@@ -15,12 +15,25 @@ The project is divided into two parts:
 
 All applies source data is mapped to the GRCh38 build of the human genome.
 
-* **Genome sequence** dowloaded from [Ensembl](ftp://ftp.ensembl.org/pub/release-84/fasta/homo_sapiens/dna/) version 84. 
+* **The sequnce of the human genome** was dowloaded from [Ensembl](http://www.ensembl.org/info/data/ftp/index.html) version 84. 
 * **Genome wide association signals** most recent version of the NHGRI-EBI [GWAS catalog](https://www.ebi.ac.uk/gwas/) was downloaded at 2016.04.10.
-* **Gene annotation** gene coordinates were downloaded from [GENCODE](ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_24/) version 24. 
+* **Gene annotation** gene coordinates were downloaded from [GENCODE](http://www.gencodegenes.org/releases/current.html) version 24. 
 
 ### Step 1 - Pre-processing.
 
 #### GWAS signals
 
-A bedfile is created with the 
+#### GENCODE annotation
+
+#### Sequences
+
+
+### Step 2 - Plotting
+
+#### Saving processed data
+
+#### Results:
+
+The plot of the 11th chromosomes of the human genome:
+![chr11 - genes, GWAS signals and CG content](https://github.com/DSuveges/GenomePlotter/blob/master/plot_chr11.png)
+
