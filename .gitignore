@@ -1,0 +1,11 @@
+# The following folders will be excluded:
+.DS_Store
+
+# Source data downloaded from GENCODE, Ensembl and the GWAS catalog
+source_data/
+
+# Data ready to be plotted. 
+data/
+
+# Processed data the will be used by the python script.
+processed_data/
