@@ -9,6 +9,12 @@
 # 2. Process downloaded data: format and calculate GC content for the whole genome.
 # 3. Saving all outputs required by the plotter.
 
+# v.1.3 Last modified: 2018.01.05
+    # Minor update: processed chromosome files now contain proper header.
+    # Chunks with excessive N contents are also saved with NA as GC content.
+    # It will allow to mark non-sequencable genomic regions.
+    # These NA.s have to be treated some special ways upon plotting...
+
 # v.1.2 Last modified: 2017.12.22
     # Before downloading, check the most recent GENCODE and Ensembl version.
     # Also output reports about the available verions.
@@ -16,6 +22,12 @@
     # Both exons and genes are handled. There will be three colors on the plot.
     # Bedtools are required and tabix.... I'm not sure if we need tabix for this.
     # All the resulting files are indexed by tabix.
+
+# The threshold for chunking the genome... it can be optional...:
+export ChunkSize=500
+
+# If the argument is given, use that as chunk size:
+if [[ ! -z "${1}" ]]; then ChunkSize=${1}; fi
 
 # Checking dependencies:
 if [[ -z $(which tabix ) ]]; then "[Error] Tabix is required. Exiting"; exit; fi
@@ -31,14 +43,14 @@ GENCODE_base_URL="ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human"
 
 # Determine the most recent GENCODE release:
 GENCODE_release=$(curl -s --list-only ${GENCODE_base_URL}/ | grep -i release | sed -e 's/release_//' | sort -n | tail -n1)
-if [[ -z ${GENCODE_release} ]]; then 
+if [[ -z ${GENCODE_release} ]]; then
     echo "[Warning] Failed to determine the most recent GENCODE version. Using version 27 (released 22/08/2017)."
     GENCODE_release=24
 fi
 
 # Determine the most recent Ensembl release:
 ENSEMBL_release=$(curl -s --list-only ${Ensembl_base_URL}/ | grep -i release | sed -e 's/release-//' | sort -n | tail -n1)
-if [[ -z ${ENSEMBL_release} ]]; then 
+if [[ -z ${ENSEMBL_release} ]]; then
     echo "[Warning] Failed to determine the most recent Ensembl release. Using version 91 (released 11/12/2017)."
     ENSEMBL_release=91
 fi
@@ -98,6 +110,7 @@ if [[ $? -ne 0 ]]; then
 fi
 
 echo "[Info] Processing gencode data: extracting gene and exon positions. Then creating bedfile with the merged coordinates."
+
 # GENCODE data is split into two parts: exons and genes.
 zcat ${workingDir}/source_data/gencode.v${GENCODE_release}.annotation.gtf.gz | perl -F"\t" -lane '
     next unless $F[2] eq "gene" and $F[8] =~ /gene_type "protein_coding"/;
@@ -132,55 +145,70 @@ for chr in {1..22} X Y ; do
     fi
 done
 
-# The threshold for chunking the genome:
-export ChunkSize=450
-
 # Chunking the human genome, calculating GC content.
 echo "[Info] Processing chrmosomes. Chunks size: ${ChunkSize}bp. Sorted bed file will be saved."
 # Downloading all chromosomes:
 for chr in {1..22} X Y ; do
     export chr
     # Processing downloaded data:
-    gzcat ${workingDir}/source_data/human_genome_GRCh38_chr${chr}.fa.gz \
-            | perl -lane '
-                $threshold = $ENV{ChunkSize}; # Importing chunk size
-                $chr = $ENV{chr}; # Importing chromosome name
+    cat <(echo -e "chr\tstart\tend\tGC_ratio") <(
+        gzcat ${workingDir}/source_data/human_genome_GRCh38_chr${chr}.fa.gz \
+            | perl -lane 'BEGIN {
+        $chunkStart = 0;
+        $threshold = $ENV{ChunkSize}; # Importing chunk size
+        $chr = $ENV{chr}; # Importing chromosome name
+        die "[Error] No chromosome number exported! Exiting." unless $chr;
+        die "[Error] No threshold has been set and exported! Exiting." unless $threshold;
+    }{
+        next if $_ =~ />/; # Excluding fasta header line
+        $_ =~ s/\s+//g; # Remove whitespace
 
-                die "[Error] No chromosome number exported! Exiting." unless $chr;
-                die "[Error] No threshold has been set and exported! Exiting." unless $threshold;
+        # If we have reached the last line of the chunk:
+        if ( length($chunk) + length($_) >= $threshold ){
 
-                next if $_ =~ />/; # Excluding header line
+            # Extract the remaining part of the chunk:
+            $rest = substr($_, $threshold - length($chunk));
+            $chunk .= substr($_, 0, $threshold - length($chunk));
 
-                chomp $_; # Remove whitespace
-                $chunkEnd += length($_); # Counting position throughout the entire datafile.
+            # Get the end position:
+            $chunkEnd = $chunkStart + $threshold;
 
-                $chunkStart = $chunkEnd - length( $_ ) unless $chunk; # Updated when starting new chunk.
+            # The chunk will not be reported if the N content is higher than half the chunk:
+            my $N_count = () = $chunk =~ /N/gi;
+            my $CG_content = "NA";
+            if ( $N_count < length($chunk) / 2 ){
 
-                my $N_count = () = $_ =~ /N/gi;
-                next if $N_count > length($_)/ 2; # Excluding lines with too many N-s
+                # Get GC content for the chunk:
+                my $CG_count = () = $chunk =~ /[CG]/gi;
+                my $AT_count = () = $chunk =~ /[AT]/gi;
+                $CG_content = $CG_content == $AT_count ? "NA" : $CG_count / ($CG_count + $AT_count);
 
-                $chunk .= $_; # Adding current line to chunk.
+                # Report line:
+            }
+            printf "%s\t%s\t%s\t%s\n", $chr, $chunkStart, $chunkEnd, $CG_content;
 
-                if ( length($chunk) >= $threshold ){
-                    $chunkCount += 1;
+            # Reinitialize variables:
+            $chunk = $rest;
+            $chunkStart = $chunkEnd;
+        }
+        else{
+            $chunk .= $_; # Adding current line to chunk.
+        }}' | sort -k1,1 -k2,2n ) | bgzip > ${workingDir}/data/Processed_chr${chr}.bed.gz
+    tabix -f -S 1 -s 1 -e 3 -b 2 ${workingDir}/data/Processed_chr${chr}.bed.gz # Indexing.
 
-                    my $CG_count = () = $chunk =~ /[CG]/gi;
-                    my $AT_count = () = $chunk =~ /[AT]/gi;
-
-                    my $CG_content = $CG_count / ($CG_count + $AT_count);
-
-                    printf "%s\t%s\t%s\t%s\t%s\n", $chr, $chunkStart, $chunkEnd, $CG_content, $chunkCount;
-
-                    $chunk = ""; # Emptying chunk.
-                }' \
-            | sort -k1,1 -k2,2n | bgzip > ${workingDir}/data/Processed_chr${chr}.bed.gz
-    tabix -p bed ${workingDir}/data/Processed_chr${chr}.bed.gz # Indexing.
-    
     chunk_no=$( gzcat ${workingDir}/data/Processed_chr${chr}.bed.gz | wc -l )
     echo -e "\tChromosome ${chr} is split into ${chunk_no} chunks."
 done
 
+# Downloading the cytoband information:
+echo "[Info] Downloading and processing cytoband information from the UCSC server."
+cat <(echo -e "chr\tstart\tend\tname\ttype") <( curl -s "http://hgdownload.cse.ucsc.edu/goldenPath/hg38/database/cytoBand.txt.gz" | gunzip | sed -e 's/chr//' | sort -k1,1 -k2,2n) | bgzip > ${workingDir}/data/cytoBand.GRCh38.bed.bgz
+
+if [ $0 != 0 ]; then
+    echo "[Error] Downloading the cytoband information failed. Exiting."
+    exit 1;
+fi
+
 echo "[Info] All source files have been downloaded and pre-processed for the plots."
-
-
-
+echo "Exiting."
+exit 0;
