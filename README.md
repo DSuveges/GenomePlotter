@@ -66,9 +66,14 @@ The script at first assigns GENCODE feature to each chunk as follows: the defaul
 
 The script then creates svg image and saves indicating the chromosome name, the specified dimension, and the chunks size for reproducibility. This svg file can further be edited. Then using cairosvg, a png file is also created and saved named identically. 
 
+About the requirements: processing a chromosome can take a long time (hours on a i7 3.1 GHz CPU) and uses upt to 2GB RAM. 
+
 ### Result:
 
 The following image was created based on the data of chromosome 19, where 450 bp-s were averaged to get GC content, and 200 of these chunks were plotted in each row. 
 
 ![chr19](chr19.w.200.c.450.0.png)
 
+The results of a genome-wide run:
+
+![genome-wide](full_genome.png)
