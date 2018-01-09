@@ -2,7 +2,7 @@
 
 The motivation behind this project was to visualize how genes and already known genome wide association signals are 
 distributed across the chromosomes. I chose a heat-map kind of visualization that allows the representation of the underlying chemical
-properties of the DNA (GC content) as well. In the most recent version of the visualization not only the protein coding genes are shown
+properties of the DNA ([GC content](https://en.wikipedia.org/wiki/GC-content)) as well. In the most recent version of the visualization not only the protein coding genes are shown
 but the exons are also highlighted in yellow. Constitutive heterochromatin (N-s in the fasta files) are colored in salmon, centromeres 
 are in blue (coordinates of the centromeres are extracted from the cytoband dataset downloaded from UCSC). 
 
@@ -20,7 +20,7 @@ The project is divided into two parts:
 * [tabix](http://www.htslib.org/download/)
 * [bedtools](http://bedtools.readthedocs.io/en/latest/content/installation.html) v2.27 or above
 
-**Required Python packages:**
+**Besided standard libraries, the following python packages were used::**
 
 * [pandas](https://pandas.pydata.org/)
 * [numpy](http://www.numpy.org/)
@@ -31,10 +31,10 @@ The project is divided into two parts:
 
 All applied source data is mapped to the GRCh38 build of the human genome.
 
-* **The sequnce of the human genome** was dowloaded from [Ensembl](http://www.ensembl.org/info/data/ftp/index.html) checked for the most recent version. 
-* **Genome wide association signals** most recent version of the NHGRI-EBI [GWAS catalog](https://www.ebi.ac.uk/gwas/) downloading the most recent version.
-* **Gene annotation** gene coordinates were downloaded from [GENCODE](http://www.gencodegenes.org/releases/current.html) checking for the most recent version. 
-* **Cyto-bands** coordinates of the G-bands and centromeres were downloaded from the [UCSC genomics database](http://hgdownload.cse.ucsc.edu/goldenPath/hg38/database/cytoBand.txt.gz) (currently only the genomic coordinates of the centromeres are used.) 
+* **The sequnce of the human genome** is dowloaded from [Ensembl](http://www.ensembl.org/info/data/ftp/index.html) (checking for the most recent version). 
+* **Genome wide association signals** most recent version of the NHGRI-EBI [GWAS catalog](https://www.ebi.ac.uk/gwas/) (checking the most recent version).
+* **Gene annotation** gene coordinates are downloaded from [GENCODE](http://www.gencodegenes.org/releases/current.html) checking for the most recent version. 
+* **Cyto-bands** coordinates of the G-bands and centromeres are downloaded from the [UCSC genomics database](http://hgdownload.cse.ucsc.edu/goldenPath/hg38/database/cytoBand.txt.gz) (currently only the genomic coordinates of the centromeres are used.) 
 
 ### Step 1 - Pre-processing.
 
@@ -42,7 +42,7 @@ All applied source data is mapped to the GRCh38 build of the human genome.
 ./Prepare_data.sh <chunk_size>
 ```
 
-* *<chunk_size>* the length of non-overlapping genomic regions which will be pooled together to calculate GC content in basepairs. The default
+* *<chunk_size>* the length of non-overlapping genomic regions which will be pooled together to calculate [GC content](https://en.wikipedia.org/wiki/GC-content) in basepairs. The default
 value is 500bp 
 * The script creates a *source_data* folder into which all the necessary input files will be downloaded.
 * Then all files will then be processed and saved into the *data/* folder.
@@ -77,3 +77,11 @@ The following image was created based on the data of chromosome 19, where 450 bp
 The results of a genome-wide run:
 
 ![genome-wide](full_genome.png)
+
+### To-Dos
+
+1. The G-bands will be added to the plot as well (at least to see how it would look). A separate plot will be generated with a "G-band" ruler with an alternating white/black colors and the names of the band. This plot will then be merged with the chromosome image.
+2. Marking a custom set of associations read from a snp set file containing rsIDs, trait and paper title or PMID... adding as a symbol at first to see how it would look. 
+3. Adding the rsID and the trait to the plot in a speech bubble... it will be very tricky. 
+4. Adding further flexibility to the plot: custom pixel size and other features, proper command line option handling and error checking. 
+5. Extra script to generate figure legend and a script to create the whole composition.
