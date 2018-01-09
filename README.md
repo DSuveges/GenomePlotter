@@ -58,4 +58,17 @@ value is 500bp
 * **${chr}** chromosome name to process
 * **${dimension}** how many chunks will be plotted in one row or one column.
 * **${axis}** if the fixed dimension is row (2) or column (1). 
+* **${working_dir}** directory from which the input files are read, by default it's the current working dir.
+* **${chunks}** There's a chance to plot just a fraction of the chromosome for testing purposes. For this point, you can specify how many chunks do you want to be 
+included in the set. This parameter is optional, if omitted, the whole chromosome will be processed and plotted. 
+
+The script at first assigns GENCODE feature to each chunk as follows: the default value is intergenic (colored in green), if a chunk has at least one base overlap with a gene then the chunk is considered to be gene (purple), unless the chunk has at least one basepair overlap with an exon in which case the cunk is consideret to be exon (colored in yellow), unless the GC content is NA, in which calse the chunk is considered to be heterochromatin (colored in salmon). Based on cyto-band annotation, chunks overlapping with centromeres will be colored in blue. The default color is adjusted based on the GC content.
+
+The script then creates svg image and saves indicating the chromosome name, the specified dimension, and the chunks size for reproducibility. This svg file can further be edited. Then using cairosvg, a png file is also created and saved named identically. 
+
+### Result:
+
+The following image was created based on the data of chromosome 19, where 450 bp-s were averaged to get GC content, and 200 of these chunks were plotted in each row. 
+
+![chr19](chr19.w.200.c.450.0.png)
 
