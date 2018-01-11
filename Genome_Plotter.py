@@ -1,6 +1,13 @@
 #!/Users/ds26/anaconda/bin/python
 
-# Last modified: 2018.01.06
+# v.2.1 Last modified: 2018.01.10
+    # Adding command line parameter support.
+    # All applied parameters can be passed as command line arguments.
+    # Flexible margins around plot.
+    # Adding support for cytobands
+    # Adding support for custom associations and their plot on figure.
+
+# v.2.0 Last modified: 2018.01.06
     # Helper functions are moved to separate files.
     # Use genomic coordinates to find x,y coordinates on the plot.
     # The x and y coordinates can be fixed.
@@ -16,31 +23,43 @@ import pandas as pd # data handling
 import numpy as np # Working with large arrays
 import colorsys # Generate color gradient.
 import cairosvg # Converting svg to image
-import pickle # Saving dataframes to disk
 import os.path # checking if the datafies are already there.
 import sys #
+import argparse # Now command line arugments are properly set.
 
 # Importing custom functions:
 from functions.helper_fun import *
 from functions.color_fun import *
 from functions.SVG_plot import SVG_plot
 
-# Coloring and drawing parameters:
-start = 0.75 # At which column the darkening starts
-threshold = 0.15 # The amount of the maximum darkness
-pixel = 3 # The size of the square for each chunk in the polt
+# Defining colors for different structures:
+colors_GENCODE = {
+    'centromere'      : linear_gradient('#9393FF', n=20),
+    'heterochromatin' : linear_gradient('#F9D2C2', finish_hex='#ffc6af', n=20), # Monochrome, no gradient!
+    'intergenic'      : linear_gradient('#A3E0D1', n=20),
+    'exon'            : linear_gradient('#FFD326', n=20),
+    'gene'            : linear_gradient('#6CB8CC', n=20)
+}
 
-# Arguments:
-## chromosome
-## dimension
-## axis
-## working dir
-## test dimension.
+# Adding command line parameters:
+parser = argparse.ArgumentParser(description='Script to plot chromosomes with elaborate annotations. See github: https://github.com/DSuveges/GenomePlotter')
+parser.add_argument('-c', '--chromosome', type = str, help='Selected chromosome to process', required = True)
+parser.add_argument('-d', '--dimension', type = int, help='Fixed dimension (height of width) of the plot (200 chunks by default).', default = 200)
+parser.add_argument('-a', '--axis', type = int, help='The fixed axis of the plot (1 - width, 2 - height, 1 by default)', default = 1)
+parser.add_argument('-p', '--pixel', type = int, help='The size of a plotted chunk in pixel (default: 3).', default = 3)
+parser.add_argument('-s', '--darkStart', type = float, help='Fraction of the width from where the colors start getting darker (default:  0.75).', default = 0.75)
+parser.add_argument('-m', '--darkMax', type = float, help='How dark a pixel can get at the right end of the plot (default: 0.15).', default = 0.15)
+parser.add_argument('-f', '--folder', type = str, help = 'The working directory (default is the current working directory)', default='.')
+parser.add_argument('-t', '--test', type = int, help = 'The number of chunks to be read (by default the whole chromosome is processed.)', default = 0)
 
-# Accepting command line arguments: <== Some error handling is needed here.
-chromosome = str(sys.argv[1])
-dimension = int(sys.argv[2])
-axis = int(sys.argv[3])
+# Extracting submitted options:
+args = parser.parse_args()
+chromosome = args.chromosome
+dimension = args.dimension
+axis = args.axis
+pixel = args.pixel
+darkStart = args.darkStart
+darkMax = args.darkMax
 
 # Understanding the provided axis:
 fixed_dim = "Width"
@@ -52,7 +71,7 @@ print("[Info %s] Processing chromosome: %s." % (get_now(), chromosome))
 print("[Info %s] Fixed dimension: %s, length: %s chunks." % (get_now(), fixed_dim, dimension))
 
 try:
-    workingDir = sys.argv[4]
+    workingDir = args.folder
 except:
     workingDir = os.getcwd()
 print("[Info %s] Working directory: %s." % (get_now(), workingDir))
@@ -84,9 +103,9 @@ print("[Info %s] reading file %s... " % (get_now(), dataFile))
 chr_dataf = pd.read_csv(dataFile, compression='gzip', sep='\t', quotechar='"')
 
 # If we want to do test, we can restrict the dataframe to n lines:
-if len(sys.argv) == 6:
-    chr_dataf = chr_dataf.ix[0:int(sys.argv[5])]
-    print("[Info %s] Test mode is on. The first %s rows will be kept." %(get_now(), sys.argv[5]))
+if args.test:
+    chr_dataf = chr_dataf.ix[0:args.test]
+    print("[Info %s] Test mode is on. The first %s rows will be kept." %(get_now(), args.test))
 
 # the start position will be the new index:
 chr_dataf = chr_dataf.set_index('start', drop = False)
@@ -145,17 +164,11 @@ chr_dataf.loc[chr_dataf.GC_ratio.isnull(), 'GENCODE'] = 'heterochromatin'
 ## Get colors based on GENCODE feature:
 ##
 print("[Info %s] Assigning colors to each chunk." % (get_now()))
-colors_GENCODE = {
-    'centromere' : linear_gradient('#8080ff', n=20),
-    'heterochromatin' : linear_gradient('#ffc6af', finish_hex='#ffc6af', n=20), #
-    'intergenic': linear_gradient('#42b79a', n=20), # gray
-    'exon': linear_gradient('#ffcc00', n=20), #CDCD00', n=20), # Purple
-    'gene': linear_gradient('#4278b7', n=20)} # Goldenrod
 chr_dataf['color'] = chr_dataf.apply(lambda x: colors_GENCODE[x['GENCODE']][int(x[3]*20)] if not np.isnan(x[3]) else colors_GENCODE['heterochromatin'][0], axis = 1)
 
 # Get the colors darker based on column number:
 print("[Info %s] Apply darkness filter." % (get_now()))
-chr_dataf['color'] = chr_dataf.apply(color_darkener, axis = 1, args=(width, start, threshold))
+chr_dataf['color'] = chr_dataf.apply(color_darkener, axis = 1, args=(width, darkStart, darkMax))
 print(chr_dataf.head())
 
 ##
@@ -171,9 +184,10 @@ GWAS_df = GWAS_df.apply(generate_xy, args = (min_pos, chunk_size, width), axis =
 ##
 ## Let's draw the plot:
 ##
+# Adding some custom annotation:
 
-outputFileName = outputDir +("/chr%s.w.%s.c.%s" %(chromosome, width, chunk_size))
-plot = SVG_plot(chr_dataf.x.max(), chr_dataf.y.max(), pixel)
+outputFileName = outputDir +("/chr%s.w.%s.c.%s" %(chromosome, int(width), int(chunk_size)))
+plot = SVG_plot(chr_dataf.x.max(), chr_dataf.y.max(), pixel, margins = [100, 100, 100, 100])
 
 print("[Info %s] Drawing svg... might take a while to complete." % (get_now()))
 chr_dataf.apply(plot.draw_chunk, axis = 1)
@@ -183,6 +197,9 @@ GWAS_df.apply(plot.draw_GWAS, axis = 1 )
 
 print("[Info %s] Marking centromere." %(get_now()))
 plot.mark_centromere(int(centromer_loc[0]/chunk_size), int(centromer_loc[1]/chunk_size))
+
+GWAS_df.sample(frac = 0.20).apply(plot.add_assoc, axis = 1 )
+
 
 print("[Info %s] Saving svg file.." % (get_now()))
 plot.save_svg(outputFileName + ".svg")

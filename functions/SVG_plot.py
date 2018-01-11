@@ -1,17 +1,42 @@
 import cairosvg
+import math
 
 class SVG_plot:
     '''
     This class contains all the methods and data to create the genome plot in svg format.
     Once the process is done, use can choose to save the svg or render using cairosvg.
-    Good luck boy.
+
+    margins = array of four integers corresponding to the left, upper, right and bottom margin.
     '''
 
-    def __init__(self, width, height, pixel):
+    def __init__(self, width, height, pixel, margins = [0,0,0,0]):
         self.width = width
         self.height = height
         self.pixel = pixel
-        self.plot =  '<svg width="%s" height="%s">\n' % (width*pixel, height*pixel)
+        self.margins = margins
+
+        # This is a scaled star for plotting custom annotation:
+        self.star = [e for ts in zip([self.__rotate(0, pixel, math.radians(alpha*36)) for alpha in range(0,9,2)],
+                                    [self.__rotate(0, pixel, math.radians(alpha*36), 1.7) for alpha in range(1,10,2)],) for e in ts]
+
+        self.plot =  '<svg width="%s" height="%s">\n' % (width*pixel + margins[0] + margins[2], height*pixel + margins[1] + margins[3])
+
+    def __adjust_coord(self, x, y):
+        ''' This simple function just sifts the coordinates by the margins and corrects for the pixel size.'''
+        return (int(x*self.pixel + self.margins[0]),
+                int(y*self.pixel + self.margins[1]))
+
+    def add_assoc(self, row):
+        ''' Adding a star to the polt and the rsID and trait... once later'''
+        (x,y) = self.__adjust_coord(row['x'], row['y'])
+
+        # Offsetting the star:
+        self.plot += ('<polygon stroke="white" fill="#E25FDA" stroke-width="2" points="%s" />\n' %
+                      " ".join([",".join([str(x + a[0] + self.pixel/2),str(y+a[1] + self.pixel/2)]) for a in self.star]))
+
+        # Adding annotation:
+        # to be implemented.... not yet there...
+
 
     # Adding square:
     def draw_chunk(self, row):
@@ -22,53 +47,51 @@ class SVG_plot:
             y - row number
             color - color of the field in hexadecimal code.
         '''
-        x = row['x']
-        y = row['y']
+        (x,y) = self.__adjust_coord(row['x'],row['y'])
         color = row['color']
         self.plot += ('<rect x="%s" y="%s" width="%s" height="%s" style="stroke-width:1;stroke:%s; fill: %s" />\n' %
-            (x*self.pixel, y*self.pixel, self.pixel , self.pixel, color, color))
+            (x, y, self.pixel , self.pixel, color, color))
 
     # Adding dot:
     def draw_GWAS(self, row):
-        x = row['x']
-        y = row['y']
-        self.plot += ('<circle cx="%s" cy="%s" r="2" stroke="%s" stroke-width="1" fill="%s" />\n' %
-            (x*self.pixel, y*self.pixel, "black", "black"))
+        (x,y) = self.__adjust_coord(row['x'],row['y'])
+        self.plot += ('<circle cx="%s" cy="%s" r="%s" stroke="%s" stroke-width="1" fill="%s" />\n' %
+            (x + self.pixel/2, y + self.pixel/2, self.pixel * 0.75, "black", "black"))
 
     def mark_centromere(self, centr_start, centr_end):
-        # Calculate centromere dimensions:
-        centr = (
-            int((centr_start / self.width) * self.pixel),
-            int((centr_end / self.width) * self.pixel),
-            int((centr_end + centr_start) / (self.width * 2) * self.pixel),
-            int((centr_end - centr_start) / (self.width * 2) * self.pixel)
-        )
+
+        # calculating the y coordinates of the centromeres based on the chunk count:
+        start_y = int(centr_start / self.width)
+        end_y = int(centr_end / self.width)
 
         # Marking centromere on the left:
-        self.plot += ('<path d="M %s %s C %s %s, %s %s, %s %s C %s %s, %s %s, %s %s Z" fill="white"/>' %
-                 ( 0, centr[0],
-                   0, centr[2],
-                   centr[3], centr[2],
-                   centr[3]*2, centr[2],
-                   centr[3], centr[2],
-                   0, centr[2],
-                   0, centr[1]))
+        self.plot += ('<path d="M %s %s C %s %s, %s %s, %s %s C %s %s, %s %s, %s %s Z" fill="white"/>\n' %
+                  ( self.__adjust_coord(0, start_y) +
+                    self.__adjust_coord(0, (start_y+end_y)/2) +
+                    self.__adjust_coord((end_y-start_y), (start_y+end_y)/2) +
+                    self.__adjust_coord((end_y-start_y)*2, (start_y+end_y)/2) +
+                    self.__adjust_coord((end_y-start_y), (start_y+end_y)/2) +
+                    self.__adjust_coord(0, (start_y+end_y)/2) +
+                    self.__adjust_coord(0, end_y )))
 
         # Marking centromoere on the right:
-        self.plot += ('<path d="M %s %s C %s %s, %s %s, %s %s C %s %s, %s %s, %s %s Z" fill="white"/>' %
-                 ( self.width * self.pixel, centr[0],
-                   self.width * self.pixel, centr[2],
-                   self.width * self.pixel - centr[3], centr[2],
-                   self.width * self.pixel - centr[3]*2, centr[2],
-                   self.width * self.pixel - centr[3], centr[2],
-                   self.width * self.pixel, centr[2],
-                   self.width * self.pixel, centr[1]))
-
+        self.plot += ('<path d="M %s %s C %s %s, %s %s, %s %s C %s %s, %s %s, %s %s Z" fill="white"/>\n' %
+                  ( self.__adjust_coord(self.width+1, start_y) +
+                    self.__adjust_coord(self.width+1, (start_y+end_y)/2) +
+                    self.__adjust_coord(self.width+1-(end_y-start_y), (start_y+end_y)/2) +
+                    self.__adjust_coord(self.width+1-(end_y-start_y)*2, (start_y+end_y)/2) +
+                    self.__adjust_coord(self.width+1-(end_y-start_y), (start_y+end_y)/2) +
+                    self.__adjust_coord(self.width+1, (start_y+end_y)/2) +
+                    self.__adjust_coord(self.width+1, end_y)))
     # Adding legend?
-    # Adding centromere?
+    # Adding centromere? DONE
     # Adding frame?
     # Adding custom annotation.
-
+    # Adding cytobands.
+    # Rotating and scaling vecot
+    def __rotate(self, x, y, angle, scale=1):
+        return ((x * math.cos(angle) - y * math.sin(angle))*scale,
+                (x * math.sin(angle) + y * math.cos(angle))*scale)
 
     # Close svg document:
     def __close(self):
