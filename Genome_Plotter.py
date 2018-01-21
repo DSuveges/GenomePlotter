@@ -149,10 +149,20 @@ chr_dataf.GENCODE.update(GENCODE_chunks) # This value will be overwritten if ove
 print(chr_dataf.head())
 
 # Reading cytoband file:
+print("[Info %s] Opening and processing cytoband file..." %(get_now()))
 cyb_df = pd.read_csv(cytoband_file, compression='gzip', sep='\t')
+cyb_df = cyb_df.loc[cyb_df.chr == chromosome] # Selecting only the relevant rows
+
+# Centromeres actually won't be used.... these rows will be deleted:
 centromer_loc = cyb_df.loc[(cyb_df.chr == chromosome) & (cyb_df.type == 'acen'),['start', 'end']]
 centromer_loc = (int(centromer_loc.start.min()),
                  int(centromer_loc.end.max()))
+
+# Calculating proper y coordinate for both the start and end position of each cytoband (x coordinate won't be used:):
+cyb_df = cyb_df.apply(generate_xy, axis = 1, args = (min_pos, chunk_size, width), y = 'y1')
+cyb_df = cyb_df.apply(generate_xy, axis = 1, args = (min_pos, chunk_size, width), position_column = 'end', y = 'y2')
+
+print(cyb_df.head())
 
 # Assigning centromere:
 chr_dataf.loc[(chr_dataf.end > centromer_loc[0]) & (chr_dataf.start < centromer_loc[1]) , 'GENCODE'] = 'centromere'
@@ -187,9 +197,9 @@ GWAS_df = GWAS_df.apply(generate_xy, args = (min_pos, chunk_size, width), axis =
 # Adding some custom annotation:
 
 outputFileName = outputDir +("/chr%s.w.%s.c.%s" %(chromosome, int(width), int(chunk_size)))
-plot = SVG_plot(chr_dataf.x.max(), chr_dataf.y.max(), pixel, margins = [100, 100, 100, 100])
+plot = SVG_plot(chr_dataf.x.max(), chr_dataf.y.max(), pixel, margins = [250, 100, 100, 100])
 
-print("[Info %s] Drawing svg... might take a while to complete." % (get_now()))
+print("[Info %s] Drawing chunks (%s of them)... might take a while to complete." % (get_now(), chr_dataf.shape[0]))
 chr_dataf.apply(plot.draw_chunk, axis = 1)
 
 print("[Info %s] Adding GWAS hits." %(get_now()))
@@ -200,6 +210,8 @@ plot.mark_centromere(int(centromer_loc[0]/chunk_size), int(centromer_loc[1]/chun
 
 GWAS_df.sample(frac = 0.20).apply(plot.add_assoc, axis = 1 )
 
+print("[Info %s] Adding cytoband ruler." %(get_now()))
+cyb_df.loc[cyb_df.chr == chromosome].apply(plot.draw_cytoband, axis = 1)
 
 print("[Info %s] Saving svg file.." % (get_now()))
 plot.save_svg(outputFileName + ".svg")

@@ -94,7 +94,7 @@ About the requirements: processing a chromosome can take a long time (hours on a
 
 The following image was created based on the data of chromosome 19, where 450 bp-s were averaged to get GC content, and 200 of these chunks were plotted in each row.
 
-![chr19](chr19.w.200.c.450.0.png)
+![chr21](chr21.w.200.c450.png)
 
 The results of a genome-wide run:
 
