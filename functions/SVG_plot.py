@@ -27,8 +27,8 @@ class SVG_plot:
         self.margins = margins
 
         # Constants for the cytobnand plot:
-        self.cband_x1 = self.margins[0] * 0.5
-        self.cband_x2 = self.margins[0] * 0.7
+        self.cband_x1 = self.margins[0] - 9 * pixel
+        self.cband_x2 = self.margins[0] - 15 * pixel
         self.cband_width = (self.cband_x2 - self.cband_x1)
         self.cband_colors = {
             'gneg'    : '#FFFFFF', # White
