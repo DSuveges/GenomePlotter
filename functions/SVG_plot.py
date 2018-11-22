@@ -39,7 +39,6 @@ class SVG_plot:
             'acen'    : '#CCCCCC', # Gray80
             'gvar'    : '#999999', # Gray60
             'stalk'   : '#E5E5E5', # Gray90
-            'border'  : '#999999'  # Gray60
         }
 
         # This is a scaled star for plotting custom annotation:
@@ -159,3 +158,4 @@ class SVG_plot:
     # Render png file:
     def save_png(self, file_name):
         cairosvg.svg2png(bytestring=self.plot,write_to=file_name)
+

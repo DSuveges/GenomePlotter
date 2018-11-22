@@ -14,6 +14,7 @@ The project is divided into two parts:
 ### Requirements
 
 **Required bash tools:**
+
 * [cairo graphics library](https://www.cairographics.org/download/)
 * [tabix](http://www.htslib.org/download/)
 * [bedtools](http://bedtools.readthedocs.io/en/latest/content/installation.html) v2.27 or above

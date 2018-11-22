@@ -51,6 +51,7 @@ parser.add_argument('-s', '--darkStart', type = float, help='Fraction of the wid
 parser.add_argument('-m', '--darkMax', type = float, help='How dark a pixel can get at the right end of the plot (default: 0.15).', default = 0.15)
 parser.add_argument('-f', '--folder', type = str, help = 'The working directory (default is the current working directory)', default='.')
 parser.add_argument('-t', '--test', type = int, help = 'The number of chunks to be read (by default the whole chromosome is processed.)', default = 0)
+parser.add_argument('--write-pickle', type = int, help = 'The resulting svg object is saved into a serialized file for further analysis.', default = 0)
 
 # Extracting submitted options:
 args = parser.parse_args()
