@@ -1,15 +1,15 @@
 ## GenomePlotter
 
-The motivation behind this project was to create a scientifically correct visualization of the human genome with showing the location of protein coding genes,
-exons, already published genome-wide associations and many more. I chose a heat-map kind of visualization that allows the representation of the underlying chemical
-properties of the DNA ([GC content](https://en.wikipedia.org/wiki/GC-content)) as well.
+The motivation behind this project was to create a scientifically correct visualization of the human genome with showing the location of protein coding genes, exons, already published genome-wide associations and many more. I chose a heat-map kind of visualization that allows the representation of the underlying chemical properties of the DNA ([GC content](https://en.wikipedia.org/wiki/GC-content)) as well.
 
 ### Approach
 
-The project is divided into two parts:
+The project is divided into several parts:
 
 1. A shell script that downloads and pre-processes the source data files with genome sequence, GWAS signals, gene annotation and the [cytobands](https://en.wikipedia.org/wiki/G_banding).
-2. A python script, that combines all source data into a single data-frame and creates the final plots.
+2. A python script (chromosome_plotter.py), that combines sequence data and gene annotation into a single chromosome svg (optionally png).
+3. A python script that uses the previously generated svg and adds various annotations (gwas signals, cytobands, custom annotation) (yet to be implemented.)
+4. An other python script that combines the previously generated annotated chromosomes into a single composition. (yet to be implemented)
 
 ### Requirements
 
@@ -33,7 +33,7 @@ All applied source data is mapped to the GRCh38 build of the human genome.
 * **The sequnce of the human genome** is dowloaded from [Ensembl](http://www.ensembl.org/info/data/ftp/index.html) (checking for the most recent version).
 * **Genome wide association signals** most recent version of the NHGRI-EBI [GWAS catalog](https://www.ebi.ac.uk/gwas/) (checking the most recent version).
 * **Gene annotation** gene coordinates are downloaded from [GENCODE](http://www.gencodegenes.org/releases/current.html) checking for the most recent version.
-* **Cyto-bands** coordinates of the G-bands and centromeres are downloaded from the [UCSC genomics database](http://hgdownload.cse.ucsc.edu/goldenPath/hg38/database/cytoBand.txt.gz) (currently only the genomic coordinates of the centromeres are used.)
+* **Cyto-bands** coordinates of the G-bands and centromeres are downloaded from the [UCSC genomics database](http://hgdownload.cse.ucsc.edu/goldenPath/hg38/database/cytoBand.txt.gz) (currently only the genomic coordinates of the centromeres are used.) (This data can optionally be accessed through the REST API of Ensembl)
 
 ### Step 1 - Pre-processing.
 
@@ -41,37 +41,33 @@ All applied source data is mapped to the GRCh38 build of the human genome.
 ./Prepare_data.sh <chunk_size>
 ```
 
-* *<chunk_size>* the length of non-overlapping genomic regions which will be pooled together to calculate [GC content](https://en.wikipedia.org/wiki/GC-content) in basepairs. The default
-value is 500bp
+* *<chunk_size>* the length of non-overlapping window used to pool together to calculate [GC content](https://en.wikipedia.org/wiki/GC-content). In basepairs. The default value is 500bp
 * The script creates a *source_data* folder into which all the necessary input files will be downloaded.
 * Then all files will then be processed and saved into the *data/* folder.
 * For each chromosome an indexed bed file will be generated containing the chromosome, start and end coordinates of the chunk and the GC content. This piece of information represent a single pixel of the resulting plot.
 * Genomic regions where the sequence is not available, 'NA' is put in to the GC content field. (This will be the base of the coloring of the heterochromatic regions)
 
-### Step 2 - Plot data.
+### Step 2 - Plot chromosome.
 
 ```bash
-./Genome_Plotter.py --help
+./chromosome_plotter.py --help
 ```
-```
-usage: Genome_Plotter.py [-h] -c CHROMOSOME [-d DIMENSION] [-a AXIS]
-                         [-p PIXEL] [-s DARKSTART] [-m DARKMAX] [-f FOLDER]
-                         [-t TEST]
 
-Script to plot chromosomes with elaborate annotations. See github:
-https://github.com/DSuveges/GenomePlotter
+```
+Script to plot genome chunks colored based on GC content and other features.
+See github: https://github.com/DSuveges/GenomePlotter
 
 optional arguments:
   -h, --help            show this help message and exit
   -c CHROMOSOME, --chromosome CHROMOSOME
                         Selected chromosome to process
   -d DIMENSION, --dimension DIMENSION
-                        Fixed dimension (height of width) of the plot (200
+                        Fixed dimension (height or width) of the plot (200
                         chunks by default).
   -a AXIS, --axis AXIS  The fixed axis of the plot (1 - width, 2 - height, 1
                         by default)
   -p PIXEL, --pixel PIXEL
-                        The size of a plotted chunk in pixel (default: 3).
+                        The size of a plotted chunk in pixels (default: 3).
   -s DARKSTART, --darkStart DARKSTART
                         Fraction of the width from where the colors start
                         getting darker (default: 0.75).
@@ -89,7 +85,7 @@ The script at first assigns GENCODE feature to each chunk as follows: the defaul
 
 The script then creates svg image and saves indicating the chromosome name, the specified dimension, and the chunks size for reproducibility. This svg file can further be edited. Then using cairosvg, a png file is also created and saved named identically.
 
-About the requirements: processing a chromosome can take a long time (hours on a i7 3.1 GHz CPU) and uses upt to 2GB RAM.
+About the requirements: processing a chromosome can take a long time and uses upt to 2GB RAM.
 
 ### Result:
 

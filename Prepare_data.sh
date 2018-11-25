@@ -24,34 +24,79 @@
     # All the resulting files are indexed by tabix.
 
 # The threshold for chunking the genome... it can be optional...:
-export ChunkSize=500
+export ChunkSize
 
-# If the argument is given, use that as chunk size:
-if [[ ! -z "${1}" ]]; then ChunkSize=${1}; fi
+function display_help(){
+    echo "Data preparation for the genome plotter: downloading cytoband information, gene annotation and the human genome. "
+    echo "(the genome is also split into chunks and the GC content is calculated.)"
+    echo ""
+    echo "Usage:"
+    echo "$0 -g <GENCODE ftp URL> -e <Ensembl ftp URL> -c <GWAS Catalog file> -u <Cytoband file> -s <chunk size>"
+    echo ""
+    echo "Command line options and their default values:"
+    echo "    Chunk size: 500"
+    echo "    GENCODE ftp URL: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human"
+    echo "    Ensembl ftp URL: ftp://ftp.ensembl.org/pub"
+    echo "    Cytoban file at UCSC: http://hgdownload.cse.ucsc.edu/goldenPath/hg38/database/cytoBand.txt.gz"
+    echo "    GWAS Catalog file: www.ebi.ac.uk/gwas/api/search/downloads/full"
+    echo ""
+    exit 1;
+}
+
+# Input files are made optional:
+OPTIND=1
+while getopts "g:e:c:u:s:h?" opt; do
+    case "$opt" in
+        "g" ) GENCODE_base_URL="${OPTARG}" ;;
+        "e" ) Ensembl_base_URL="${OPTARG}" ;;
+        "c" ) GWAS_file="${OPTARG}" ;;
+        "u" ) CYTOBAND_URL="${OPTARG}" ;;
+        "s" ) ChunkSize="${OPTARG}" ;;
+        "h" | * ) display_help ;;
+    esac
+done
 
 # Checking dependencies:
 if [[ -z $(which tabix ) ]]; then "[Error] Tabix is required. Exiting"; exit; fi
 if [[ -z $(which mergeBed ) ]]; then "[Error] Bedtools is required. Exiting"; exit; fi
 
+
+# Testing command line parameters:
+if [[ -z "${ChunkSize}" ]]; then ChunkSize=500; fi
+
+if [[ -z "${GENCODE_base_URL}" ]]; then GENCODE_base_URL="ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human"; fi
+
+if [[ -z "${Ensembl_base_URL}" ]]; then Ensembl_base_URL="ftp://ftp.ensembl.org/pub" ; fi
+
+if [[ -z "${GWAS_file}" ]]; then GWAS_file="www.ebi.ac.uk/gwas/api/search/downloads/full"; fi
+
+if [[ -z "${CYTOBAND_URL}" ]]; then CYTOBAND_URL="http://hgdownload.cse.ucsc.edu/goldenPath/hg38/database/cytoBand.txt.gz"; fi
+
 # Setting working dir:
 workingDir=$(pwd)
 
-# Setting up source directories:
-GWAS_file="www.ebi.ac.uk/gwas/api/search/downloads/full"
-Ensembl_base_URL="ftp://ftp.ensembl.org/pub"
-GENCODE_base_URL="ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human"
+# Status update:
+echo "[Info] Data preparation is called with the following parameters:"
+echo -e "\tChunk size: ${ChunkSize}"
+echo -e "\tGENCODE ftp folder: ${GENCODE_base_URL}"
+echo -e "\tEnsembl ftp folder: ${Ensembl_base_URL}"
+echo -e "\tCytoban file at UCSC: ${CYTOBAND_URL}"
+echo -e "\tGWAS Catalog file: ${GWAS_file}"
+echo ""
 
 # Determine the most recent GENCODE release:
 GENCODE_release=$(curl -s --list-only ${GENCODE_base_URL}/ | grep -i release | sed -e 's/release_//' | sort -n | tail -n1)
 if [[ -z ${GENCODE_release} ]]; then
     echo "[Warning] Failed to determine the most recent GENCODE version. Using version 27 (released 22/08/2017)."
-    GENCODE_release=24
+    echo "[Warning] The following URL was used: ${GENCODE_base_URL}"
+    GENCODE_release=24  
 fi
 
 # Determine the most recent Ensembl release:
 ENSEMBL_release=$(curl -s --list-only ${Ensembl_base_URL}/ | grep -i release | sed -e 's/release-//' | sort -n | tail -n1)
 if [[ -z ${ENSEMBL_release} ]]; then
     echo "[Warning] Failed to determine the most recent Ensembl release. Using version 91 (released 11/12/2017)."
+    echo "[Warning] The following URL was used: ${Ensembl_base_URL}"
     ENSEMBL_release=91
 fi
 
@@ -73,6 +118,8 @@ wget -q ${GWAS_file} -O ${workingDir}/source_data/GWAS_catalog.tsv
 if [[ $? -ne 0 ]]; then
     echo "[Error] Failed to download the GWAS catalog. Exiting."
     exit
+else
+    echo "[Info] GWAS Catalog data successfully downloaded."
 fi
 
 # Extracting columns of interest:
@@ -94,8 +141,8 @@ if [[ ! -e ${workingDir}/data/processed_GWAS.bed.gz ]]; then
     echo "[Error] Creation of the processed gwas file was failed. Exiting."
     exit;
 else
-    hitcount=$(zcat ${workingDir}/data/processed_GWAS.bed.gz | grep -v "#" | wc -l )
-    snpcount=$(zcat ${workingDir}/data/processed_GWAS.bed.gz | grep -v "#" | cut -f4 | sort -u | wc -l )
+    hitcount=$(gunzip -c ${workingDir}/data/processed_GWAS.bed.gz | grep -v "#" | wc -l )
+    snpcount=$(gunzip -c ${workingDir}/data/processed_GWAS.bed.gz | grep -v "#" | cut -f4 | sort -u | wc -l )
     echo "[Info] Number of processed associations in the GWAS file: ${hitcount}, number of snps: ${snpcount}"
 fi;
 
@@ -112,7 +159,7 @@ fi
 echo "[Info] Processing gencode data: extracting gene and exon positions. Then creating bedfile with the merged coordinates."
 
 # GENCODE data is split into two parts: exons and genes.
-zcat ${workingDir}/source_data/gencode.v${GENCODE_release}.annotation.gtf.gz | perl -F"\t" -lane '
+gunzip -c ${workingDir}/source_data/gencode.v${GENCODE_release}.annotation.gtf.gz | perl -F"\t" -lane '
     next unless $F[2] eq "gene" and $F[8] =~ /gene_type "protein_coding"/;
     $F[0] =~ s/chr//i;
     $F[8] =~ /gene_id "(ENSG.+?)";.+gene_name "(.+?)";/;
@@ -120,7 +167,7 @@ zcat ${workingDir}/source_data/gencode.v${GENCODE_release}.annotation.gtf.gz | p
 
 mergeBed -i ${workingDir}/data/genes_GENCODE.bed.gz | awk 'BEGIN{FS=OFS="\t"}{print $0, "gene"}' | gzip > ${workingDir}/data/genes_GENCODE.merged.bed.gz
 
-zcat ${workingDir}/source_data/gencode.v${GENCODE_release}.annotation.gtf.gz | perl -F"\t" -lane '
+gunzip -c ${workingDir}/source_data/gencode.v${GENCODE_release}.annotation.gtf.gz | perl -F"\t" -lane '
     next unless $F[2] eq "exon" and $F[8] =~ /gene_type "protein_coding"/;
     $F[0] =~ s/chr//i;
     $F[8] =~ /gene_id "(ENSG.+?)";.+gene_name "(.+?)";/;
@@ -129,7 +176,7 @@ zcat ${workingDir}/source_data/gencode.v${GENCODE_release}.annotation.gtf.gz | p
 mergeBed -i  ${workingDir}/data/exons_GENCODE.bed.gz | awk 'BEGIN{FS=OFS="\t"}{print $0, "exon"}' | gzip > ${workingDir}/data/exons_GENCODE.merged.bed.gz
 
 # Combining the exon and the gene datasets together:
-zcat ${workingDir}/data/exons_GENCODE.merged.bed.gz ${workingDir}/data/genes_GENCODE.merged.bed.gz | sort -k1,1 -k2,2n | bgzip > ${workingDir}/data/GENCODE.merged.bed.gz
+gunzip -c ${workingDir}/data/exons_GENCODE.merged.bed.gz ${workingDir}/data/genes_GENCODE.merged.bed.gz | sort -k1,1 -k2,2n | bgzip > ${workingDir}/data/GENCODE.merged.bed.gz
 tabix -p bed ${workingDir}/data/GENCODE.merged.bed.gz
 
 # Download and process Ensembl genomic data:
@@ -152,7 +199,7 @@ for chr in {1..22} X Y ; do
     export chr
     # Processing downloaded data:
     cat <(echo -e "chr\tstart\tend\tGC_ratio") <(
-        gzcat ${workingDir}/source_data/human_genome_GRCh38_chr${chr}.fa.gz \
+        gunzip -c ${workingDir}/source_data/human_genome_GRCh38_chr${chr}.fa.gz \
             | perl -lane 'BEGIN {
         $chunkStart = 0;
         $threshold = $ENV{ChunkSize}; # Importing chunk size
@@ -196,15 +243,15 @@ for chr in {1..22} X Y ; do
         }}' | sort -k1,1 -k2,2n ) | bgzip > ${workingDir}/data/Processed_chr${chr}.bed.gz
     tabix -f -S 1 -s 1 -e 3 -b 2 ${workingDir}/data/Processed_chr${chr}.bed.gz # Indexing.
 
-    chunk_no=$( gzcat ${workingDir}/data/Processed_chr${chr}.bed.gz | wc -l )
+    chunk_no=$( gunzip -c ${workingDir}/data/Processed_chr${chr}.bed.gz | wc -l )
     echo -e "\tChromosome ${chr} is split into ${chunk_no} chunks."
 done
 
 # Downloading the cytoband information:
 echo "[Info] Downloading and processing cytoband information from the UCSC server."
-cat <(echo -e "chr\tstart\tend\tname\ttype") <( curl -s "http://hgdownload.cse.ucsc.edu/goldenPath/hg38/database/cytoBand.txt.gz" | gunzip | sed -e 's/chr//' | sort -k1,1 -k2,2n) | bgzip > ${workingDir}/data/cytoBand.GRCh38.bed.bgz
+cat <(echo -e "chr\tstart\tend\tname\ttype") <( curl -s "${CYTOBAND_URL}" | gunzip | sed -e 's/chr//' | sort -k1,1 -k2,2n ) | bgzip > ${workingDir}/data/cytoBand.GRCh38.bed.bgz
 
-if [ $0 != 0 ]; then
+if [ $? -ne 0 ]; then
     echo "[Error] Downloading the cytoband information failed. Exiting."
     exit 1;
 fi
