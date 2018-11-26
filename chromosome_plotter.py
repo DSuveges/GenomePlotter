@@ -1,4 +1,4 @@
-#!/Users/ds26/anaconda/bin/python
+#!/usr/bin/env python3
 
 # v.3.0 Last modified: 2018.04.02
     # The functionality of this script was completely re-designed.
@@ -24,6 +24,7 @@ import argparse # Now command line arugments are properly set.
 from functions.helper_fun import *
 from functions.color_fun import *
 from functions.chrom_GWAS_plotter import process_chrom
+from functions.SVG_plot import SVG_plot
 
 # Defining colors for different structures:
 colors_GENCODE = {
