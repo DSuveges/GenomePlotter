@@ -80,7 +80,7 @@ if not os.path.isfile(GWAS_file_loc):
     print ("GWAS file is missing. Run `prepare_data.sh` first!")
 if not os.path.isfile(GENCODE_file_loc):
     print ("GENCODE file is missing. Run `prepare_data.sh` first!")
-if not os.path.isfile(Chromosome_file_loc % 11):
+if not os.path.isfile(Chromosome_file_loc % chromosome):
     print ("Processed chromosome files are missing! Run `prepare_data.sh` first!")
 
 # Creating plot folder if does not exist:

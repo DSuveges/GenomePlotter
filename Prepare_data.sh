@@ -176,8 +176,11 @@ gunzip -c ${workingDir}/source_data/gencode.v${GENCODE_release}.annotation.gtf.g
 mergeBed -i  ${workingDir}/data/exons_GENCODE.bed.gz | awk 'BEGIN{FS=OFS="\t"}{print $0, "exon"}' | gzip > ${workingDir}/data/exons_GENCODE.merged.bed.gz
 
 # Combining the exon and the gene datasets together:
-gunzip -c ${workingDir}/data/exons_GENCODE.merged.bed.gz ${workingDir}/data/genes_GENCODE.merged.bed.gz | sort -k1,1 -k2,2n | bgzip > ${workingDir}/data/GENCODE.merged.bed.gz
-tabix -p bed ${workingDir}/data/GENCODE.merged.bed.gz
+cat <(echo -e "chr\tstart\tend\ttype") \
+    <( gunzip -c ${workingDir}/data/exons_GENCODE.merged.bed.gz \
+                ${workingDir}/data/genes_GENCODE.merged.bed.gz | sort -k1,1 -k2,2n ) \
+    | bgzip > ${workingDir}/data/GENCODE.merged.bed.gz
+tabix -S 1 -b 2 -e 3 -s 1 ${workingDir}/data/GENCODE.merged.bed.gz
 
 # Download and process Ensembl genomic data:
 echo "[Info] Downloading the non-masked sequence of human genome (Ensembl release: ${ENSEMBL_release}). It may take a while..."
