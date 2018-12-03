@@ -112,6 +112,7 @@ class SVG_plot:
                     self.__adjust_coord(self.width+1-(end_y-start_y), (start_y+end_y)/2) +
                     self.__adjust_coord(self.width+1, (start_y+end_y)/2) +
                     self.__adjust_coord(self.width+1, end_y)))
+    
     # Adding legend?
     # Adding centromere? DONE
     # Adding frame?

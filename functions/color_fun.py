@@ -5,7 +5,6 @@ def hex_to_RGB(hex):
     # Pass 16 to the integer function for change of base
     return [int(hex[i:i+2], 16) for i in range(1,6,2)]
 
-
 def RGB_to_hex(RGB):
     ''' [255,255,255] -> "#FFFFFF" '''
     # Components need to be integers for hex to make sense
@@ -63,9 +62,7 @@ def color_darkener(row, width, threshold, max_diff_value):
         rgb_code = hex_to_RGB(color)
 
         # Get the hls code of the rgb:
-        hls_code = colorsys.rgb_to_hls(rgb_code[0]/float(255),
-                                       rgb_code[1]/float(255),
-                                       rgb_code[2]/float(255))
+        hls_code = colorsys.rgb_to_hls(rgb_code[0]/255,rgb_code[1]/255,rgb_code[2]/255)
 
         # Get the modifed rgb code:
         new_rgb = colorsys.hls_to_rgb(hls_code[0],
@@ -73,7 +70,5 @@ def color_darkener(row, width, threshold, max_diff_value):
                                       hls_code[2])
 
         # Get the modifed hexacode:
-        color = RGB_to_hex([new_rgb[0] * 255,
-                           new_rgb[1] * 255,
-                           new_rgb[2] * 255])
+        color = RGB_to_hex([ x * 255 for x in new_rgb ])
     return(color)

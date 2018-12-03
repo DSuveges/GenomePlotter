@@ -1,4 +1,11 @@
 
+# read dataframe
+## extract row number
+## extract number of columns
+# read pixel size.
+# 
+
+
 
 
 class process_chrom:
@@ -97,6 +104,4 @@ class process_chrom:
         '''
         filename = ("chr%s_genome_chunks.txt" % chr_name)
         f.open('', 'w')
-
-
         f.close
