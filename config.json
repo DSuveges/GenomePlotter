@@ -1,0 +1,15 @@
+{
+    "colorScheme" : {
+        "centromere" : "#9393FF",
+        "heterochromatin" : "#F9D2C2",
+        "intergenic" : "#A3E0D1",
+        "exon" : "#FFD326",
+        "gene" : "#6CB8CC"
+    },
+    "inputFiles" : {
+        "cytoband_file" : "data/cytoBand.GRCh38.bed.bgz",
+        "Chromosome_file_pattern" : "data/Processed_chr%s.bed.gz",
+        "GWAS_file_loc" : "data/processed_GWAS.bed.gz",
+        "GENCODE_file_loc" : "data/GENCODE.merged.bed.gz"
+    }
+}
