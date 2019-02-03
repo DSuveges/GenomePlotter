@@ -1,13 +1,13 @@
 ## GenomePlotter
 
-The motivation behind this project was to create a scientifically correct visualization of the human genome with showing the location of protein coding genes, exons, already published genome-wide associations and many more. I chose a heat-map kind of visualization that allows the representation of the underlying chemical properties of the DNA ([GC content](https://en.wikipedia.org/wiki/GC-content)) as well.
+The motivation behind this project was to create a scientifically correct visualization of the human genome with showing the location of genes, exons, already published genome-wide associations and many more. I chose a heat-map kind of visualization that allows the representation of the underlying chemical properties of the DNA ([GC content](https://en.wikipedia.org/wiki/GC-content)) as well.
 
 ### Approach
 
 The project is divided into several parts:
 
 1. A shell script that downloads and pre-processes the source data files with genome sequence, GWAS signals, gene annotation and the [cytobands](https://en.wikipedia.org/wiki/G_banding).
-2. A python script (chromosome_plotter.py), that combines sequence data and gene annotation into a single chromosome svg (optionally png).
+2. A python script (`plot_chromosome.py`), that combines sequence data and gene annotation into a single chromosome svg (and png).
 3. A python script that uses the previously generated svg and adds various annotations (gwas signals, cytobands, custom annotation) (yet to be implemented.)
 4. An other python script that combines the previously generated annotated chromosomes into a single composition. (yet to be implemented)
 
@@ -50,22 +50,23 @@ All applied source data is mapped to the GRCh38 build of the human genome.
 ### Step 2 - Plot chromosome.
 
 ```bash
-./chromosome_plotter.py --help
+./plot_chromosome.py --help
 ```
 
 ```
-Script to plot genome chunks colored based on GC content and other features.
+usage: plot_chromosome.py [-h] -c CHROMOSOME [-w WIDTH] [-p PIXEL]
+                          [-s DARKSTART] [-m DARKMAX] [-f FOLDER] [-t TEST]
+                          [-d DUMMY] [--config CONFIG]
+
+Script to plot genome chunks colored based on GC content and gene annotation.
 See github: https://github.com/DSuveges/GenomePlotter
 
 optional arguments:
   -h, --help            show this help message and exit
   -c CHROMOSOME, --chromosome CHROMOSOME
                         Selected chromosome to process
-  -d DIMENSION, --dimension DIMENSION
-                        Fixed dimension (height or width) of the plot (200
-                        chunks by default).
-  -a AXIS, --axis AXIS  The fixed axis of the plot (1 - width, 2 - height, 1
-                        by default)
+  -w WIDTH, --width WIDTH
+                        Number of chunks in one row.
   -p PIXEL, --pixel PIXEL
                         The size of a plotted chunk in pixels (default: 3).
   -s DARKSTART, --darkStart DARKSTART
@@ -79,23 +80,24 @@ optional arguments:
                         directory)
   -t TEST, --test TEST  The number of chunks to be read (by default the whole
                         chromosome is processed.)
+  -d DUMMY, --dummy DUMMY
+                        If instead of the chunks, a dummy is drawn with
+                        identical dimensions
+  --config CONFIG       Specifying json file containing custom configuration
 ```
 
-The script at first assigns GENCODE feature to each chunk as follows: the default value is intergenic (colored in green), if a chunk has at least one base overlap with a gene then the chunk is considered to be gene (purple), unless the chunk has at least one basepair overlap with an exon in which case the cunk is consideret to be exon (colored in yellow), unless the GC content is NA, in which calse the chunk is considered to be heterochromatin (colored in salmon). Based on cyto-band annotation, chunks overlapping with centromeres will be colored in blue. The default color is adjusted based on the GC content.
+The script at first assigns GENCODE feature to each chunk as follows: the default value is intergenic, if a chunk has at least one base overlap with a gene then the chunk is considered to be gene, unless the chunk has at least one basepair overlap with an exon in which case the cunk is consideret to be exon, unless the GC content is NA, in which calse the chunk is considered to be heterochromatin. Based on cyto-band annotation, chunks overlapping with centromeres will be colored accordingly. The default color is adjusted based on the GC content.
 
-The script then creates svg image and saves indicating the chromosome name, the specified dimension, and the chunks size for reproducibility. This svg file can further be edited. Then using cairosvg, a png file is also created and saved named identically.
+The script then creates svg image and saves indicating the chromosome name, the specified dimension, and the chunks size for reproducibility. This svg file can further be edited. Then using cairosvg, a png file is also created and saved named identically. For easing downstream processes, a "dummy" chromosome is also saved colored in green.
 
-About the requirements: processing a chromosome can take a long time and uses upt to 2GB RAM.
+About the requirements: processing a chromosome can take long time and uses upt to 2GB RAM.
 
 ### Result:
 
-The following image was created based on the data of chromosome 19, where 450 bp-s were averaged to get GC content, and 200 of these chunks were plotted in each row.
+The following image was created based on the data of chromosome 20, where 450 bp-s were averaged to get GC content, and 200 of these chunks were plotted in each row.
 
-![chr21](chr21.w.200.c450.png)
+![chr22](chr20.png)
 
-The results of a genome-wide run:
-
-![genome-wide](full_genome.png)
 
 ### To-Dos
 
