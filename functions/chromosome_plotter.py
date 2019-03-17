@@ -2,8 +2,6 @@ import pickle
 import pandas as pd
 import cairosvg
 
-
-
 class chromosome_plotter(object):
 
     def __init__(self, input_data, pixel):
