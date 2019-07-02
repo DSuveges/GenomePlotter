@@ -4,7 +4,19 @@
         "heterochromatin" : "#F9D2C2",
         "intergenic" : "#A3E0D1",
         "exon" : "#FFD326",
-        "gene" : "#6CB8CC"
+        "gene" : "#6CB8CC",
+        "gwas_point" : "black",
+        "cytobandColors" : {
+            "gneg"    : "#FFFFFF",
+            "gpos25"  : "#E5E5E5",
+            "gpos50"  : "#CCCCCC",
+            "gpos75"  : "#B3B3B3",
+            "gpos100" : "#999999",
+            "acen"    : "#CCCCCC",
+            "gvar"    : "#999999",
+            "stalk"   : "#E5E5E5",
+            "border"  : "#999999" 
+        }
     },
     "inputFiles" : {
         "cytoband_file" : "data/cytoBand.GRCh38.bed.bgz",
