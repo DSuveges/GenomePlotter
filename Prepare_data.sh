@@ -123,7 +123,7 @@ else
 fi
 
 # Extracting columns of interest:
-columns=$(head -n1 ${workingDir}/source_data/GWAS_catalog.tsv | tr " " "_" | awk 'BEGIN{FS="\t"}{ for(i = 1; i <= NF; i++) { print i, $i; } }' | grep -w -e CHR_ID -e CHR_POS -e DISEASE/TRAIT -e SNPS  | cut -d" " -f1 )
+columns=$(head -n1 ${workingDir}/source_data/GWAS_catalog.tsv | tr " " "_" | awk 'BEGIN{FS="\t"}{ for(i = 1; i <= NF; i++) { print i, $i; } }' | grep -w -e CHR_ID -e CHR_POS -e DISEASE/TRAIT -e SNPS -e PVALUE_MLOG | cut -d" " -f1 )
 
 # If the extraction has been failed, we exit from the script.
 if [[ -z ${columns} ]]; then
@@ -132,8 +132,8 @@ if [[ -z ${columns} ]]; then
 fi
 
 # Extracting columns and properly format:
-echo "[Info] Processing GWAS file: creating bed file and keeping only rsID and trait."
-cat <(echo -e "#chr\tstart\tend\trsID\ttrait") <(cat ${workingDir}/source_data/GWAS_catalog.tsv | cut -f$(echo ${columns} | sed -e 's/ /,/g') | awk 'BEGIN{FS=OFS="\t"} NR != 1 && $3 ~ /^[0-9]+$/ { printf "%s\t%s\t%s\t%s\t%s\n", $2, $3 - 1, $3, $4, $1 }' | sort -k1,1 -k2,2n) | bgzip > ${workingDir}/data/processed_GWAS.bed.gz
+echo "[Info] Processing GWAS file: creating bed file and keeping only rsID and trait for associations with p-value below 5E-8."
+cat <(echo -e "#chr\tstart\tend\trsID\ttrait\tpval") <(cat ${workingDir}/source_data/GWAS_catalog.tsv | cut -f$(echo ${columns} | sed -e 's/ /,/g') | awk 'BEGIN{FS=OFS="\t"} NR != 1 && $3 ~ /^[0-9]+$/ && $5 > 7.3 { printf "%s\t%s\t%s\t%s\t%s\n", $2, $3 - 1, $3, $4, $1 }' | sort -k1,1 -k2,2n) | bgzip > ${workingDir}/data/processed_GWAS.bed.gz
 tabix -p bed ${workingDir}/data/processed_GWAS.bed.gz
 
 # Checking if the process was successful:

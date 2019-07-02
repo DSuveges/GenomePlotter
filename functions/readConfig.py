@@ -8,7 +8,6 @@ class readConfig(object):
         with open(configFileName) as f:
             data = json.load(f)
 
-
         self.__data = data;
 
     def getColorScheme(self):
