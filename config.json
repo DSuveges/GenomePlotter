@@ -1,9 +1,9 @@
 {
     "colorScheme" : {
         "centromere" : "#9393FF",
-        "heterochromatin" : "#F9D2C2",
+        "heterochromatin" : "#D3D3D3",
         "intergenic" : "#A3E0D1",
-        "exon" : "#FFD326",
+        "exon" : "#FD5E53",
         "gene" : "#6CB8CC",
         "gwas_point" : "black",
         "cytobandColors" : {
@@ -15,7 +15,7 @@
             "acen"    : "#CCCCCC",
             "gvar"    : "#999999",
             "stalk"   : "#E5E5E5",
-            "border"  : "#999999" 
+            "border"  : "#000000" 
         }
     },
     "inputFiles" : {
