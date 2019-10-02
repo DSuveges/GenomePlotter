@@ -23,11 +23,11 @@ class cytoband_annotator(object):
         self.cytobandDf_select = cytobandDf_select.assign(endY = cytobandDf_select.end / chunkSize/ width * pixel)
         
         # cytoband drawing parameters derived from the plot parameters:
-        self.x_offset = pixel * 30
-        self.font_size = pixel * 5
+        self.x_offset = pixel * 40
+        self.font_size = pixel * 9
         self.border_width = int(pixel / 2)
         self.box_width = pixel * 5
-        self.right_margin = pixel * 5
+        self.right_margin = pixel * 4
         
         # Color definitions:
         self.cytbandColors = cytbandColors
@@ -71,7 +71,7 @@ class cytoband_annotator(object):
 
             # Adding cytoband names, except centromeres:
             if row['type'] != 'acen':
-                svg_element += self.cytoband_name.format(**{ 'x': x0 * 0.75, 
+                svg_element += self.cytoband_name.format(**{ 'x': x0 * 0.8, 
                                                     'y' : row['startY'] + (row['endY'] - row['startY'])/2,
                                                     'font_size' : self.font_size,
                                                     'font_color' : self.cytbandColors['border'], 

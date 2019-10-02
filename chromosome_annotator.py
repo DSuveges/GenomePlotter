@@ -38,6 +38,9 @@ if __name__ == '__main__':
     pixel = data['pixel']
     width = screenWidth / pixel
 
+    # Report:
+    print("[Info] chr{} is successfully read.".format(chromosome))
+
     ## Reading configuration:
     config = readConfig()
     filesConfig = config.getFiles()
@@ -52,6 +55,9 @@ if __name__ == '__main__':
                                chunkSize=chunkSize, gwasFile=gwasFile, width=width)
     points = gwasAnnot.generateGWAS()
     
+    # Report:
+    print("[Info] GWAS annotation generated.")
+
     # Adding points to the svg image:
     # Initialize the first object
     chromosomeSvgObject = svg_handler(svg_data, screenWidth, screenHeight)
@@ -59,8 +65,11 @@ if __name__ == '__main__':
     # Adding Annotation to the chromosome:
     chromosomeSvgObject.appendSvg(points)
 
+    # Report:
+    print("[Info] GWAS annotation is added to the chromosome.")
+
     # Saving png:
-    chromosomeSvgObject.savePng("plots/chr{}_GWAS.png".format(chromosome))
+    # chromosomeSvgObject.savePng("plots/chr{}_GWAS.png".format(chromosome))
 
     ###
     ### Generate cytobands:
@@ -73,6 +82,9 @@ if __name__ == '__main__':
     cyb.generate_bands()
     (cyb_width, cyb_height) = cyb.get_dimensions()
     cyb_svg = svg_handler(cyb.return_svg(), cyb_width, cyb_height)
+    
+    # Report:
+    print("[Info] Cytological bands generated.")
 
 
     ##
@@ -80,5 +92,10 @@ if __name__ == '__main__':
     ##
     chromosomeSvgObject.group(translate = (cyb_width,0))
     chromosomeSvgObject.mergeSvg(cyb_svg)
+    # Report:
+    print("[Info] Cytological bands added to chromosome.")
+    
     chromosomeSvgObject.savePng("plots/chr{}_GWAS_cytoband.png".format(chromosome))
+    # Report:
+    print("[Info] Png file saved.")
 
