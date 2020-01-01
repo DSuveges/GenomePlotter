@@ -18,6 +18,7 @@ The project is divided into several parts:
 * [cairo graphics library](https://www.cairographics.org/download/)
 * [tabix](http://www.htslib.org/download/)
 * [bedtools](http://bedtools.readthedocs.io/en/latest/content/installation.html) v2.27 or above
+* [jq](https://stedolan.github.io/jq/) v1.5 or above
 
 **Besides standard libraries, the following python packages were used:**
 
@@ -38,7 +39,24 @@ All applied source data is mapped to the GRCh38 build of the human genome.
 ### Step 1 - Pre-processing.
 
 ```bash
-./Prepare_data.sh <chunk_size>
+./Prepare_data.sh -h
+```
+
+help output:
+
+```
+Data preparation for the genome plotter: downloading cytoband information, gene annotation and the human genome.
+(the genome is also split into chunks and the GC content is calculated.)
+
+Usage:
+./Prepare_data.sh -g <GENCODE ftp URL> -e <Ensembl ftp URL> -c <GWAS Catalog file> -u <Cytoband file> -s <chunk size>
+
+Command line options and their default values:
+    Chunk size: 500
+    GENCODE ftp URL: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human
+    Ensembl ftp URL: ftp://ftp.ensembl.org/pub
+    Cytoband file at UCSC: http://hgdownload.cse.ucsc.edu/goldenPath/hg38/database/cytoBand.txt.gz
+    GWAS Catalog file: www.ebi.ac.uk/gwas/api/search/downloads/full
 ```
 
 * *<chunk_size>* the length of non-overlapping window used to pool together to calculate [GC content](https://en.wikipedia.org/wiki/GC-content). In basepairs. The default value is 500bp

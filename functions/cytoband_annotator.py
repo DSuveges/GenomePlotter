@@ -1,6 +1,37 @@
 import pandas as pd
 import cairosvg
 
+def get_centromere_position(cytobandFile, chromosome):
+    """
+    This function parses the gzipped cytoband file and returns the location of the centromere for a given chromosome.
+    
+    Input:
+    cytobandFile = gzipped cytoband data
+    chromosome = chromosome name as string.
+    
+    Output:
+    centromere position
+    """
+    
+    # Reading cytoband file as a pandas dataframe:
+    df = pd.read_csv(cytobandFile, sep = "\t", compression='gzip')
+    
+    # Extracting centromere for that chromosome:
+    cytobands = df.loc[df.chr == chromosome]
+    if len(cytobands) == 0:
+        print('[Error] Cytobands were not found for chromosome {}.'.format(chromosome))
+        return None
+        
+    # Extracting centromere:
+    centromere = cytobands.loc[cytobands.type == 'acen']
+    if len(centromere) == 0:
+        print('[Error] Centromeres were not found for chromosome {}.'.format(chromosome))
+        return None
+    
+    # Extracting midpoint:
+    centr = centromere.loc[centromere.name.str.match('q')].end.tolist()[0]
+    return centr
+
 class cytoband_annotator(object):
     # Built in strings with the cytoband definitions:
     centromer = '<polygon points="{x1},{y1} {x2},{y2} {x3},{y3}" style="fill:{fill_color};stroke:{border_color};stroke-width:{box_width};fill-rule:nonzero;" />\n'

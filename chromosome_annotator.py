@@ -7,6 +7,7 @@ from functions.readConfig import readConfig
 from functions.svg_handler import svg_handler
 from functions.gwas_annotator import gwas_annotator
 from functions.cytoband_annotator import cytoband_annotator
+from functions.cytoband_annotator import get_centromere_position
 
 # Annotator modules: all annotation types are added using a dedicated module eg. GWAS 
 
