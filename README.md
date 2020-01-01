@@ -36,7 +36,7 @@ All applied source data is mapped to the GRCh38 build of the human genome.
 * **Gene annotation** gene coordinates are downloaded from [GENCODE](http://www.gencodegenes.org/releases/current.html) checking for the most recent version.
 * **Cyto-bands** coordinates of the G-bands and centromeres are downloaded from the [UCSC genomics database](http://hgdownload.cse.ucsc.edu/goldenPath/hg38/database/cytoBand.txt.gz) (currently only the genomic coordinates of the centromeres are used.) (This data can optionally be accessed through the REST API of Ensembl)
 
-### Step 1 - Pre-processing.
+### Step 1 - Pre-processing
 
 ```bash
 ./Prepare_data.sh -h
@@ -49,7 +49,11 @@ Data preparation for the genome plotter: downloading cytoband information, gene 
 (the genome is also split into chunks and the GC content is calculated.)
 
 Usage:
-./Prepare_data.sh -g <GENCODE ftp URL> -e <Ensembl ftp URL> -c <GWAS Catalog file> -u <Cytoband file> -s <chunk size>
+./Prepare_data.sh -g <GENCODE ftp URL> \
+    -e <Ensembl ftp URL> \
+    -c <GWAS Catalog file> \
+    -u <Cytoband file> \
+    -s <chunk size>
 
 Command line options and their default values:
     Chunk size: 500
@@ -65,7 +69,7 @@ Command line options and their default values:
 * For each chromosome an indexed bed file will be generated containing the chromosome, start and end coordinates of the chunk and the GC content. This piece of information represent a single pixel of the resulting plot.
 * Genomic regions where the sequence is not available, 'NA' is put in to the GC content field. (This will be the base of the coloring of the heterochromatic regions)
 
-### Step 2 - Plot chromosome.
+### Step 2 - Generate chromosome plot
 
 ```bash
 ./plot_chromosome.py --help
@@ -106,21 +110,49 @@ optional arguments:
 
 The script at first assigns GENCODE feature to each chunk as follows: the default value is intergenic, if a chunk has at least one base overlap with a gene then the chunk is considered to be gene, unless the chunk has at least one basepair overlap with an exon in which case the cunk is consideret to be exon, unless the GC content is NA, in which calse the chunk is considered to be heterochromatin. Based on cyto-band annotation, chunks overlapping with centromeres will be colored accordingly. The default color is adjusted based on the GC content.
 
-The script then creates svg image and saves indicating the chromosome name, the specified dimension, and the chunks size for reproducibility. This svg file can further be edited. Then using cairosvg, a png file is also created and saved named identically. For easing downstream processes, a "dummy" chromosome is also saved colored in green.
+The script then creates svg image and saves indicating the chromosome name, the specified dimension, and the chunks size for reproducibility. This svg file can further be edited. Then using cairosvg, a png file is also created and saved named identically. For easing downstream processes, a "dummy" chromosome is also saved colored in green. The chromosome data is also saved as a readable binary format (`.pkl`)
 
 About the requirements: processing a chromosome can take long time and uses upt to 2GB RAM.
 
-### Result:
+### Step 3 - Add annotation to chromosome
+
+As the generation of the plot is very long, it makes sense to do the annotation is a separate round. The previously generated pickled data is read, and a different set of annotation is added to the svg.
+
+The currently implemented annotation:
+* GWAS signals
+* Cytological bands
+
+```bash
+./chromosome_annotator.py --help
+```
+
+Help message:
+
+```
+usage: chromosome_annotator.py [-h] --chromosome CHROMOSOME [--dummy]
+
+This script adds annotation to a chromosome plot.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --chromosome CHROMOSOME
+                        Name of the Chromosome.
+  --dummy               Dummy is used or not.
+```
+
+To optimize annotation process there's an option to add annotation to the dummy. Once annotation is added, diagram is saved in a png file.
+
+
+### Result
 
 The following image was created based on the data of chromosome 20, where 450 bp-s were averaged to get GC content, and 200 of these chunks were plotted in each row.
 
 ![chr22](chr20.png)
 
 
-### To-Dos
+### TO-DOs
 
-1. The G-bands will be added to the plot as well (at least to see how it would look). A separate plot will be generated with a "G-band" ruler with an alternating white/black colors and the names of the band. This plot will then be merged with the chromosome image.
-2. Marking a custom set of associations read from a snp set file containing rsIDs, trait and paper title or PMID... adding as a symbol at first to see how it would look.
-3. Adding the rsID and the trait to the plot in a speech bubble... it will be very tricky.
-4. Adding further flexibility to the plot: custom pixel size and other features, proper command line option handling and error checking.
-5. Extra script to generate figure legend and a script to create the whole composition.
+1. Extra script to generate figure legend also as a csv and png. 
+2. Script to create the whole composition with all the chromosomes. Resolving the alignment is not trivial.
+3. Adding gene annotation... generate based on gene set eg. all kinases, all miosins, all omim genes etc.
+

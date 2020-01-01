@@ -40,7 +40,7 @@ function save_parameters(){
        --arg gencodeVersion   "${3}" \
        --arg genomeBuild "GRCh38" \
        '. | .["date"]=$date | .["ensemblVersion"]=$ensemblVersion | .["gencodeVersion"]=$gencodeVersion | .["genomeBuild"]=$genomeBuild' \
-       <<<'{}' > ${workingDir}/data/input_parameters.json
+       <<<'{}' > ${workingDir}/data/ input_parameters.json
 
     # Report:
     if [[ $? == 0 ]]; then
@@ -84,6 +84,7 @@ done
 # Checking dependencies:
 if [[ -z $(which tabix ) ]]; then "[Error] Tabix is required. Exiting"; exit; fi
 if [[ -z $(which mergeBed ) ]]; then "[Error] Bedtools is required. Exiting"; exit; fi
+if [[ -z $(which jq ) ]]; then "[Error] jq is required. Exiting"; exit; fi
 
 
 # Setting working dir:
@@ -126,88 +127,88 @@ echo "[Info] All files will be saved in a sorted bed format. More info: https://
 
 # Download GWAS file:
 echo "[Info] Downloading the most recent NHGRI-EBI GWAS catalog."
-# wget -q ${GWAS_file} -O ${workingDir}/source_data/GWAS_catalog.tsv
+wget -q ${GWAS_file} -O ${workingDir}/source_data/GWAS_catalog.tsv
 
-# # Checking download:
-# if [[ $? -ne 0 ]]; then
-#     echo "[Error] Failed to download the GWAS catalog. Exiting."
-#     exit
-# else
-#     echo "[Info] GWAS Catalog data successfully downloaded."
-# fi
+# Checking download:
+if [[ $? -ne 0 ]]; then
+    echo "[Error] Failed to download the GWAS catalog. Exiting."
+    exit
+else
+    echo "[Info] GWAS Catalog data successfully downloaded."
+fi
 
-# # Extracting columns of interest:
-# columns=$(head -n1 ${workingDir}/source_data/GWAS_catalog.tsv | tr " " "_" | awk 'BEGIN{FS="\t"}{ for(i = 1; i <= NF; i++) { print i, $i; } }' | grep -w -e CHR_ID -e CHR_POS -e DISEASE/TRAIT -e SNPS -e PVALUE_MLOG | cut -d" " -f1 )
+# Extracting columns of interest:
+columns=$(head -n1 ${workingDir}/source_data/GWAS_catalog.tsv | tr " " "_" | awk 'BEGIN{FS="\t"}{ for(i = 1; i <= NF; i++) { print i, $i; } }' | grep -w -e CHR_ID -e CHR_POS -e DISEASE/TRAIT -e SNPS -e PVALUE_MLOG | cut -d" " -f1 )
 
-# # If the extraction has been failed, we exit from the script.
-# if [[ -z ${columns} ]]; then
-#     echo "[Error] The relevant fields from the GWAS file could not be extracted. Exiting."
-#     exit;
-# fi
+# If the extraction has been failed, we exit from the script.
+if [[ -z ${columns} ]]; then
+    echo "[Error] The relevant fields from the GWAS file could not be extracted. Exiting."
+    exit;
+fi
 
-# # Extracting columns and properly format:
-# echo "[Info] Processing GWAS file: creating bed file and keeping only rsID and trait for associations with p-value below 5E-8."
-# cat <(echo -e "#chr\tstart\tend\trsID\ttrait\tpval") <(cat ${workingDir}/source_data/GWAS_catalog.tsv | cut -f$(echo ${columns} | sed -e 's/ /,/g') | awk 'BEGIN{FS=OFS="\t"} NR != 1 && $3 ~ /^[0-9]+$/ && $5 > 7.3 { printf "%s\t%s\t%s\t%s\t%s\n", $2, $3 - 1, $3, $4, $1 }' | sort -k1,1 -k2,2n) | bgzip > ${workingDir}/data/processed_GWAS.bed.gz
-# tabix -p bed ${workingDir}/data/processed_GWAS.bed.gz
+# Extracting columns and properly format:
+echo "[Info] Processing GWAS file: creating bed file and keeping only rsID and trait for associations with p-value below 5E-8."
+cat <(echo -e "#chr\tstart\tend\trsID\ttrait\tpval") <(cat ${workingDir}/source_data/GWAS_catalog.tsv | cut -f$(echo ${columns} | sed -e 's/ /,/g') | awk 'BEGIN{FS=OFS="\t"} NR != 1 && $3 ~ /^[0-9]+$/ && $5 > 7.3 { printf "%s\t%s\t%s\t%s\t%s\n", $2, $3 - 1, $3, $4, $1 }' | sort -k1,1 -k2,2n) | bgzip > ${workingDir}/data/processed_GWAS.bed.gz
+tabix -p bed ${workingDir}/data/processed_GWAS.bed.gz
 
-# # Checking if the process was successful:
-# if [[ ! -e ${workingDir}/data/processed_GWAS.bed.gz ]]; then
-#     echo "[Error] Creation of the processed gwas file was failed. Exiting."
-#     exit;
-# else
-#     hitcount=$(gunzip -c ${workingDir}/data/processed_GWAS.bed.gz | grep -v "#" | wc -l )
-#     snpcount=$(gunzip -c ${workingDir}/data/processed_GWAS.bed.gz | grep -v "#" | cut -f4 | sort -u | wc -l )
-#     echo "[Info] Number of processed associations in the GWAS file: ${hitcount}, number of snps: ${snpcount}"
-# fi;
+# Checking if the process was successful:
+if [[ ! -e ${workingDir}/data/processed_GWAS.bed.gz ]]; then
+    echo "[Error] Creation of the processed gwas file was failed. Exiting."
+    exit;
+else
+    hitcount=$(gunzip -c ${workingDir}/data/processed_GWAS.bed.gz | grep -v "#" | wc -l )
+    snpcount=$(gunzip -c ${workingDir}/data/processed_GWAS.bed.gz | grep -v "#" | cut -f4 | sort -u | wc -l )
+    echo "[Info] Number of processed associations in the GWAS file: ${hitcount}, number of snps: ${snpcount}"
+fi;
 
-# # Downloading GENCODE file and process
-# echo "[Info] Downloading GENCODE file (v. ${GENCODE_release})."
-# wget -q ${GENCODE_base_URL}/release_${GENCODE_release}/gencode.v${GENCODE_release}.annotation.gtf.gz -O ${workingDir}/source_data/gencode.v${GENCODE_release}.annotation.gtf.gz
+# Downloading GENCODE file and process
+echo "[Info] Downloading GENCODE file (v. ${GENCODE_release})."
+wget -q ${GENCODE_base_URL}/release_${GENCODE_release}/gencode.v${GENCODE_release}.annotation.gtf.gz -O ${workingDir}/source_data/gencode.v${GENCODE_release}.annotation.gtf.gz
 
-# # Checking download:
-# if [[ $? -ne 0 ]]; then
-#     echo "[Error] Failed to download the GENCODE file. Exiting"
-#     exit
-# fi
+# Checking download:
+if [[ $? -ne 0 ]]; then
+    echo "[Error] Failed to download the GENCODE file. Exiting"
+    exit
+fi
 
-# echo "[Info] Processing gencode data: extracting gene and exon positions. Then creating bedfile with the merged coordinates."
+echo "[Info] Processing gencode data: extracting gene and exon positions. Then creating bedfile with the merged coordinates."
 
-# # GENCODE data is split into two parts: exons and genes.
-# gunzip -c ${workingDir}/source_data/gencode.v${GENCODE_release}.annotation.gtf.gz | perl -F"\t" -lane '
-#     next unless $F[2] eq "gene" and $F[8] =~ /gene_type "protein_coding"/;
-#     $F[0] =~ s/chr//i;
-#     $F[8] =~ /gene_id "(ENSG.+?)";.+gene_name "(.+?)";/;
-#     print join("\t", ($F[0], $F[3], $F[4], $1, $2))' | sort -k1,1 -k2,2n | gzip > ${workingDir}/data/genes_GENCODE.bed.gz
+# GENCODE data is split into two parts: exons and genes.
+gunzip -c ${workingDir}/source_data/gencode.v${GENCODE_release}.annotation.gtf.gz | perl -F"\t" -lane '
+    next unless $F[2] eq "gene" and $F[8] =~ /gene_type "protein_coding"/;
+    $F[0] =~ s/chr//i;
+    $F[8] =~ /gene_id "(ENSG.+?)";.+gene_name "(.+?)";/;
+    print join("\t", ($F[0], $F[3], $F[4], $1, $2))' | sort -k1,1 -k2,2n | gzip > ${workingDir}/data/genes_GENCODE.bed.gz
 
-# mergeBed -i ${workingDir}/data/genes_GENCODE.bed.gz | awk 'BEGIN{FS=OFS="\t"}{print $0, "gene"}' | gzip > ${workingDir}/data/genes_GENCODE.merged.bed.gz
+mergeBed -i ${workingDir}/data/genes_GENCODE.bed.gz | awk 'BEGIN{FS=OFS="\t"}{print $0, "gene"}' | gzip > ${workingDir}/data/genes_GENCODE.merged.bed.gz
 
-# gunzip -c ${workingDir}/source_data/gencode.v${GENCODE_release}.annotation.gtf.gz | perl -F"\t" -lane '
-#     next unless $F[2] eq "exon" and $F[8] =~ /gene_type "protein_coding"/;
-#     $F[0] =~ s/chr//i;
-#     $F[8] =~ /gene_id "(ENSG.+?)";.+gene_name "(.+?)";/;
-#     print join("\t", ($F[0], $F[3], $F[4], $1, $2))' | sort -k1,1 -k2,2n | gzip > ${workingDir}/data/exons_GENCODE.bed.gz
+gunzip -c ${workingDir}/source_data/gencode.v${GENCODE_release}.annotation.gtf.gz | perl -F"\t" -lane '
+    next unless $F[2] eq "exon" and $F[8] =~ /gene_type "protein_coding"/;
+    $F[0] =~ s/chr//i;
+    $F[8] =~ /gene_id "(ENSG.+?)";.+gene_name "(.+?)";/;
+    print join("\t", ($F[0], $F[3], $F[4], $1, $2))' | sort -k1,1 -k2,2n | gzip > ${workingDir}/data/exons_GENCODE.bed.gz
 
-# mergeBed -i  ${workingDir}/data/exons_GENCODE.bed.gz | awk 'BEGIN{FS=OFS="\t"}{print $0, "exon"}' | gzip > ${workingDir}/data/exons_GENCODE.merged.bed.gz
+mergeBed -i  ${workingDir}/data/exons_GENCODE.bed.gz | awk 'BEGIN{FS=OFS="\t"}{print $0, "exon"}' | gzip > ${workingDir}/data/exons_GENCODE.merged.bed.gz
 
-# # Combining the exon and the gene datasets together:
-# cat <(echo -e "chr\tstart\tend\ttype") \
-#     <( gunzip -c ${workingDir}/data/exons_GENCODE.merged.bed.gz \
-#                 ${workingDir}/data/genes_GENCODE.merged.bed.gz | sort -k1,1 -k2,2n ) \
-#     | bgzip > ${workingDir}/data/GENCODE.merged.bed.gz
-# tabix -S 1 -b 2 -e 3 -s 1 ${workingDir}/data/GENCODE.merged.bed.gz
+# Combining the exon and the gene datasets together:
+cat <(echo -e "chr\tstart\tend\ttype") \
+    <( gunzip -c ${workingDir}/data/exons_GENCODE.merged.bed.gz \
+                ${workingDir}/data/genes_GENCODE.merged.bed.gz | sort -k1,1 -k2,2n ) \
+    | bgzip > ${workingDir}/data/GENCODE.merged.bed.gz
+tabix -S 1 -b 2 -e 3 -s 1 ${workingDir}/data/GENCODE.merged.bed.gz
 
-# # Download and process Ensembl genomic data:
-# echo "[Info] Downloading the non-masked sequence of human genome (Ensembl release: ${ENSEMBL_release}). It may take a while..."
-# for chr in {1..22} X Y ; do
-#     echo -e "\tDownloading chromosome ${chr}"
-#     wget -q ${Ensembl_base_URL}/release-${ENSEMBL_release}/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.chromosome.${chr}.fa.gz -O ${workingDir}/source_data/human_genome_GRCh38_chr${chr}.fa.gz
+# Download and process Ensembl genomic data:
+echo "[Info] Downloading the non-masked sequence of human genome (Ensembl release: ${ENSEMBL_release}). It may take a while..."
+for chr in {1..22} X Y ; do
+    echo -e "\tDownloading chromosome ${chr}"
+    wget -q ${Ensembl_base_URL}/release-${ENSEMBL_release}/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.chromosome.${chr}.fa.gz -O ${workingDir}/source_data/human_genome_GRCh38_chr${chr}.fa.gz
 
-#     # Checking download:
-#     if [[ $? -ne 0 ]]; then
-#         echo "[Error] Failed to download the chromosome file. Exiting"
-#         exit
-#     fi
-# done
+    # Checking download:
+    if [[ $? -ne 0 ]]; then
+        echo "[Error] Failed to download the chromosome file. Exiting"
+        exit
+    fi
+done
 
 # Chunking the human genome, calculating GC content.
 echo "[Info] Processing chrmosomes. Chunks size: ${ChunkSize}bp. Sorted bed file will be saved."
