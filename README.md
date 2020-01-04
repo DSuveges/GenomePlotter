@@ -78,7 +78,7 @@ Command line options and their default values:
 ```
 usage: plot_chromosome.py [-h] -c CHROMOSOME [-w WIDTH] [-p PIXEL]
                           [-s DARKSTART] [-m DARKMAX] [-f FOLDER] [-t TEST]
-                          [-d DUMMY] [--config CONFIG]
+                          [-d] [--config CONFIG]
 
 Script to plot genome chunks colored based on GC content and gene annotation.
 See github: https://github.com/DSuveges/GenomePlotter
@@ -102,7 +102,7 @@ optional arguments:
                         directory)
   -t TEST, --test TEST  The number of chunks to be read (by default the whole
                         chromosome is processed.)
-  -d DUMMY, --dummy DUMMY
+  -d, --dummy
                         If instead of the chunks, a dummy is drawn with
                         identical dimensions
   --config CONFIG       Specifying json file containing custom configuration
@@ -138,6 +138,7 @@ optional arguments:
   --chromosome CHROMOSOME
                         Name of the Chromosome.
   --dummy               Dummy is used or not.
+  --geneFile            gzipped bed file of the genes to be added. (optional)
 ```
 
 To optimize annotation process there's an option to add annotation to the dummy. Once annotation is added, diagram is saved in a png file.
@@ -154,5 +155,4 @@ The following image was created based on the data of chromosome 20, where 450 bp
 
 1. Extra script to generate figure legend also as a csv and png. 
 2. Script to create the whole composition with all the chromosomes. Resolving the alignment is not trivial.
-3. Adding gene annotation... generate based on gene set eg. all kinases, all miosins, all omim genes etc.
 

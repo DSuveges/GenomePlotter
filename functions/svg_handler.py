@@ -27,7 +27,7 @@ class svg_handler(object):
         self.__height__ = max(self.__height__, svg_obj.getHeight())
         
     def __closeSvg(self):
-        self.__closedSVG__ = '<svg width = "%s" height = "%s">\n%s\n</svg>\n' % (
+        self.__closedSVG__ = '<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve"  width = "%s" height = "%s">\n%s\n</svg>\n' % (
             self.__width__, self.__height__, self.__svg__)
         
     def savePng(self, filename = 'test.png'):
@@ -42,4 +42,3 @@ class svg_handler(object):
 
     def getHeight(self):
         return(self.__height__)
-    

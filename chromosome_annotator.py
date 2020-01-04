@@ -8,6 +8,20 @@ from functions.svg_handler import svg_handler
 from functions.gwas_annotator import gwas_annotator
 from functions.cytoband_annotator import cytoband_annotator
 from functions.cytoband_annotator import get_centromere_position
+from functions.gene_annotator import position_converter, gene_annotator
+
+
+def annotate_GWAS(chromosome):
+    return None
+
+
+def annotate_cytobands(chromosome):
+    return None
+
+
+def annotate_genes(chromosome, geneFile):
+    return None
+
 
 # Annotator modules: all annotation types are added using a dedicated module eg. GWAS 
 
@@ -21,11 +35,16 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = "This script adds annotation to a chromosome plot.")
     parser.add_argument('--chromosome', type=str, help='Name of the Chromosome.', required = True)
     parser.add_argument('--dummy', default=False, help='Dummy is used or not.', action='store_true')
+    parser.add_argument('--geneFile', type=str, help='gzipped bed file of the genes to be added.', required = False, default=None)
+
     args = parser.parse_args()
 
     # Parsing input file name:
     chromosome = args.chromosome
     fileName = 'data/chr{}.dummy.pkl'.format(chromosome) if args.dummy else 'data/chr{}.pkl'.format(chromosome)
+    output_png = "plots/chr{}_annotated.dummy.png".format(chromosome) if args.dummy else "plots/chr{}_annotated.png".format(chromosome)
+
+    geneFile = args.geneFile
 
     # Reading data:
     with open(fileName, 'rb') as f:
@@ -83,6 +102,7 @@ if __name__ == '__main__':
     cyb.generate_bands()
     (cyb_width, cyb_height) = cyb.get_dimensions()
     cyb_svg = svg_handler(cyb.return_svg(), cyb_width, cyb_height)
+    centromerePos = get_centromere_position(bandFile,chromosome)
     
     # Report:
     print("[Info] Cytological bands generated.")
@@ -95,8 +115,25 @@ if __name__ == '__main__':
     chromosomeSvgObject.mergeSvg(cyb_svg)
     # Report:
     print("[Info] Cytological bands added to chromosome.")
-    
-    chromosomeSvgObject.savePng("plots/chr{}_GWAS_cytoband.png".format(chromosome))
+
+
+    if geneFile:
+        gene_annot = gene_annotator(geneFile,data)
+        gene_annot.generate_gene_annotation(chromosome, centromerePos)
+            
+        dimensions = gene_annot.get_dimensions()
+        gene_svg = svg_handler(width=800, height=abs(dimensions[0])+dimensions[1],svg_string=gene_annot.get_annotation())
+
+        # Move svg object if there are negative values:
+        if abs(dimensions[0]) > 0:
+            gene_svg.group(translate = (0,abs(dimensions[0])))
+            chromosomeSvgObject.group(translate = (0,abs(dimensions[0])))
+
+        # Merging together with the chromosome:
+        gene_svg.group(translate = (chromosomeSvgObject.getWidth(),0))
+        chromosomeSvgObject.mergeSvg(gene_svg)
+
+    chromosomeSvgObject.savePng(output_png)
     # Report:
     print("[Info] Png file saved.")
 

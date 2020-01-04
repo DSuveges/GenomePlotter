@@ -29,7 +29,7 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--darkMax', type = float, help='How dark a pixel can get at the right end of the plot (default: 0.15).', default = 0.15)
     parser.add_argument('-f', '--folder', type = str, help = 'The working directory (default is the current working directory)', default='.')
     parser.add_argument('-t', '--test', type = int, help = 'The number of chunks to be read (by default the whole chromosome is processed.)', default = 0)
-    parser.add_argument('-d', '--dummy', type = bool, help = 'If instead of the chunks, a dummy is drawn with identical dimensions', default = False)
+    parser.add_argument('-d', '--dummy', help = 'If instead of the chunks, a dummy is drawn with identical dimensions', action='store_true')
     parser.add_argument('--config', type = str, help = 'Specifying json file containing custom configuration', default = 'config.json')
 
     # Extracting submitted options:
@@ -99,8 +99,14 @@ if __name__ == '__main__':
     x.save_png("data/chr%s.dummy.png" % chromosome)
     x.pickle_data("data/chr%s.dummy.pkl" % chromosome)
 
+    # If only dummy is requested, exiting:
+    if dummy:
+        quit()
+
     x.draw_chromosome()
     x.add_centromere(cyb_df)
     x.wrap_svg("test.svg")
     x.save_png("data/chr%s.png" % chromosome)
     x.pickle_data("data/chr%s.pkl" % chromosome)
+
+
