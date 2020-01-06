@@ -95,8 +95,8 @@ if __name__ == '__main__':
     x = chromosome_plotter(integratedData, pixel=pixel)# 
     x.draw_dummy()
     x.add_centromere(cyb_df)
-    x.wrap_svg("test.svg")
-    x.save_png("data/chr%s.dummy.png" % chromosome)
+    # x.wrap_svg("test.svg")
+    # x.save_png("data/chr%s.dummy.png" % chromosome)
     x.pickle_data("data/chr%s.dummy.pkl" % chromosome)
 
     # If only dummy is requested, exiting:
@@ -105,8 +105,8 @@ if __name__ == '__main__':
 
     x.draw_chromosome()
     x.add_centromere(cyb_df)
-    x.wrap_svg("test.svg")
-    x.save_png("data/chr%s.png" % chromosome)
+    # x.wrap_svg("test.svg")
+    # x.save_png("data/chr%s.png" % chromosome)
     x.pickle_data("data/chr%s.pkl" % chromosome)
 
 

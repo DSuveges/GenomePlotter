@@ -148,8 +148,12 @@ To optimize annotation process there's an option to add annotation to the dummy.
 
 The following image was created based on the data of chromosome 20, where 450 bp-s were averaged to get GC content, and 200 of these chunks were plotted in each row.
 
-![chr22](chr20.png)
+<img src="chr20.png" alt="Chromosome 20" height="1500"/>
 
+
+The combined plot showing the entire genome with all the protein kinases highlighted:
+
+<img src="plots/kinases.png" alt="Protein kinases in the genome" width="1000">
 
 ### TO-DOs
 

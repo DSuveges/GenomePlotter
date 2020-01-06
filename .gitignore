@@ -7,3 +7,5 @@ processed_data/
 plots/
 Custom_associations/
 temp/
+*.pyc
+
