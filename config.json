@@ -1,12 +1,17 @@
 {
-    "colorScheme" : {
+    "basic_parameters": {
+        "data_folder": null,
+        "chunk_size": null,
+        "row_length": null
+    },
+    "color_schema" : {
         "centromere" : "#9393FF",
         "heterochromatin" : "#F9D2C2",
         "intergenic" : "#A3E0D1",
         "exon" : "#FFD326",
         "gene" : "#6CB8CC",
         "gwas_point" : "black",
-        "cytobandColors" : {
+        "cytoband_colors" : {
             "gneg"    : "#FFFFFF",
             "gpos25"  : "#E5E5E5",
             "gpos50"  : "#CCCCCC",
@@ -18,10 +23,21 @@
             "border"  : "#000000" 
         }
     },
-    "inputFiles" : {
-        "cytoband_file" : "data/cytoBand.GRCh38.bed.bgz",
-        "Chromosome_file_pattern" : "data/Processed_chr%s.bed.gz",
-        "GWAS_file_loc" : "data/processed_GWAS.bed.gz",
-        "GENCODE_file_loc" : "data/GENCODE.merged.bed.gz"
+    "source_data": {
+        "cytoband_data": {
+            "url": "http://rest.ensembl.org/info/assembly/homo_sapiens?content-type=application/json&bands=1"
+        },
+        "genome_data": {
+            "url": "ftp://ftp.ensembl.org/pub/"
+        },
+        "gencode_data": {
+            "url": "ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_%s/gencode.v%s.annotation.gtf.gz",
+            "processed_file": ""
+        },
+        "gwas_data": {
+            "url": "http://ftp.ebi.ac.uk/pub/databases/gwas/releases/latest/gwas-catalog-associations.tsv",
+            "processed_file": "processed_GWAS.bed.gz",
+            "release_date": null
+        }
     }
 }
