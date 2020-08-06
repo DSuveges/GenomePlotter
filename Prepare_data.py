@@ -47,10 +47,32 @@ def get_gencode_data():
 
 
 # get cytoband data:
-def get_cytoband_data():
-    # http://rest.ensembl.org/info/assembly/homo_sapiens?content-type=application/json&bands=1
-    return 1
+def get_cytoband_data(url, outfile):
+    response = requests.get(url)
+    data = response.json()
 
+    logging.info('Cytobands successfully fetched. Parsing.')
+
+    bands = []
+    for region in data['top_level_region']:
+        if 'bands' in region:
+            bands += region['bands']
+            
+            
+    df = pd.DataFrame(bands)
+    df.rename(columns={
+        'id': 'name',
+        'seq_region_name': 'chr',
+        'stain': 'type'
+    }, inplace=True)
+
+    logging.info(f'Number of bands in the genome: {len(df)}.')
+    logging.info(f'Saving cytoband file: {outfile}.')
+
+    df = df[['chr', 'start', 'end', 'name', 'type']]
+    df.sort_values(by = ['chr', 'start'], inplace=True)
+    df.to_csv(outfile, sep='\t', index=False, compression='gzip')
+    logging.info(f'Outputfile successfully saved.')
 
 # get ensembl version
 def get_ensembl_version():
@@ -75,7 +97,7 @@ class fetch_gwas_data(object):
         self.release_folder = '/pub/databases/gwas/releases/latest/'
         
         # Initialize connection and go to folder:
-        self.ftp = ftplib.FTP(FTP_HOST,'anonymous','')
+        self.ftp = ftplib.FTP(self.FTP_HOST,'anonymous','')
         self.ftp.cwd(self.release_folder)
         
     def get_release_date(self):
@@ -103,15 +125,15 @@ class fetch_gwas_data(object):
 def get_gwas_bed(gwas_ftp_host, gwas_output_filename):
     
     # Open ftp connection and fetch GWAS data:
-    print('[Info] Fetching GWAS data from ftp...')
+    logging.info('Fetching GWAS data from ftp...')
     gwas_obj = fetch_gwas_data(gwas_ftp_host)
     release_date = gwas_obj.get_release_date()
-    gwas_df = gwas.fetch_associations()
-    print('[Info] Done. Release date: {}, number of associations: {}'.format(release_date, len(gwas_df)))
+    gwas_df = gwas_obj.fetch_associations()
+    logging.info('Done. Release date: {}, number of associations: {}'.format(release_date, len(gwas_df)))
     gwas_obj.close_connection()
 
     # Set proper types:
-    print('[Info] Processing GWAS data...')
+    logging.info('Processing GWAS data...')
     gwas_df.CHR_ID = gwas_df.CHR_ID.astype(str)
 
     # Filtering columns:
@@ -137,7 +159,7 @@ def get_gwas_bed(gwas_ftp_host, gwas_output_filename):
     filt = filt[['#chr','start','end','rsID']]
     
     # Save dataframe:
-    print('[Info] Saving file ({})'.format(gwas_output_filename))
+    logging.info('Saving file ({})'.format(gwas_output_filename))
     filt.to_csv(gwas_output_filename, sep='\t', compression='infer')
     
     # Return release date:
@@ -155,6 +177,7 @@ def main():
     # Parse parameters:
     args = parser.parse_args()
     data_dir = args.dataDir
+    data_dir = os.path.abspath(data_dir)
     config_file = args.config
 
     # Initialize logger:
@@ -175,9 +198,27 @@ def main():
     # Reading configuration file:
     with open(config_file) as f:
         configuration = json.load(f)
-        print(configuration)
+
+    # Update data folder:
+    configuration['basic_parameters']['data_folder'] = data_dir
 
     # Fetching GWAS Catalog data:
+    gwas_host = configuration['source_data']['gwas_data']['host']
+    gwas_output_filename = f"{data_dir}/{configuration['source_data']['gwas_data']['processed_file']}"
+    logging.info(f'Fetching GWAS Catalog data from {gwas_host}. Data will be saved as {gwas_output_filename}')
+    configuration['source_data']['gwas_data']['release_date'] = get_gwas_bed(gwas_host, gwas_output_filename)
+
+    # Fetching cytological bands:
+    cytoband_url = configuration['source_data']['cytoband_data']['url']
+    cytoband_output_file = configuration['source_data']['cytoband_data']['processed_file']
+    logging.info('Fetching cytoband information.')
+    get_cytoband_data(cytoband_url, cytoband_output_file)
+
+
+    # Save config file:
+    logging.info('Saving updated configuration.')
+    with open(config_file, 'w') as f:
+        json.dump(configuration, f, indent=4)
 
 
 

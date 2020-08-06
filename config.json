@@ -1,31 +1,33 @@
 {
     "basic_parameters": {
-        "data_folder": null,
+        "data_folder": "/Users/dsuveges/repositories/GenomePlotter/new_data",
         "chunk_size": null,
         "row_length": null
     },
-    "color_schema" : {
-        "centromere" : "#9393FF",
-        "heterochromatin" : "#F9D2C2",
-        "intergenic" : "#A3E0D1",
-        "exon" : "#FFD326",
-        "gene" : "#6CB8CC",
-        "gwas_point" : "black",
-        "cytoband_colors" : {
-            "gneg"    : "#FFFFFF",
-            "gpos25"  : "#E5E5E5",
-            "gpos50"  : "#CCCCCC",
-            "gpos75"  : "#B3B3B3",
-            "gpos100" : "#999999",
-            "acen"    : "#CCCCCC",
-            "gvar"    : "#999999",
-            "stalk"   : "#E5E5E5",
-            "border"  : "#000000" 
+    "color_schema": {
+        "centromere": "#9393FF",
+        "heterochromatin": "#F9D2C2",
+        "intergenic": "#A3E0D1",
+        "exon": "#FFD326",
+        "gene": "#6CB8CC",
+        "gwas_point": "black",
+        "cytoband_colors": {
+            "gneg": "#FFFFFF",
+            "gpos25": "#E5E5E5",
+            "gpos50": "#CCCCCC",
+            "gpos75": "#B3B3B3",
+            "gpos100": "#999999",
+            "acen": "#CCCCCC",
+            "gvar": "#999999",
+            "stalk": "#E5E5E5",
+            "border": "#000000"
         }
     },
     "source_data": {
         "cytoband_data": {
-            "url": "http://rest.ensembl.org/info/assembly/homo_sapiens?content-type=application/json&bands=1"
+            "url": "http://rest.ensembl.org/info/assembly/homo_sapiens?content-type=application/json&bands=1",
+            "version": null,
+            "processed_file": "processed_cytoBand.bed.bgz"
         },
         "genome_data": {
             "url": "ftp://ftp.ensembl.org/pub/"
@@ -35,9 +37,9 @@
             "processed_file": ""
         },
         "gwas_data": {
-            "url": "http://ftp.ebi.ac.uk/pub/databases/gwas/releases/latest/gwas-catalog-associations.tsv",
+            "host": "ftp.ebi.ac.uk",
             "processed_file": "processed_GWAS.bed.gz",
-            "release_date": null
+            "release_date": "2020-08-06"
         }
     }
 }
