@@ -11,8 +11,7 @@ import ftplib
 import sys
 
 # Importing custom functions:
-from functions.input_parsers import Fetch_gwas
-from functions.input_parsers import get_cytoband_data
+from functions.input_parsers import Fetch_gwas, Fetch_gencode, get_cytoband_data
 
 
 # Save parameters
@@ -25,64 +24,11 @@ def get_ensembl_data():
     return 1
 
 
-# get GENCODE data:
-def get_gencode_data():
-    return 1
-
-
 # get ensembl version
 def get_ensembl_version():
     # http://rest.ensembl.org/info/data/?content-type=application/json
     return 1
 
-
-# parse genome:
-def parse_genome():
-    return 1
-
-       
-def get_gwas_bed():
-    
-    # Open ftp connection and fetch GWAS data:
-    logging.info('Fetching GWAS data from ftp...')
-    gwas_obj = fetch_gwas_data(gwas_ftp_host)
-    release_date = gwas_obj.get_release_date()
-    gwas_df = gwas_obj.fetch_associations()
-    logging.info('Done. Release date: {}, number of associations: {}'.format(release_date, len(gwas_df)))
-    gwas_obj.close_connection()
-
-    # Set proper types:
-    logging.info('Processing GWAS data...')
-    gwas_df.CHR_ID = gwas_df.CHR_ID.astype(str)
-
-    # Filtering columns:
-    filt = gwas_df.loc[(~gwas_df.CHR_ID.isna()) & 
-                  (~gwas_df.CHR_POS.isna()),['CHR_ID', 'CHR_POS', 'SNPS']]
-
-    filt = filt.loc[(~filt.CHR_ID.str.contains('x')) &
-                  (~filt.CHR_ID.str.contains(';'))&
-                   (filt.SNPS.str.contains('rs', case=False))]
-
-    # Set proper types again:
-    filt.CHR_POS = filt.CHR_POS.astype(int)
-
-    # rename columns:
-    filt['end'] = filt.CHR_POS
-    filt.rename(columns={
-        'CHR_POS':'start',
-        'CHR_ID': '#chr',
-        'SNPS':'rsID'
-    }, inplace=True)
-
-    # Order columns:
-    filt = filt[['#chr','start','end','rsID']]
-    
-    # Save dataframe:
-    logging.info('Saving file ({})'.format(gwas_output_filename))
-    filt.to_csv(gwas_output_filename, sep='\t', compression='infer')
-    
-    # Return release date:
-    return release_date
 
 # Main 
 def main():
@@ -122,21 +68,34 @@ def main():
     configuration['basic_parameters']['data_folder'] = data_dir
 
     # Fetching GWAS Catalog data:
-    gwas_retrieve = Fetch_gwas(configuration['source_data']['gwas_data'])
-    gwas_retrieve.retrieve_data()
-    gwas_retrieve.process_gwas_data()
-    gwas_retrieve.save_gwas_data(data_dir)
+    # gwas_retrieve = Fetch_gwas(configuration['source_data']['gwas_data'])
+    # gwas_retrieve.retrieve_data()
+    # gwas_retrieve.process_gwas_data()
+    # gwas_retrieve.save_gwas_data(data_dir)
+    # configuration['source_data']['gwas_data']['release_date'] = gwas_retrieve.get_release_date()
 
     # Fetching cytological bands:
     cytoband_url = configuration['source_data']['cytoband_data']['url']
-    cytoband_output_file = configuration['source_data']['cytoband_data']['processed_file']
+    cytoband_output_file = f"{data_dir}/{configuration['source_data']['cytoband_data']['processed_file']}"
     logging.info('Fetching cytoband information.')
     get_cytoband_data(cytoband_url, cytoband_output_file)
+
+    # Fetching GENCODE data:
+    logging.info('Fetching GENCODE data.')
+    gencode_retrieve = Fetch_gencode(configuration['source_data']['gencode_data'])
+    gencode_retrieve.retrieve_data()
+    gencode_retrieve.process_gencode_data()
+    gencode_retrieve.save_gencode_data(data_dir)
+    configuration['source_data']['gencode_data']['release_date'] = gencode_retrieve.get_release_date()
+    configuration['source_data']['gencode_data']['version'] = gencode_retrieve.get_release()
+    logging.info(f"Saving processed data: {configuration['source_data']['gencode_data']['processed_file']}.")
+
+
 
 
     # Save config file:
     logging.info('Saving updated configuration.')
-    with open(config_file, 'w') as f:
+    with open(config_file.replace('.json','_updated.json'), 'w') as f:
         json.dump(configuration, f, indent=4)
 
 
