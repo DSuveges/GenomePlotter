@@ -10,25 +10,9 @@ import pandas as pd
 import ftplib
 import sys
 
-# A function to retrieve data from the web:
-def fetch_json(URL):
-    """Fetching JSON Data from web
-
-    Args:
-        URL (str): URL that will be fetched
-
-    Returns:
-        dict: the loaded JSON object
-    """
-
-    response = requests.get(URL)
-
-    try:
-        parsed_json = response.json
-    except:
-        raise('[Error] JSON from URL (%s) could not be fetched.'.format(URL))
-
-    return parsed_json
+# Importing custom functions:
+from functions.input_parsers import Fetch_gwas
+from functions.input_parsers import get_cytoband_data
 
 
 # Save parameters
@@ -46,34 +30,6 @@ def get_gencode_data():
     return 1
 
 
-# get cytoband data:
-def get_cytoband_data(url, outfile):
-    response = requests.get(url)
-    data = response.json()
-
-    logging.info('Cytobands successfully fetched. Parsing.')
-
-    bands = []
-    for region in data['top_level_region']:
-        if 'bands' in region:
-            bands += region['bands']
-            
-            
-    df = pd.DataFrame(bands)
-    df.rename(columns={
-        'id': 'name',
-        'seq_region_name': 'chr',
-        'stain': 'type'
-    }, inplace=True)
-
-    logging.info(f'Number of bands in the genome: {len(df)}.')
-    logging.info(f'Saving cytoband file: {outfile}.')
-
-    df = df[['chr', 'start', 'end', 'name', 'type']]
-    df.sort_values(by = ['chr', 'start'], inplace=True)
-    df.to_csv(outfile, sep='\t', index=False, compression='gzip')
-    logging.info(f'Outputfile successfully saved.')
-
 # get ensembl version
 def get_ensembl_version():
     # http://rest.ensembl.org/info/data/?content-type=application/json
@@ -84,45 +40,8 @@ def get_ensembl_version():
 def parse_genome():
     return 1
 
-
-class fetch_gwas_data(object):
-    """
-    This class is to retrieve the association table from the most recent GWAS Catalog release.
-    Expects the ftp host address.
-
-    It also returns the release date.
-    """
-    def __init__(self, url):
-        self.FTP_HOST = url
-        self.release_folder = '/pub/databases/gwas/releases/latest/'
-        
-        # Initialize connection and go to folder:
-        self.ftp = ftplib.FTP(self.FTP_HOST,'anonymous','')
-        self.ftp.cwd(self.release_folder)
-        
-    def get_release_date(self):
-        
-        # Get list of files and the date of modification:
-        files = []
-        self.ftp.dir(files.append)
-        
-        # Parse creation date of a file:
-        release_date_string = ' '.join(files[1].split()[5:8])
-        release_date = parser.parse(release_date_string)
-        
-        # Store date:
-        self.release_date = release_date.strftime('%Y-%m-%d')
-        return self.release_date
-    
-    def fetch_associations(self):
-        return(pd.read_csv('ftp://{}/{}/gwas-catalog-associations_ontology-annotated.tsv '.format(self.FTP_HOST, self.release_folder),
-                          sep='\t', dtype=str))
-    
-    def close_connection(self):
-        self.ftp.close()
-
-        
-def get_gwas_bed(gwas_ftp_host, gwas_output_filename):
+       
+def get_gwas_bed():
     
     # Open ftp connection and fetch GWAS data:
     logging.info('Fetching GWAS data from ftp...')
@@ -203,10 +122,10 @@ def main():
     configuration['basic_parameters']['data_folder'] = data_dir
 
     # Fetching GWAS Catalog data:
-    gwas_host = configuration['source_data']['gwas_data']['host']
-    gwas_output_filename = f"{data_dir}/{configuration['source_data']['gwas_data']['processed_file']}"
-    logging.info(f'Fetching GWAS Catalog data from {gwas_host}. Data will be saved as {gwas_output_filename}')
-    configuration['source_data']['gwas_data']['release_date'] = get_gwas_bed(gwas_host, gwas_output_filename)
+    gwas_retrieve = Fetch_gwas(configuration['source_data']['gwas_data'])
+    gwas_retrieve.retrieve_data()
+    gwas_retrieve.process_gwas_data()
+    gwas_retrieve.save_gwas_data(data_dir)
 
     # Fetching cytological bands:
     cytoband_url = configuration['source_data']['cytoband_data']['url']
