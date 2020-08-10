@@ -95,32 +95,128 @@ class Fetch_gwas(Fetch_from_ftp):
 
 
 # get cytoband data:
-def get_cytoband_data(url, outfile):
-    response = requests.get(url)
-    data = response.json()
+class Fetch_cytobands(object):
 
-    logging.info('Cytobands successfully fetched. Parsing.')
+    def __init__(self, url):
 
-    bands = []
-    for region in data['top_level_region']:
-        if 'bands' in region:
-            bands += region['bands']
+        response = requests.get(url)
+        data = response.json()
+
+        logging.info('Cytobands successfully fetched. Parsing.')
+
+        # Saving assembly:
+        self.assembly = data['default_coord_system_version']
+        logging.info(f"Current genome assembly: {self.assembly}")
+
+        bands = []
+        for region in data['top_level_region']:
+            if 'bands' in region:
+                bands += region['bands']
+                
+                
+        df = pd.DataFrame(bands)
+        df.rename(columns={
+            'id': 'name',
+            'seq_region_name': 'chr',
+            'stain': 'type'
+        }, inplace=True)
+
+        logging.info(f'Number of bands in the genome: {len(df)}.')
+
+        df = df[['chr', 'start', 'end', 'name', 'type']]
+        self.cytobands = df.sort_values(by = ['chr', 'start'])
+
+
+    def save_cytoband_data(self, outfile):
+        logging.info(f'Saving cytoband file: {outfile}.')
+        self.cytobands.to_csv(outfile, sep='\t', index=False, compression='gzip')
+        
+
+    def get_assembly_build(self):
+        return self.assembly
+
+
+# Fetch and process Gencode data:
+class Fetch_genome(Fetch_from_ftp):
+    
+    def __init__(self, ensembl_parameters):
+
+        # These are the parameters required to fetch the data:
+        self.host = ensembl_parameters['host']
+        self.path = ensembl_parameters['path'].format(ensembl_parameters['release'])
+        self.source_file = ensembl_parameters['source_file']
+        self.parsed_file = ensembl_parameters['processed_file']
+
+        # Initialize host:
+        Fetch_from_ftp.__init__(self, self.host)
+
+
+    def retrieve_data(self):
+
+        ftp = Fetch_from_ftp(self.host)
+        self.resp = ftp.fetch_file(self.path,self.source_file)
+
+        logging.info('Sequence data successfully fetched. Parsing...')
+        
+        
+    def parse_genome(self, chunk_size, threshold, data_folder):
+        
+        self.chunk_size = chunk_size
+        self.threshold = threshold
+        self.data_folder = data_folder
+        
+        # This variable contains sequence for one chromosome:
+        chrom_data = ''
+        for line in self.resp:
+            line = line.decode("utf-8")
+
+            # Check if it is a header:
+            if re.match('>',line):
+
+                # If there's data in the buffer, save it:
+                if chrom_data:
+                    logging.info(f'Parsing chromosome {chrom_name} is done.')
+                    self.process_chromosome(chrom_data, chrom_name)
+                    chrom_data = ''
+
+                x = re.match('>(\S+) ',line)
+                chrom_name = x.group(1)
+
+            chrom_data += line.strip()
             
-            
-    df = pd.DataFrame(bands)
-    df.rename(columns={
-        'id': 'name',
-        'seq_region_name': 'chr',
-        'stain': 'type'
-    }, inplace=True)
+        # The last chunk is passed:
+        logging.info(f'Parsing chromosome {chrom_name} is done.')
+        self.process_chromosome(chrom_data, chrom_name)
+        
+        
+    def process_chromosome(self, chrom_data, chr_name):
+        
+        raw_data = []
+        file_name = f"{self.data_folder}/{self.parsed_file.format(chr_name)}"
+        chunk_size = self.chunk_size
+        threshold = self.threshold
+        
+        for i in range(0, len(chrom_data), chunk_size):
+            # Removing Ns:
+            chunk = chrom_data[i:i+chunk_size].replace('N','')
 
-    logging.info(f'Number of bands in the genome: {len(df)}.')
-    logging.info(f'Saving cytoband file: {outfile}.')
+            # Skipping chunks where the Ns are above the threshold:
+            if len(chunk) < chunk_size * threshold:
+                gc_content = None
+            else:
+                # Calculate GC content:
+                gc_content = (chunk.count('G')+chunk.count('C'))/len(chunk)
 
-    df = df[['chr', 'start', 'end', 'name', 'type']]
-    df.sort_values(by = ['chr', 'start'], inplace=True)
-    df.to_csv(outfile, sep='\t', index=False, compression='gzip')
-    logging.info(f'Outputfile successfully saved.')
+            raw_data.append({
+                'chr': chr_name,
+                'start': i,
+                'end': i+chunk_size,
+                'GC_ratio': gc_content
+            })
+
+        # Save data as 
+        df = pd.DataFrame(raw_data)
+        df.to_csv(file_name, sep='\t', compression='infer', index=False)
 
 
 # Fetch and process Gencode data:

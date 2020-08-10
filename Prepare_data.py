@@ -11,23 +11,15 @@ import ftplib
 import sys
 
 # Importing custom functions:
-from functions.input_parsers import Fetch_gwas, Fetch_gencode, get_cytoband_data
-
-
-# Save parameters
-def save_parameters(d,config_file):
-    return 1
-
-
-# get Ensembl data:
-def get_ensembl_data():
-    return 1
+from functions.input_parsers import Fetch_gwas, Fetch_genome, Fetch_gencode, Fetch_cytobands
 
 
 # get ensembl version
-def get_ensembl_version():
+def get_ensembl_version(url):
     # http://rest.ensembl.org/info/data/?content-type=application/json
-    return 1
+    response = requests.get(url)
+    data = response.json()
+    return data['releases'][0]
 
 
 # Main 
@@ -38,12 +30,16 @@ def main():
     parser.add_argument('-d', '--dataDir', help='Folder into which the input data and the temporary files will be saved', required=True, type=str)
     parser.add_argument('-c', '--config', help='JSON file with configuration data', required=True, type=str)    
     parser.add_argument('-l', '--logfile', help='Name of the logfile', required=False, type=str)
+    parser.add_argument('-s', '--chunkSize', help='Chunk size to pool genomic sequence', required=True, type=int)
+    parser.add_argument('-t', '--tolerance', help='Fraction of a chunk that cannot be N.', required=True, type=float)
 
     # Parse parameters:
     args = parser.parse_args()
     data_dir = args.dataDir
     data_dir = os.path.abspath(data_dir)
     config_file = args.config
+    chunkSize = args.chunkSize
+    tolerance = args.tolerance
 
     # Initialize logger:
     handlers = [ logging.StreamHandler(sys.stdout) ]
@@ -66,21 +62,31 @@ def main():
 
     # Update data folder:
     configuration['basic_parameters']['data_folder'] = data_dir
+    configuration['basic_parameters']['chunk_size'] = chunkSize
+    configuration['basic_parameters']['missing_tolerance'] = tolerance
 
-    # Fetching GWAS Catalog data:
-    # gwas_retrieve = Fetch_gwas(configuration['source_data']['gwas_data'])
-    # gwas_retrieve.retrieve_data()
-    # gwas_retrieve.process_gwas_data()
-    # gwas_retrieve.save_gwas_data(data_dir)
-    # configuration['source_data']['gwas_data']['release_date'] = gwas_retrieve.get_release_date()
+    ##
+    ## Fetching GWAS Catalog data:
+    ##
+    gwas_retrieve = Fetch_gwas(configuration['source_data']['gwas_data'])
+    gwas_retrieve.retrieve_data()
+    gwas_retrieve.process_gwas_data()
+    gwas_retrieve.save_gwas_data(data_dir)
+    configuration['source_data']['gwas_data']['release_date'] = gwas_retrieve.get_release_date()
 
-    # Fetching cytological bands:
+    ##
+    ## Fetching cytological bands:
+    ##
     cytoband_url = configuration['source_data']['cytoband_data']['url']
     cytoband_output_file = f"{data_dir}/{configuration['source_data']['cytoband_data']['processed_file']}"
     logging.info('Fetching cytoband information.')
-    get_cytoband_data(cytoband_url, cytoband_output_file)
+    cytoband_retrieve = Fetch_cytobands(cytoband_url)
+    cytoband_retrieve.save_cytoband_data(cytoband_output_file)
+    configuration['source_data']['cytoband_data']['genome_build'] = cytoband_retrieve.get_assembly_build()
 
-    # Fetching GENCODE data:
+    ##
+    ## Fetching GENCODE data:
+    ##
     logging.info('Fetching GENCODE data.')
     gencode_retrieve = Fetch_gencode(configuration['source_data']['gencode_data'])
     gencode_retrieve.retrieve_data()
@@ -91,11 +97,25 @@ def main():
     logging.info(f"Saving processed data: {configuration['source_data']['gencode_data']['processed_file']}.")
 
 
+    ##
+    ## Fetching Ensembl version and genome build:
+    ##
+    logging.info('Fetching Ensembl release...')
+    ensembl_release_url = configuration['source_data']['ensembl_data']['version_url']
+    configuration['source_data']['ensembl_data']['release'] = get_ensembl_version(ensembl_release_url)
+
+    ##
+    ## Fetching the human genome:
+    ##
+    genome_retrieve = Fetch_genome(configuration['source_data']['ensembl_data'])
+    genome_retrieve.retrieve_data()
+    genome_retrieve.parse_genome(chunkSize, tolerance, data_dir)
+
 
 
     # Save config file:
     logging.info('Saving updated configuration.')
-    with open(config_file.replace('.json','_updated.json'), 'w') as f:
+    with open(config_file, 'w') as f:
         json.dump(configuration, f, indent=4)
 
 

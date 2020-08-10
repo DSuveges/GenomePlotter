@@ -6,21 +6,18 @@ The motivation behind this project was to create a scientifically correct visual
 
 The project is divided into several parts:
 
-1. A shell script that downloads and pre-processes the source data files with genome sequence, GWAS signals, gene annotation and the [cytobands](https://en.wikipedia.org/wiki/G_banding).
-2. A python script (`plot_chromosome.py`), that combines sequence data and gene annotation into a single chromosome svg (and png).
-3. A python script that uses the previously generated svg and adds various annotations (gwas signals, cytobands, custom annotation) (yet to be implemented.)
-4. An other python script that combines the previously generated annotated chromosomes into a single composition. (yet to be implemented)
+1. A script (`Prepare_data.py`) that downloads and pre-processes the source data files with genome sequence, GWAS signals, gene annotation and the [cytological bands](https://en.wikipedia.org/wiki/G_banding).
+2. A script (`plot_chromosome.py`), that integrates sequence data and gene annotation into a single svg (and png).
+3. A script (`chromosome_annotator.py`) that uses the previously generated svg and adds various annotations (gwas signals, cytobands, custom annotation)
 
 ### Requirements
 
 **Required bash tools:**
 
 * [cairo graphics library](https://www.cairographics.org/download/)
-* [tabix](http://www.htslib.org/download/)
 * [bedtools](http://bedtools.readthedocs.io/en/latest/content/installation.html) v2.27 or above
-* [jq](https://stedolan.github.io/jq/) v1.5 or above
 
-**Besides standard libraries, the following python packages were used:**
+**Besides standard libraries, the following Python packages were used:**
 
 * [pandas](https://pandas.pydata.org/)
 * [numpy](http://www.numpy.org/)
@@ -33,41 +30,44 @@ All applied source data is mapped to the GRCh38 build of the human genome.
 
 * **The sequnce of the human genome** is dowloaded from [Ensembl](http://www.ensembl.org/info/data/ftp/index.html) (checking for the most recent version).
 * **Genome wide association signals** most recent version of the NHGRI-EBI [GWAS catalog](https://www.ebi.ac.uk/gwas/) (checking the most recent version).
-* **Gene annotation** gene coordinates are downloaded from [GENCODE](http://www.gencodegenes.org/releases/current.html) checking for the most recent version.
-* **Cyto-bands** coordinates of the G-bands and centromeres are downloaded from the [UCSC genomics database](http://hgdownload.cse.ucsc.edu/goldenPath/hg38/database/cytoBand.txt.gz) (currently only the genomic coordinates of the centromeres are used.) (This data can optionally be accessed through the REST API of Ensembl)
+* **Gene annotation** the most recent gene coordinates are downloaded from [GENCODE](http://www.gencodegenes.org/releases/current.html).
+* **Cytological bands** coordinates fetched from the Ensembl [REST API](http://rest.ensembl.org/).
+
+More information on the sources can be found in the `config.json` configuration file.
 
 ### Step 1 - Pre-processing
 
 ```bash
-./Prepare_data.sh -h
+python Prepare_data.py -d data_folder/ -c config.json -l lofile.log -s 450 -t 0.5
 ```
 
 help output:
 
 ```
-Data preparation for the genome plotter: downloading cytoband information, gene annotation and the human genome.
-(the genome is also split into chunks and the GC content is calculated.)
+usage: prepare_data.py [-h] -d DATADIR -c CONFIG [-l LOGFILE] -s CHUNKSIZE -t TOLERANCE
 
-Usage:
-./Prepare_data.sh -g <GENCODE ftp URL> \
-    -e <Ensembl ftp URL> \
-    -c <GWAS Catalog file> \
-    -u <Cytoband file> \
-    -s <chunk size>
+This script fetches and parses input data for the genome plotter project
 
-Command line options and their default values:
-    Chunk size: 500
-    GENCODE ftp URL: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human
-    Ensembl ftp URL: ftp://ftp.ensembl.org/pub
-    Cytoband file at UCSC: http://hgdownload.cse.ucsc.edu/goldenPath/hg38/database/cytoBand.txt.gz
-    GWAS Catalog file: www.ebi.ac.uk/gwas/api/search/downloads/full
+optional arguments:
+  -h, --help            show this help message and exit
+  -d DATADIR, --dataDir DATADIR
+                        Folder into which the input data and the temporary files will be saved
+  -c CONFIG, --config CONFIG
+                        JSON file with configuration data
+  -l LOGFILE, --logfile LOGFILE
+                        Name of the logfile
+  -s CHUNKSIZE, --chunkSize CHUNKSIZE
+                        Chunk size to pool genomic sequence
+  -t TOLERANCE, --tolerance TOLERANCE
+                        Fraction of a chunk that cannot be N.
 ```
 
-* *<chunk_size>* the length of non-overlapping window used to pool together to calculate [GC content](https://en.wikipedia.org/wiki/GC-content). In basepairs. The default value is 500bp
-* The script creates a *source_data* folder into which all the necessary input files will be downloaded.
-* Then all files will then be processed and saved into the *data/* folder.
-* For each chromosome an indexed bed file will be generated containing the chromosome, start and end coordinates of the chunk and the GC content. This piece of information represent a single pixel of the resulting plot.
-* Genomic regions where the sequence is not available, 'NA' is put in to the GC content field. (This will be the base of the coloring of the heterochromatic regions)
+* *<DATADIR>* folder into which the files are going to be saved.
+* *<CONFIG>* JSON file containing the project level configuration. Will be used for multiple scripts
+* *<LOGFILE>* information on the run is saved here.
+* *<CHUNKSIZE>* the length of non-overlapping window used to pool together to calculate [GC content](https://en.wikipedia.org/wiki/GC-content). In basepairs. 
+* *<TOLERANCE>* Ns are discarded from the GC content calculation. This float (ranging from 0-1) shows the maximum of Ns in a chunk tolerated. Chunks with too high N ratio is considered as heterochromatic region on the plot.
+
 
 ### Step 2 - Generate chromosome plot
 

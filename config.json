@@ -2,7 +2,8 @@
     "basic_parameters": {
         "data_folder": null,
         "chunk_size": null,
-        "row_length": null
+        "row_length": null,
+        "missing_tolerance": null
     },
     "color_schema": {
         "centromere": "#9393FF",
@@ -26,10 +27,16 @@
     "source_data": {
         "cytoband_data": {
             "url": "http://rest.ensembl.org/info/assembly/homo_sapiens?content-type=application/json&bands=1",
-            "processed_file": "processed_cytoBand.bed.gz"
+            "processed_file": "processed_cytoBand.bed.gz",
+            "genome_build": null
         },
-        "genome_data": {
-            "url": "ftp://ftp.ensembl.org/pub/"
+        "ensembl_data": {
+            "host": "ftp.ensembl.org",
+            "path": "/pub/release-{}/fasta/homo_sapiens/dna",
+            "source_file": "Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz",
+            "version_url": "http://rest.ensembl.org/info/data/?content-type=application/json",
+            "release": null,
+            "processed_file": "Processed_chr{}.bed.gz"
         },
         "gencode_data": {
             "host": "ftp.ebi.ac.uk",

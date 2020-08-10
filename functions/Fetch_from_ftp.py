@@ -9,6 +9,9 @@ from dateutil import parser
 import pandas as pd
 import ftplib
 import sys
+import io
+import gzip
+
 
 
 class Fetch_from_ftp(object):
@@ -55,7 +58,14 @@ class Fetch_from_ftp(object):
     
     
     def fetch_file(self, path, file):
-        return 1
+        sio = io.BytesIO()
+        def handle_binary(more_data):
+            sio.write(more_data)
+
+        response = self.ftp.retrbinary(f"RETR {path}/{file}", handle_binary)
+        sio.seek(0) # Go back to the start
+        zippy = gzip.GzipFile(fileobj=sio)
+        return zippy
     
     
     def fetch_tsv(self, path, file, skiprows=None, header='infer'):
