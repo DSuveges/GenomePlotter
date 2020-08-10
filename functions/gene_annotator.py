@@ -29,8 +29,7 @@ class gene_annotator(object):
         """
         
         # Open gene file and store data:
-        fileName = '/Users/dsuveges/repositories/GenomePlotter/gene_sets/kinases_Hs.bed.gz'
-        self.__df = pd.read_csv(fileName, sep= "\t", compression='gzip')
+        self.__df = pd.read_csv(gene_file, sep= "\t", compression='gzip')
         
         # Store other values:
         self.__chunkSize = chromosome_svg_data['chunk_size']
