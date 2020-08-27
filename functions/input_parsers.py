@@ -15,7 +15,14 @@ import logging
 # Load custom packages:
 from .Fetch_from_ftp import Fetch_from_ftp
 
+# get ensembl version
+def Fetch_ensembl_version(url):
+    response = requests.get(url)
+    data = response.json()
+    return data['releases'][0]
 
+
+# Fetch GWAS Catalog data and parse:
 class Fetch_gwas(Fetch_from_ftp):
     def __init__(self,gwas_parameters):
         """
@@ -44,6 +51,8 @@ class Fetch_gwas(Fetch_from_ftp):
     
         # Parse data
         self.fetch_tsv(self.path, self.source_file)
+
+        logging.info(f'Successfully fetched {len(self.tsv_data)} GWAS associations.')
         
         # Close connection:
         self.close_connection()
@@ -64,6 +73,9 @@ class Fetch_gwas(Fetch_from_ftp):
               (~filt.CHR_ID.str.contains(';')) &
               (filt.SNPS.str.contains('rs', case=False))
         ]
+
+        logging.info(f'Number of filtered associations:  {len(filt)}.')
+        logging.info(f'Formatting data...')
 
         # Set proper types again:
         filt.CHR_POS = filt.CHR_POS.astype(int)
@@ -175,8 +187,12 @@ class Fetch_genome(Fetch_from_ftp):
 
                 # If there's data in the buffer, save it:
                 if chrom_data:
-                    logging.info(f'Parsing chromosome {chrom_name} is done.')
-                    self.process_chromosome(chrom_data, chrom_name)
+                    if len(chrom_name) < 3:
+                        logging.info(f'Parsing chromosome {chrom_name} is done.')
+                        self.process_chromosome(chrom_data, chrom_name)
+                    else:
+                        logging.info(f'Chromosome {chrom_name} is skipped.')
+
                     chrom_data = ''
 
                 x = re.match('>(\S+) ',line)
@@ -216,7 +232,7 @@ class Fetch_genome(Fetch_from_ftp):
 
         # Save data as 
         df = pd.DataFrame(raw_data)
-        df.to_csv(file_name, sep='\t', compression='infer', index=False)
+        df.to_csv(file_name, sep='\t', compression='infer', index=False, na_rep='NA')
 
 
 # Fetch and process Gencode data:
@@ -310,15 +326,16 @@ class Fetch_gencode(Fetch_from_ftp):
                 continue
 
             # Adding CDS length to all transcripts:
-            transcripts['CDS_length'] = transcripts.transcript_id.apply(lambda t_id: features.loc[(features.type == 'CDS')&(features.transcript_id == t_id)].length.sum())
-            
+            CDS_length =  transcripts.transcript_id.apply(lambda t_id: features.loc[(features.type == 'CDS')&(features.transcript_id == t_id)].length.sum())
+            transcripts.insert(2, "CDS_length", CDS_length) 
+
             # Get canonical transcript and properties:
             canonical_transcript_id = self.get_canonical_transcript(transcripts)
             [start, end] = transcripts.loc[transcripts.transcript_id == canonical_transcript_id, ['start', 'end']].iloc[0].tolist()
             
             # Generate exon-intron splice:
-            gene_df = self.generate_exon_intron_structure(gene_id, canonical_transcript_id, start, end, features.loc[(features.transcript_id == canonical_transcript_id) &
-                                                                             (features.type == 'exon')])
+            gene_df = self.generate_exon_intron_structure(gene_id, canonical_transcript_id, start, end, 
+                                        features.loc[(features.transcript_id == canonical_transcript_id) & (features.type == 'exon')])
             # appending to existing data:
             processed = processed.append(gene_df, ignore_index=True)
             

@@ -11,12 +11,11 @@ import ftplib
 import sys
 
 # Importing custom functions:
-from functions.input_parsers import Fetch_gwas, Fetch_genome, Fetch_gencode, Fetch_cytobands
+from functions.input_parsers import Fetch_gwas, Fetch_genome, Fetch_gencode, Fetch_cytobands, Fetch_ensembl_version
 
 
 # get ensembl version
 def get_ensembl_version(url):
-    # http://rest.ensembl.org/info/data/?content-type=application/json
     response = requests.get(url)
     data = response.json()
     return data['releases'][0]
@@ -56,9 +55,23 @@ def main():
 
     logging.info('Fetching data for Genome Plotter started....')
 
+    # Checking if output dir exists:
+    if not os.path.isdir(data_dir):
+        raise ValueError(f'The provided folder ({data_dir}) does not exist')
+
+    logging.info(f'Pre-processed data is saved to {data_dir}')
+
     # Reading configuration file:
+    if not os.path.isfile(config_file):
+        raise ValueError(f'The provided config file ({config_file}) does not exist.')
+
     with open(config_file) as f:
-        configuration = json.load(f)
+        try:
+            configuration = json.load(f)
+        except json.decoder.JSONDecodeError:
+            raise ValueError(f'The provided config file ({config_file}) is not a valid JSON file.')
+
+    logging.info(f'Configuration is read from {config_file}')
 
     # Update data folder:
     configuration['basic_parameters']['data_folder'] = data_dir
@@ -68,6 +81,7 @@ def main():
     ##
     ## Fetching GWAS Catalog data:
     ##
+    logging.info('Fetching GWAS data...')
     gwas_retrieve = Fetch_gwas(configuration['source_data']['gwas_data'])
     gwas_retrieve.retrieve_data()
     gwas_retrieve.process_gwas_data()
@@ -96,28 +110,27 @@ def main():
     configuration['source_data']['gencode_data']['version'] = gencode_retrieve.get_release()
     logging.info(f"Saving processed data: {configuration['source_data']['gencode_data']['processed_file']}.")
 
-
     ##
     ## Fetching Ensembl version and genome build:
     ##
     logging.info('Fetching Ensembl release...')
     ensembl_release_url = configuration['source_data']['ensembl_data']['version_url']
-    configuration['source_data']['ensembl_data']['release'] = get_ensembl_version(ensembl_release_url)
+    ensembl_release = get_ensembl_version(ensembl_release_url) 
+    configuration['source_data']['ensembl_data']['release'] = ensembl_release
+    logging.info(f'Current Ensembl release: {ensembl_release}')
 
     ##
     ## Fetching the human genome:
     ##
+    logging.info('Fetching the human genome sequence...')
     genome_retrieve = Fetch_genome(configuration['source_data']['ensembl_data'])
     genome_retrieve.retrieve_data()
     genome_retrieve.parse_genome(chunkSize, tolerance, data_dir)
 
-
-
     # Save config file:
-    logging.info('Saving updated configuration.')
-    with open(config_file, 'w') as f:
+    logging.info(f"Saving updated configuration as {config_file.replace('json', 'updated.json')}")
+    with open(config_file.replace('json', 'updated.json'), 'w') as f:
         json.dump(configuration, f, indent=4)
-
 
 
 if __name__ == '__main__':
