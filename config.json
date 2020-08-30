@@ -1,9 +1,16 @@
 {
+    "plot_parameters": {
+        "width": null,
+        "pixel_size": null,
+        "dark_start": null,
+        "dark_max": null
+    },
     "basic_parameters": {
         "data_folder": null,
         "chunk_size": null,
         "row_length": null,
-        "missing_tolerance": null
+        "missing_tolerance": null,
+        "plot_folder": null
     },
     "color_schema": {
         "centromere": "#9393FF",

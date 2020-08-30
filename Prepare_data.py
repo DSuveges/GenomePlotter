@@ -14,13 +14,6 @@ import sys
 from functions.input_parsers import Fetch_gwas, Fetch_genome, Fetch_gencode, Fetch_cytobands, Fetch_ensembl_version
 
 
-# get ensembl version
-def get_ensembl_version(url):
-    response = requests.get(url)
-    data = response.json()
-    return data['releases'][0]
-
-
 # Main 
 def main():
 
