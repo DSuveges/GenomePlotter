@@ -6,14 +6,22 @@ from .color_fun import *
 
 class dataIntegrator(object):
 
+    __required_columns = ['chr','start', 'end']
+
     def __init__(self, genome_df):
-        # Needs to be tested if that's a dataframe and all the columns are added!
+        
         self.__genome__ = genome_df.copy()
+
+        # Testing columns:
+        for col in self.__required_columns:
+            if col not in genome_df.columns:
+                raise ValueError(f'Manadatory colum: {col} is not found in the provided dataframe.')
+
 
     def add_xy_coordinates(self, width):
         self.__width__ = width
         self.__genome__['x'] = self.__genome__.index % width
-        self.__genome__['y'] = [int(x / width) for x in self.__genome__.index ]
+        self.__genome__['y'] = [ int(x / width) for x in self.__genome__.index ]
 
     def add_genes(self, GENCODE_df):
         # Creating bedtools objects:

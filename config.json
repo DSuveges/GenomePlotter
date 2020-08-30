@@ -19,6 +19,7 @@
         "exon": "#FFD326",
         "gene": "#6CB8CC",
         "gwas_point": "black",
+        "dummy": "#B3F29D",
         "cytoband_colors": {
             "gneg": "#FFFFFF",
             "gpos25": "#E5E5E5",
