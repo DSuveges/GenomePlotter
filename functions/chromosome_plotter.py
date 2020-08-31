@@ -1,8 +1,12 @@
 import pickle
 import pandas as pd
 import cairosvg
+from tqdm import tqdm
+
 
 class chromosome_plotter(object):
+
+    chunk_svg = '<rect x="{}" y="{}" width="{}" height="{}" style="stroke-width:1;stroke:{}; fill: {}" />'
 
     def __init__(self, input_data, pixel):
         self.__pixel__ = pixel
@@ -15,80 +19,98 @@ class chromosome_plotter(object):
         self.__width__ = pixel * (input_data.x.max() + 1)
         self.__height__ = pixel * (input_data.y.max() + 1)
 
-        # Do something:
+        # The svg string will be stored here:
         self.__plotString__ = ''
 
-    def draw_dummy(self, color = '#B3F29D'):
-        self.__plotString__  = ('<rect x="0" y="0" width="%s" height="%s" style="stroke-width:1;stroke:%s; fill: %s" />\n' %
-            (self.__width__, self.__height__, color, color))
+    def __add_centromere(self):
 
-    def add_centromere(self, cytobandDf):
-        # Get start and end positions of the centromere from the cytoband dataframe
-        chromosome = self.__chromosomeName__
-        centromereStarts = cytobandDf.loc[(cytobandDf.chr == str(chromosome)) & (cytobandDf.type == 'acen') , 'start'].tolist()
-        centromereEnds = cytobandDf.loc[(cytobandDf.chr == str(chromosome)) & (cytobandDf.type == 'acen') , 'end'].tolist()
+        # We use the Gencode annotation in the chromosome dataframe to get start and end:
+        centromere_start = self.__chromosomeData__.loc[ self.__chromosomeData__.GENCODE == 'centromere' ].y.min() * self.__pixel__
+        centromere_end = self.__chromosomeData__.loc[ self.__chromosomeData__.GENCODE == 'centromere' ].y.max() * self.__pixel__ 
         
-        cetromereXCoord = self.__width__ / 3
+        centromere_midpoint = (centromere_end - centromere_start)/2
+        centromere_hight = centromere_end - centromere_start
 
-        # Calculating important measures from the cytobands dataframe:
-        centromereStartCoord = int((centromereStarts[0] * self.__pixel__) / (self.__chunk_size__ * self.__widthChunk__))
-        centromereEndCoord = int((centromereEnds[1] * self.__pixel__) / (self.__chunk_size__ * self.__widthChunk__))
-        centromereMidpoint = (centromereEndCoord + centromereStartCoord) / 2
-        centromereMidpointDiff = (centromereStartCoord - centromereStartCoord) / 2 
+
+        # How deep we want the cleavage:
+        cetromere_x = self.__width__ / 3
 
         # Right mark of the centromere:
-        half_centromere = ('<path d="M %s %s C %s %s, %s %s, %s %s C %s %s, %s %s, %s %s Z" fill="white"/>\n' %
-            (0, centromereStartCoord,  
-             0, centromereMidpoint, cetromereXCoord/2, centromereMidpoint, cetromereXCoord, centromereMidpoint, 
-             cetromereXCoord/2, centromereMidpoint, 0, centromereMidpoint, 0,centromereEndCoord))
+        centromere_string = (f'<path d="M -1 0 \
+            C 0 {centromere_midpoint}, {cetromere_x/2} {centromere_midpoint}, {cetromere_x/2} {centromere_midpoint} \
+            C {cetromere_x/2} {centromere_midpoint}, 0 {centromere_midpoint}, -1 {centromere_hight} Z" fill="white"/>\n' )
+
+
+        half_centromere = f'<g transform="translate(0, {centromere_start})">\n\t{centromere_string}\n</g>\n'
 
         # Generating the other half of the centromoere:
-        other_half = '<g transform="rotate(180 0 %s) translate(-%s, -%s)">\n\t%s\n</g>\n' %(
-            centromereMidpoint, self.__width__, 0, half_centromere)
+        other_half = f'<g transform="rotate(180 0 {centromere_start + centromere_midpoint}) translate(-{self.__width__}, 0)">\n\t{half_centromere}\n</g>\n'
 
         # adding both sides of the centromere to the plot:
-        self.__plotString__ += '<g id="centromere">\n%s %s </g>\n' % (half_centromere, other_half)
+        self.__plotString__ += f'\n<g id="centromere">\n\t{half_centromere}\t{other_half}</g>\n'
 
-    def wrap_svg(self, fileName):
-        self.__svg__ =  '<svg width="%s" height="%s">\n%s</svg>' % (self.__width__, self.__height__, self.__plotString__)
 
-        f = open(fileName, 'w')
-        f.write(self.__svg__)
-        f.close()
+    def draw_dummy(self):
+        width = self.__pixel__ * self.__width__
+        height = self.__pixel__ * self.__height__
 
-    def return_data(self, dataType):
-        if dataType == 'svg':
-            return(self.__svg__)
-        elif dataType == 'data':
-            return(self.__chromosomeData__)
+        # Extract dummy and centromere color:
+        dummy_color = self.__chromosomeData__.loc[ self.__chromosomeData__.GENCODE != 'centromere' ].color.tolist()[0]
+        centromere_color = self.__chromosomeData__.loc[ self.__chromosomeData__.GENCODE == 'centromere' ].color.tolist()[0]
+        
+        # Extract centromere positions:
+        centromere_start = self.__chromosomeData__.loc[ self.__chromosomeData__.GENCODE == 'centromere' ].y.min() * self.__pixel__
+        centromere_end =  self.__chromosomeData__.loc[ self.__chromosomeData__.GENCODE == 'centromere' ].y.max() * self.__pixel__ - centromere_start
 
-    def pickle_data(self, fileName):
-        pickle.dump( {
-            'chromosome' : self.__chromosomeName__, 
-            'width'      : self.__width__,
-            'height'     : self.__height__,
-            'pixel'      : self.__pixel__,
-            'chunk_size' : self.__chunk_size__,
-            'data'       : self.__plotString__,
-        }, open( fileName, "wb" ) )
+        print(f'centromere_start: {centromere_start}, centromere_end: {centromere_end}')
+
+        # Adding the full chromosome in dummY;
+        self.__plotString__ += self.chunk_svg.format(0, 0, width, height, dummy_color, dummy_color)
+
+        # Adding centromere rectangle:
+        self.__plotString__ += self.chunk_svg.format(0, centromere_start, width, centromere_end, centromere_color, centromere_color)
+
+        # Adding centromoere:
+        self.__add_centromere()
+
+
+    def draw_chromosome(self):
+        
+        pixel = self.__pixel__
+        svg_chunks = []
+        for index, df_row in  tqdm(self.__chromosomeData__.iterrows(), total=self.__chromosomeData__.shape[0]):
+            x = df_row['x'] * pixel
+            y = df_row['y'] * pixel
+            svg_chunks.append(self.chunk_svg.format(x, y, pixel, pixel, df_row['color'], df_row['color']))
+
+        self.__plotString__ = '\n'.join(svg_chunks)
+
+        # Adding centromoere:
+        self.__add_centromere()
+
+
+    
+    def get_plot_with(self):
+        return self.__width__
+
+
+    def get_plot_height(self):
+        return self.__height__
+
+
+    def return_svg(self):
+        return self.__plotString__
+
 
     def save_png(self, fileName):
         cairosvg.svg2png(bytestring=self.__svg__,write_to=fileName)
 
-    def draw_chromosome(self):
-        self.__plotString__  = ''
-        self.__chromosomeData__.head()
 
-        def add_chunk(df_row, pixel):
-            color = df_row['color']
-            x = df_row['x'] * pixel
-            y = df_row['y'] * pixel
-            self.__plotString__  += ('<rect x="%s" y="%s" width="%s" height="%s" style="stroke-width:1;stroke:%s; fill: %s" />\n' %
-               (x, y, pixel, pixel, color, color))
+    def wrap_svg(self, fileName):
+        self.__svg__ =  '<svg width="%s" height="%s" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve">\n%s</svg>' % (self.__width__, self.__height__, self.__plotString__)
 
-        self.__chromosomeData__.apply(add_chunk, axis = 1, args = (self.__pixel__,))
-        
-
-
+        f = open(fileName, 'w')
+        f.write(self.__svg__)
+        f.close()
 
 
