@@ -148,3 +148,16 @@ class ConfigManager(object):
             raise ValueError(f'Processed GENCODE file ({full_path}) doesn\'t exists.')
             
         return full_path
+
+
+    def get_pixel(self):
+        return self.__data['plot_parameters']['pixel_size']
+
+
+    def get_chunk_size(self):
+        return self.__data['basic_parameters']['chunk_size']
+
+
+    def get_width(self):
+        return self.__data['plot_parameters']['width']
+

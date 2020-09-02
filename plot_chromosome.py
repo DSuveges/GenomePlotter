@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+
 # Importing standard libraries:
 import gzip
 import pandas as pd 
@@ -17,6 +18,24 @@ from functions.color_fun import *
 from functions.dataIntegrator import dataIntegrator
 from functions.chromosome_plotter import chromosome_plotter
 from functions.ConfigManager import ConfigManager
+from functions.svg_handler import svg_handler
+from functions.gwas_annotator import gwas_annotator
+
+def gwas_annotation_wrapper(config_manager, chromosome):
+    # Extract config values:
+    color_scheme = config_manager.get_color_scheme()
+    gwas_color = color_scheme['gwas_point']
+    gwas_file = config_manager.get_gwas_file()
+    pixel = config_manager.get_pixel()
+    chunk_size = config_manager.get_chunk_size()
+    width = config_manager.get_width()
+    gwas_file = config_manager.get_gwas_file()
+
+    logging.info(f'Generating GWAS annotation from file: {gwas_file}.')
+
+    gwasAnnot = gwas_annotator(chromosome=chromosome, gwasColor=gwas_color, pixel=pixel, 
+                               chunkSize=chunk_size, gwasFile=gwas_file, width=width)
+    return gwasAnnot.generateGWAS()
 
 def integrator_wrapper(config_manager, is_dummy=False):
     """
@@ -131,6 +150,9 @@ if __name__ == '__main__':
     logging.info(f'Generating plot for chromosome: {chromosome}')
     logging.info('Processing parameters.')
 
+    # Output file name:
+    output_filename = f'{plot_folder}/chr{chromosome}_dummy.png' if dummy else f'{plot_folder}/chr{chromosome}.png'
+
     # initialize config manager:
     config_manager = ConfigManager(config_file)
 
@@ -161,11 +183,21 @@ if __name__ == '__main__':
         logging.info(f'Generating plot.')
         x.draw_chromosome()
 
-    logging.info(f'Exporting plot to svg.')
-    x.wrap_svg("chr%s.svg" % chromosome)
+    # Extract data after plotting:
+    plot_width = x.get_plot_with()
+    plot_height = x.get_plot_height()
+    plot_data = x.return_svg()
 
-    logging.info(f'Exporting plot to png.')
-    x.save_png("chr%s.png" % chromosome)
+    # Initialize svg wrapper object with the returned data:
+    chromosomeSvgObject = svg_handler(plot_data, plot_width, plot_height)
 
+    # Generate gwas annitation:
+    gwas_annotation = gwas_annotation_wrapper(config_manager, chromosome)
+    chromosomeSvgObject.appendSvg(gwas_annotation)
 
+    # Save file:
+    logging.info(f'Saving image: {output_filename}')
+    chromosomeSvgObject.savePng(output_filename)
+
+    logging.info(f'All done.')
 
