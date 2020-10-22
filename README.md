@@ -8,11 +8,10 @@ The project is divided into several parts:
 
 1. A script (`Prepare_data.py`) that downloads and pre-processes the source data files with genome sequence, GWAS signals, gene annotation and the [cytological bands](https://en.wikipedia.org/wiki/G_banding).
 2. A script (`plot_chromosome.py`), that integrates sequence data and gene annotation into a single svg (and png).
-3. A script (`chromosome_annotator.py`) that uses the previously generated svg and adds various annotations (gwas signals, cytobands, custom annotation)
 
 ### Requirements
 
-**Required bash tools:**
+**Required tools:**
 
 * [cairo graphics library](https://www.cairographics.org/download/)
 * [bedtools](http://bedtools.readthedocs.io/en/latest/content/installation.html) v2.27 or above
@@ -31,6 +30,7 @@ All applied source data is mapped to the GRCh38 build of the human genome.
 * **The sequnce of the human genome** is dowloaded from [Ensembl](http://www.ensembl.org/info/data/ftp/index.html) (checking for the most recent version).
 * **Genome wide association signals** most recent version of the NHGRI-EBI [GWAS catalog](https://www.ebi.ac.uk/gwas/) (checking the most recent version).
 * **Gene annotation** the most recent gene coordinates are downloaded from [GENCODE](http://www.gencodegenes.org/releases/current.html).
+* **Canonical transcripts** of protein coding genes are defined according to [Ensembl](https://www.ensembl.org/Help/Glossary).
 * **Cytological bands** coordinates fetched from the Ensembl [REST API](http://rest.ensembl.org/).
 
 More information on the sources can be found in the `config.json` configuration file.
@@ -76,9 +76,8 @@ optional arguments:
 ```
 
 ```
-usage: plot_chromosome.py [-h] -c CHROMOSOME [-w WIDTH] [-p PIXEL]
-                          [-s DARKSTART] [-m DARKMAX] [-f FOLDER] [-t TEST]
-                          [-d] [--config CONFIG]
+usage: plot_chromosome.py [-h] -c CHROMOSOME [-w WIDTH] [-p PIXEL] [-s DARKSTART] [-m DARKMAX] -f FOLDER [--textFile]
+                          [-g GENEFILE] [-t TEST] [--dummy] --config CONFIG [-l LOGFILE]
 
 Script to plot genome chunks colored based on GC content and gene annotation.
 See github: https://github.com/DSuveges/GenomePlotter
@@ -98,55 +97,35 @@ optional arguments:
                         How dark a pixel can get at the right end of the plot
                         (default: 0.15).
   -f FOLDER, --folder FOLDER
-                        The working directory (default is the current working
-                        directory)
+                        Folder into which the plots are saved.
+  --textFile            Flag to indicate if svg file should also be saved.
+  -g GENEFILE, --geneFile GENEFILE
+                        A .bed file with genes to add to the chromosome.
   -t TEST, --test TEST  The number of chunks to be read (by default the whole
                         chromosome is processed.)
-  -d, --dummy
-                        If instead of the chunks, a dummy is drawn with
+  --dummy               If instead of the chunks, a dummy is drawn with
                         identical dimensions
   --config CONFIG       Specifying json file containing custom configuration
+  -l LOGFILE, --logFile LOGFILE
+                        File into which the logs are generated.
 ```
 
 The script at first assigns GENCODE feature to each chunk as follows: the default value is intergenic, if a chunk has at least one base overlap with a gene then the chunk is considered to be gene, unless the chunk has at least one basepair overlap with an exon in which case the cunk is consideret to be exon, unless the GC content is NA, in which calse the chunk is considered to be heterochromatin. Based on cyto-band annotation, chunks overlapping with centromeres will be colored accordingly. The default color is adjusted based on the GC content.
 
-The script then creates svg image and saves indicating the chromosome name, the specified dimension, and the chunks size for reproducibility. This svg file can further be edited. Then using cairosvg, a png file is also created and saved named identically. For easing downstream processes, a "dummy" chromosome is also saved colored in green. The chromosome data is also saved as a readable binary format (`.pkl`)
+Then genome-wide association signals are added as black dots. The size of the dots depends on the number of independent associations on a given chunk. Then cytological bands are added on the left side of the chromosome. Finally, if a gene set is given, the genes on the given chromosome are marked on the right side of the chromosome.
 
-About the requirements: processing a chromosome can take long time and uses upt to 2GB RAM.
+Finally the `.png` file is saved (and `.svg` file if required).
 
-### Step 3 - Add annotation to chromosome
+### Gene sets
 
-As the generation of the plot is very long, it makes sense to do the annotation is a separate round. The previously generated pickled data is read, and a different set of annotation is added to the svg.
+The `gene_sets/` folder contains a set of files that can be used as gene annotation:
 
-The currently implemented annotation:
-* GWAS signals
-* Cytological bands
-
-```bash
-./chromosome_annotator.py --help
-```
-
-Help message:
-
-```
-usage: chromosome_annotator.py [-h] --chromosome CHROMOSOME [--dummy]
-
-This script adds annotation to a chromosome plot.
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --chromosome CHROMOSOME
-                        Name of the Chromosome.
-  --dummy               Dummy is used or not.
-  --geneFile            gzipped bed file of the genes to be added. (optional)
-```
-
-To optimize annotation process there's an option to add annotation to the dummy. Once annotation is added, diagram is saved in a png file.
-
+* *kinases_Hs.bed.gz*: list of kinase genes in the human genome, generated by `get_kinases.sh` script.
+* *gene_w_drugs.tsv.gz*: list of genes for which approved drugs exists (where the mechanism of action is known) based on [OpenTargets tractability](https://docs.targetvalidation.org/getting-started/target-tractability) data.
 
 ### Result
 
-The following image was created based on the data of chromosome 20, where 450 bp-s were averaged to get GC content, and 200 of these chunks were plotted in each row.
+The following image was created based on the data of chromosome 20, where 450 bp-s were averaged to get GC content, and 200 of these chunks were plotted in each row. The list of kinase genes are shown on the right side of the chromosome.
 
 <img src="plots/chr20.png" alt="Chromosome 20" height="1500"/>
 

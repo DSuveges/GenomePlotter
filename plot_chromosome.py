@@ -145,6 +145,7 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--darkStart', type=float, help='Fraction of the width from where the colors start getting darker (default: 0.75).', default = 0.75)
     parser.add_argument('-m', '--darkMax', type=float, help='How dark a pixel can get at the right end of the plot (default: 0.15).', default = 0.15)
     parser.add_argument('-f', '--folder', type=str, help = 'Folder into which the plots are saved.', required=True)
+    parser.add_argument('--textFile', help = 'Flag to indicate if svg file should also be saved.', action='store_true')
     parser.add_argument('-g', '--geneFile', type=str, help='A .bed file with genes to add to the chromosome.', required=False)
     parser.add_argument('-t', '--test', type=int, help='The number of chunks to be read (by default the whole chromosome is processed.)', default = 0)
     parser.add_argument('--dummy', help='If instead of the chunks, a dummy is drawn with identical dimensions', action='store_true')
@@ -258,16 +259,13 @@ if __name__ == '__main__':
         gene_svg.group(translate = (chromosomeSvgObject.getWidth(),0))
         chromosomeSvgObject.mergeSvg(gene_svg)
 
-
     # Save file:
     logging.info(f'Saving image: {output_filename}')
-
     chromosomeSvgObject.savePng(output_filename)
-    chromosomeSvgObject.saveSvg()
 
-
-    
-    
+    if args.textFile:
+        logging.info(f'Saving svg file: {output_filename.replace("png","svg")}')
+        chromosomeSvgObject.saveSvg(output_filename.replace('png','svg'))
 
     logging.info(f'All done.')
 
