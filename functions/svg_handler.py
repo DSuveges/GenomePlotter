@@ -32,8 +32,15 @@ class svg_handler(object):
         
     def savePng(self, filename = 'test.png'):
         self.__closeSvg()
+
         cairosvg.svg2png(bytestring = self.__closedSVG__, write_to = filename)
     
+    def saveSvg(self, filename = 'test.svg'):
+        self.__closeSvg()
+        
+        with open(filename, 'w') as f:
+            f.write(self.__closedSVG__)
+
     def getSvg(self):
         return(self.__svg__)
     

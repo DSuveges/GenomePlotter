@@ -51,8 +51,8 @@ class chromosome_plotter(object):
 
 
     def draw_dummy(self):
-        width = self.__pixel__ * self.__width__
-        height = self.__pixel__ * self.__height__
+        width = self.__width__
+        height = self.__height__
 
         # Extract dummy and centromere color:
         dummy_color = self.__chromosomeData__.loc[ self.__chromosomeData__.GENCODE != 'centromere' ].color.tolist()[0]
@@ -64,7 +64,7 @@ class chromosome_plotter(object):
 
         print(f'centromere_start: {centromere_start}, centromere_end: {centromere_end}')
 
-        # Adding the full chromosome in dummY;
+        # Adding the full chromosome in dummy;
         self.__plotString__ += self.chunk_svg.format(0, 0, width, height, dummy_color, dummy_color)
 
         # Adding centromere rectangle:

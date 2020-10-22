@@ -161,3 +161,5 @@ class ConfigManager(object):
     def get_width(self):
         return self.__data['plot_parameters']['width']
 
+
+

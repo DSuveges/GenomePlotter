@@ -32,16 +32,13 @@ def get_centromere_position(cytobandFile, chromosome):
     centr = centromere.loc[centromere.name.str.match('q')].end.tolist()[0]
     return centr
 
-class cytoband_annotator(object):
+class CytobandAnnotator(object):
     # Built in strings with the cytoband definitions:
     centromer = '<polygon points="{x1},{y1} {x2},{y2} {x3},{y3}" style="fill:{fill_color};stroke:{border_color};stroke-width:{box_width};fill-rule:nonzero;" />\n'
     cytoband_name = '<text x="{x}" y="{y}" text-anchor="end" font-family="sans-serif" font-size="{font_size}px" fill="{font_color}">{band_name}</text>\n'
     cytoband_box = '<rect x="{x}" y="{y}" width="{width}" height="{height}" style="stroke-width:{box_width};stroke:{border_color};fill:{fill_color}" />\n'
 
     def __init__(self, pixel, chromosome, bandFile, chunkSize, width, cytbandColors):
-        '''
-        This class generates gwas signals based on the provided parameters
-        '''
         
         # Reading gwas file:
         cytobandDf = pd.read_csv(bandFile, compression='gzip', sep='\t', quotechar='"', header=0,)

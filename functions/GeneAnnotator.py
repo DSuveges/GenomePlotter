@@ -1,17 +1,19 @@
 import pandas as pd
 
-
-# This helper class converts genomic position to screen position:
-class position_converter(object):
+class PositionConverter(object):
+    '''
+    Helper class to convert genomic position to y coordinate on the plot 
+    based on chunk size, width and pixel size
+    '''
     def __init__(self, width, chunkSize, pixel):
         self.width = width
         self.chunkSize = chunkSize
         self.pixel = pixel
         
     def convert(self, position):
-        return(position / (self.width * self.chunkSize) * self.pixel)
+        return( position / (self.width * self.chunkSize) * self.pixel)
 
-class gene_annotator(object):
+class GeneAnnotator(object):
     
     # Text line:
     text = '<text x="{x}" y="{y}" alignment-baseline="baseline" text-anchor="start" font-family="sans-serif" font-size="{font_size}px" fill="{font_color}">{gene_name}</text>\n'
@@ -22,42 +24,46 @@ class gene_annotator(object):
     # Font color:
     __fontColor = 'black'
     
-    def __init__(self, gene_file, chromosome_svg_data):
+    def __init__(self, gene_file, centromerePosition, chromosome, chunk_size, pixel, height, width):
         """
         The gene file is supposed to be a compressed tab limited file.
         Expected columns: chr, start, end, name
         """
         
         # Open gene file and store data:
-        self.__df = pd.read_csv(gene_file, sep= "\t", compression='gzip')
+        df = pd.read_csv(gene_file, sep= "\t", compression='infer')
+        self.__df = df.loc[df.chr == chromosome]
+        print("[Info] There are {} genes on this chromosome.".format(len(self.__df)))
         
         # Store other values:
-        self.__chunkSize = chromosome_svg_data['chunk_size']
-        self.__pixel = chromosome_svg_data['pixel']
+        self.__chunkSize = chunk_size
+        self.__pixel = pixel
         self.__svg_top = 0
-        self.__svg_bottom = chromosome_svg_data['height']
-        self.__svg_width = chromosome_svg_data['width']
-        self.__width = chromosome_svg_data['width'] / chromosome_svg_data['pixel']
-        self.__fontSize = chromosome_svg_data['pixel'] * 10
+        self.__svg_bottom = height
+        self.__width = width
+
+        self.__fontSize = pixel * 10
+        self.__centromerePosition = centromerePosition
+        self.__chromosome = chromosome
 
         # Initialize return values:
         self.__gene_annot = ''
 
-    def genes_on_chromosome_arms(self, genes_df, centromerePosition, arm):
+    def genes_on_chromosome_arms(self, df, arm):
 
         # Initialize position converter:
-        converter = position_converter(self.__width, self.__chunkSize, self.__pixel)
+        converter = PositionConverter(self.__width, self.__chunkSize, self.__pixel)
 
         # Get centromere position:
-        limit = converter.convert(centromerePosition)
+        limit = converter.convert(self.__centromerePosition)
 
         # Extract values:
         font_size = self.__fontSize
         font_color = self.__fontColor
         
-        for i, row in genes_df.iterrows():
+        for i, row in df.iterrows():
             pos = converter.convert(row['start'])
-            
+
             if arm == 'p':
                 if limit <= pos:
                     text_pos = limit - 10
@@ -108,24 +114,16 @@ class gene_annotator(object):
                 'gene_name' : row['name']}
             )
                       
-    def generate_gene_annotation(self, chromosome, centromerePosition):
+    def generate_gene_annotation(self):
 
         # Initialize gene annotation:
         self.__gene_annot = ''
         
-        # Restrict data to the requested chromosome:
-        print("[Info] Filtering gene data... ")
-        
-        genes_df = self.__df.loc[ self.__df.chr == chromosome]
-        
-        print("[Info] There are {} genes on this chromosome.".format(len(genes_df)))
-        
         # Generate text for the p-arm:
-        self.genes_on_chromosome_arms(genes_df.loc[ genes_df.start <= centromerePosition].sort_values(by=['start'], ascending=False), centromerePosition, 'p')
+        self.genes_on_chromosome_arms(self.__df.loc[ self.__df.start <= self.__centromerePosition].sort_values(by=['start'], ascending=False), 'p')
 
         # Generate text for the q-arm:
-        self.genes_on_chromosome_arms(genes_df.loc[ genes_df.start > centromerePosition].sort_values(by=['start'], ascending=True), centromerePosition, 'q')
-
+        self.genes_on_chromosome_arms(self.__df.loc[ self.__df.start > self.__centromerePosition].sort_values(by=['start'], ascending=True), 'q')
 
     def get_annotation(self):
         return self.__gene_annot

@@ -30,6 +30,7 @@ if __name__ == '__main__':
     """
     This script adds annotation to the chromosome svg file.
     """
+
     
     # Parsing command line arguments:
     parser = argparse.ArgumentParser(description = "This script adds annotation to a chromosome plot.")
