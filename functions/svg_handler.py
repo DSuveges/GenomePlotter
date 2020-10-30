@@ -1,6 +1,12 @@
 import cairosvg
 
 class svg_handler(object):
+
+    __svg_rect__ = '<rect x="{}" y="{}" width="{}" height="{}" style="stroke-width:1;stroke:{}; fill: {}" />\n'
+    __svg_label__ = '<text x="{}" y="{}" text-anchor="{}" font-family="sans-serif" font-size="{}px" fill="{}">{}</text>\n'
+    __svg_line__  = '<line x1="{}" y1="{}" x2="{}" y2="{}" stroke="{}" stroke-width="{}" {} />\n'
+
+
     def __init__(self, svg_string, width, height):
         self.__svg__ = svg_string
         self.__width__ = width
@@ -49,3 +55,18 @@ class svg_handler(object):
 
     def getHeight(self):
         return(self.__height__)
+
+    def draw_rectangle(self, x, y, width, height, stroke, fill):
+        self.__svg__ += self.__svg_rect__.format(x, y, width, height, stroke, fill)
+
+    def draw_line(self, x1, y1, x2, y2, stroke="#000000", stroke_width=3, **kwargs):
+        extra_args = ''
+
+        if kwargs:
+            for key, value in kwargs.items():
+                extra_args += f' {key.replace("_","-")}="{value}"'
+        print(extra_args)
+        self.__svg__ += self.__svg_line__.format(x1, y1, x2, y2, stroke, stroke_width, extra_args)
+
+    def add_text(self, x, y, text, size=10, fill="#000000", anchor='start'):
+        self.__svg__ += self.__svg_label__.format(x,y,anchor,size,fill,text)
