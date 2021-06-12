@@ -1,0 +1,36 @@
+version: 2.1
+
+orbs:
+  python: circleci/python@1.2
+
+workflows:
+  sample:  # This is the name of the workflow, feel free to change it to better match your workflow.
+    # Inside the workflow, you define the jobs you want to run. 
+    # For more details on extending your workflow, see the configuration docs: https://circleci.com/docs/2.0/configuration-reference/#workflows 
+    jobs:
+      - build-and-test
+
+jobs:
+  build-and-test:
+    docker:
+      # Using the miniconda image from dokerhub:
+      - image: continuumio/miniconda
+    steps:
+      - checkout
+      - run:
+          name: Set-up and update conda
+          # This assumes pytest is installed via the install-package step above
+          command: |
+            conda config --set always_yes yes --set changeps1 no
+            conda update -q conda
+      - run:
+          name: Setting up environment
+          command: |
+            conda env create -f environment.yml
+            conda activate genomePlotter
+      - run:
+          name: Run pytest
+          command: |
+            coverage run -m pytest
+            coverage xml
+            python-codacy-coverage -r coverage.xml
