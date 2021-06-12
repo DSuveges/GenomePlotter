@@ -1,28 +1,21 @@
 
-# read dataframe
-## extract row number
-## extract number of columns
-# read pixel size.
-# 
-
-
-
-
 class process_chrom:
     '''
     This class plots the chromosomes and saves a gzipped text file.
     Also can create defs... whatever.
     '''
 
-    def __init__(self, width, height, pixel, defs = 0):
+    def __init__(self, width, height, pixel, defs=0):
         self.width = width
         self.height = height
         self.pixel = pixel
 
         # If we would like, we can include the defs tag as well:
         if defs == 1:
-            self.__add_def('chunk', '<rect x="0" y="0" width="%s" height="%s" style="stroke-width:0" />\n' %
-                (pixel, pixel))
+            self.__add_def(
+                'chunk', '<rect x="0" y="0" width="%s" height="%s" style="stroke-width:0" />\n' %
+                (pixel, pixel)
+            )
 
     def __add_def(self, ID, svg_string):
         '''
@@ -51,7 +44,9 @@ class process_chrom:
         x = row['x']
         y = row['y']
         color = row['color']
-        self.plot += ('<use x="%s" y="%s" href="#chunk" style="fill: %s;"/>\n' %(x*self.pixel, y*self.pixel, color))
+        self.plot += (
+            f'<use x="{x*self.pixel}" y="{y*self.pixel}" href="#chunk" style="fill: {color};"/>\n'
+        )
 
     # Adding dot:
     def draw_GWAS(self, row):
@@ -60,8 +55,9 @@ class process_chrom:
         '''
         x = row['x']
         y = row['y']
-        self.plot += ('<circle cx="%s" cy="%s" r="2" stroke="%s" stroke-width="1" fill="%s" />\n' %
-            (x*self.pixel, y*self.pixel, "black", "black"))
+        self.plot += (
+            f'<circle cx="{x*self.pixel}" cy="{y*self.pixel}" r="2" stroke="black" stroke-width="1" fill="black" />\n'
+        )
 
     def mark_centromere(self, centr_start, centr_end):
         '''
