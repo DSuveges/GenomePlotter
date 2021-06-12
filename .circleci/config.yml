@@ -27,6 +27,7 @@ jobs:
           name: Setting up environment
           command: |
             conda env create -f environment.yml
+            . /opt/conda/etc/profile.d/conda.sh
             conda activate genomePlotter
       - run:
           name: Run pytest
