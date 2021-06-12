@@ -66,7 +66,7 @@ class GeneAnnotator(object):
         font_size = self.__fontSize
         font_color = self.__fontColor
 
-        for i, row in df.iterrows():
+        for _, row in df.iterrows():
             pos = converter.convert(row['start'])
 
             if arm == 'p':

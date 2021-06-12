@@ -94,7 +94,7 @@ class chromosome_plotter(object):
 
         pixel = self.__pixel__
         svg_chunks = []
-        for index, df_row in self.__chromosomeData__.iterrows():
+        for _, df_row in self.__chromosomeData__.iterrows():
             x = df_row['x'] * pixel
             y = df_row['y'] * pixel
             svg_chunks.append(self.chunk_svg.format(x, y, pixel, pixel, df_row['color'], df_row['color']))

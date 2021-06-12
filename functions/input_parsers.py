@@ -399,7 +399,7 @@ class Fetch_gencode(Fetch_from_ftp):
 
         # Looping through all exons generate coordinates of the corresponding intron(s)
         new_features = []
-        for i, values in exons[['start', 'end']].sort_values(by='start', axis=0, ascending=True).iterrows():
+        for _, values in exons[['start', 'end']].sort_values(by='start', axis=0, ascending=True).iterrows():
             es = values['start']
             ee = values['end']
 
