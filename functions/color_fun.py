@@ -3,6 +3,13 @@ import colorsys
 def hex_to_RGB(hex_color):
     """ "#FFFFFF" -> [255,255,255] """
 
+    if not isinstance(hex_color, str):
+        raise ValueError('The provided hexadecimal definition has to be string eg #000000.')
+    elif len(hex_color) != 7 or not hex_color.startswith('#'):
+        raise ValueError('The provided hexadecimal definition has to starts with #')
+
+    hex_color = hex_color.lower()
+
     # Pass 16 to the integer function for change of base
     return [int(hex_color[i:i + 2], 16) for i in range(1, 6, 2)]
 
@@ -19,14 +26,19 @@ def linear_gradient(start_hex, finish_hex="#FFFFFF", n=10):
     returns a gradient list of (n) colors between
     two hex colors. start_hex and finish_hex
     should be the full six-digit color string,
-    inlcuding the sharp sign (eg "#FFFFFF")
+    inlcuding the # sign (eg "#FFFFFF")
     """
     # Starting and ending colors in RGB form
     s = hex_to_RGB(start_hex)
     f = hex_to_RGB(finish_hex)
 
     # Initilize a list of the output colors with the starting color
-    RGB_list = [start_hex]
+    RGB_list = [start_hex.lower()]
+
+    if not isinstance(n, int):
+        raise ValueError('The number of returned colors have to be specified by an integer.')
+    elif n == 0:
+        return []
 
     # Calcuate a color at each evenly spaced value of t from 1 to n
     for t in range(1, n):
