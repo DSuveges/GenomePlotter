@@ -32,6 +32,8 @@ jobs:
       - run:
           name: Run pytest
           command: |
+            . /opt/conda/etc/profile.d/conda.sh
+            conda activate genomePlotter
             coverage run -m pytest
             coverage xml
             python-codacy-coverage -r coverage.xml
