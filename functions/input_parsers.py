@@ -16,6 +16,9 @@ def Fetch_ensembl_version(url):
 
 # Fetch GWAS Catalog data and parse:
 class Fetch_gwas(Fetch_from_ftp):
+    
+    """Function to fetch GWAS data from ftp and format as bed"""
+
     def __init__(self, gwas_parameters):
         """
         Based on the gwas source related parameters, fetches, parses and saves data
@@ -101,6 +104,8 @@ class Fetch_gwas(Fetch_from_ftp):
 # get cytoband data:
 class Fetch_cytobands(object):
 
+    """Function to retrieve cytogenic bands from Ensembl"""
+
     def __init__(self, url):
 
         response = requests.get(url)
@@ -141,6 +146,8 @@ class Fetch_cytobands(object):
 
 # Fetch and process Gencode data:
 class Fetch_genome(Fetch_from_ftp):
+
+    """Function to retrieve genome sequence from Ensembl"""
 
     def __init__(self, ensembl_parameters):
 
@@ -227,10 +234,11 @@ class Fetch_genome(Fetch_from_ftp):
 
 # Fetch and process Gencode data:
 class Fetch_gencode(Fetch_from_ftp):
+
+    """Function to fetch gene data from GENCODE ftp"""
+
     def __init__(self, gencode_parameters):
-        """
-        Based on the source related parameters, fetches, parses and saves GENCODE gene info
-        """
+        """Based on the source related parameters, fetches, parses and saves GENCODE gene info"""
 
         # Extract parameters:
         self.host = gencode_parameters['host']

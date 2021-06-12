@@ -2,6 +2,7 @@
 from time import gmtime, strftime
 
 def generate_xy(df, min_pos, chunk_size, width, position_column='start', x='x', y='y'):
+
     '''
     Generating x,y coordinates from genomic position and
     the provided plot width or chunk size.

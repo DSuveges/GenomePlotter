@@ -6,12 +6,14 @@ import io
 import gzip
 
 class Fetch_from_ftp(object):
+
     """
     This class is to retrieve the association table from the most recent GWAS Catalog release.
     Expects the ftp host address.
 
     It also returns the release date.
     """
+
     def __init__(self, url):
         self.FTP_HOST = url
 
@@ -51,7 +53,7 @@ class Fetch_from_ftp(object):
         def handle_binary(more_data):
             sio.write(more_data)
 
-        response = self.ftp.retrbinary(f"RETR {path}/{file}", handle_binary)
+        self.ftp.retrbinary(f"RETR {path}/{file}", handle_binary)
         sio.seek(0)  # Go back to the start
         zippy = gzip.GzipFile(fileobj=sio)
         return zippy

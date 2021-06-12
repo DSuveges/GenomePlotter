@@ -2,6 +2,8 @@ import cairosvg
 
 class svg_handler(object):
 
+    """Functions to manipulate svg"""
+
     __svg_rect__ = '<rect x="{}" y="{}" width="{}" height="{}" style="stroke-width:1;stroke:{}; fill: {}" />\n'
     __svg_label__ = '<text x="{}" y="{}" text-anchor="{}" font-family="sans-serif" \
         font-size="{}px" fill="{}">{}</text>\n'
@@ -13,9 +15,9 @@ class svg_handler(object):
         self.__height__ = height
 
     def group(self, translate=(0, 0)):
-        '''
+        """
         Grouping and transforming object. Should have been more functionally rich
-        '''
+        """
         self.__svg__ = '<g transform="translate(%s %s)">\n%s\n</g>\n' % (
             translate[0], translate[1], self.__svg__)
 

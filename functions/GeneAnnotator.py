@@ -1,10 +1,12 @@
 import pandas as pd
 
 class PositionConverter(object):
-    '''
+
+    """
     Helper class to convert genomic position to y coordinate on the plot
     based on chunk size, width and pixel size
-    '''
+    """
+    
     def __init__(self, width, chunkSize, pixel):
         self.width = width
         self.chunkSize = chunkSize
@@ -14,6 +16,8 @@ class PositionConverter(object):
         return position / (self.width * self.chunkSize) * self.pixel
 
 class GeneAnnotator(object):
+
+    """Adds genes to chromosomes"""
 
     # Text line:
     text = '<text x="{x}" y="{y}" alignment-baseline="baseline" \

@@ -6,15 +6,21 @@ from svg_handler import svg_handler
 
 class DrawLegend(object):
 
+    """
+    WARNING: This function is heavily in under development
+
+    TODO:
+    * Integrate datasource versions
+    * Example gene
+    """
+
     def __init__(self, config_manager):
         self.__colors__ = config_manager.get_color_scheme()
         self.__pixel__ = config_manager.get_pixel()
         self.__config_manager__ = config_manager
 
     def draw_colors_legend(self):
-        '''
-        Function to drawing a legend describing colors of the chromosome plot
-        '''
+        """Function to drawing a legend describing colors of the chromosome plot"""
 
         # These values and the order is hardcoded:
         regions = OrderedDict({

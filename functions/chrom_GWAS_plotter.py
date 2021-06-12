@@ -1,8 +1,7 @@
 import gzip
 class process_chrom:
-    '''
-    This class plots the chromosomes and saves a gzipped text file.
-    '''
+
+    """This class plots the chromosomes and saves a gzipped text file."""
 
     def __init__(self, width, height, pixel, defs=0):
         self.width = width
@@ -17,13 +16,13 @@ class process_chrom:
             )
 
     def __add_def(self, ID, svg_string):
-        '''
+        """
         This function adds an other <g> object to the <defs> section of the
         svg object.
 
         Until the whole object is saved, all the definitions will be stored in a
         dictionary.
-        '''
+        """
 
         if 'defs' in self:
             self['defs'][ID] = svg_string
@@ -33,13 +32,13 @@ class process_chrom:
 
     # Adding square:
     def draw_chunk(self, row):
-        '''
+        """
         This function expects a row of a dataframe in which there must be the
         following three columns:
             x - column number
             y - row number
             color - color of the field in hexadecimal code.
-        '''
+        """
         x = row['x']
         y = row['y']
         color = row['color']
@@ -49,9 +48,9 @@ class process_chrom:
 
     # Adding dot:
     def draw_GWAS(self, row):
-        '''
+        """
         The GWAS signals are added as dots. There's no need to use g and use tags.
-        '''
+        """
         x = row['x']
         y = row['y']
         self.plot += (
@@ -59,10 +58,10 @@ class process_chrom:
         )
 
     def mark_centromere(self, centr_start, centr_end):
-        '''
+        """
         Based on the coordinates of the centromoere, this function compiles an svg
         path for the centromere and addes to the plot object.
-        '''
+        """
 
         # The y coordinate of the centromere start and end points 0 adjusted:
         centr_y_start = 0
@@ -98,9 +97,9 @@ class process_chrom:
 
     # Close svg document:
     def save(self, chr_name):
-        '''
+        """
         This function saves the assembled lines into a textfile.
         We don't expect to be included anything else.w
-        '''
+        """
         with gzip.open(f'chr{chr_name}_genome_chunks.txt.gz', 'wt') as f:
             f.write(self.plot)

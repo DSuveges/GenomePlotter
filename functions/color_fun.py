@@ -1,12 +1,12 @@
 import colorsys
 
 def hex_to_RGB(hex):
-    ''' "#FFFFFF" -> [255,255,255] '''
+    """ "#FFFFFF" -> [255,255,255] """
     # Pass 16 to the integer function for change of base
     return [int(hex[i:i + 2], 16) for i in range(1, 6, 2)]
 
 def RGB_to_hex(RGB):
-    ''' [255,255,255] -> "#FFFFFF" '''
+    """ [255,255,255] -> "#FFFFFF" """
     # Components need to be integers for hex to make sense
     RGB = [int(x) for x in RGB]
     return "#" + "".join(
@@ -14,12 +14,12 @@ def RGB_to_hex(RGB):
     )
 
 def linear_gradient(start_hex, finish_hex="#FFFFFF", n=10):
-    '''
+    """
     returns a gradient list of (n) colors between
     two hex colors. start_hex and finish_hex
     should be the full six-digit color string,
     inlcuding the sharp sign (eg "#FFFFFF")
-    '''
+    """
     # Starting and ending colors in RGB form
     s = hex_to_RGB(start_hex)
     f = hex_to_RGB(finish_hex)
@@ -42,14 +42,14 @@ def linear_gradient(start_hex, finish_hex="#FFFFFF", n=10):
     return RGB_list
 
 def color_darkener(row, width, threshold, max_diff_value):
-    '''
+    """
     width - how many chunks do we have in one line.
     threshold - at which column the darkening starts
     max_diff_value - the max value of darkening
 
     Once the colors are assigned, we make the colors darker for those columns
     that are at the end of the plot.
-    '''
+    """
 
     color = row['color']
     col_frac = row['x'] / width

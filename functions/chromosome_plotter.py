@@ -1,7 +1,10 @@
-import pandas as pd
 import cairosvg
 
 class chromosome_plotter(object):
+
+    """
+    Functions to store/process and save svg object of a single chromosome
+    """
 
     chunk_svg = '<rect x="{}" y="{}" width="{}" height="{}" style="stroke-width:1;stroke:{}; fill: {}" />'
 

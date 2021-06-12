@@ -2,6 +2,7 @@ import pandas as pd
 import cairosvg
 
 def get_centromere_position(cytobandFile, chromosome):
+
     """
     This function parses the gzipped cytoband file and returns the location of the centromere for a given chromosome.
 

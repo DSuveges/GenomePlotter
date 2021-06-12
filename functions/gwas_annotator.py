@@ -3,6 +3,8 @@ import math
 
 class gwas_annotator(object):
 
+    """Adds GWAS associations to the chromosome"""
+
     # GWAS hit svg definition:
     gwas_hit = '<circle cx="{}" cy="{}" r="{}" stroke="{}" stroke-width="1" fill="{}" />'
 
@@ -13,9 +15,9 @@ class gwas_annotator(object):
     gwas_cap = 10
 
     def __init__(self, pixel, chromosome, gwasFile, chunkSize, width, xoffset=0, yoffset=0, gwasColor="black"):
-        '''
+        """
         This class generates gwas signals based on the provided parameters
-        '''
+        """
 
         # Reading gwas file:
         gwas_df = pd.read_csv(gwasFile, compression='gzip', sep='\t', quotechar='"', header=0,
