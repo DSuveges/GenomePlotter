@@ -3,14 +3,15 @@ import colorsys
 def hex_to_RGB(hex):
     ''' "#FFFFFF" -> [255,255,255] '''
     # Pass 16 to the integer function for change of base
-    return [int(hex[i:i+2], 16) for i in range(1,6,2)]
+    return [int(hex[i:i + 2], 16) for i in range(1, 6, 2)]
 
 def RGB_to_hex(RGB):
     ''' [255,255,255] -> "#FFFFFF" '''
     # Components need to be integers for hex to make sense
     RGB = [int(x) for x in RGB]
-    return "#"+"".join(["0{0:x}".format(v) if v < 16 else
-            "{0:x}".format(v) for v in RGB])
+    return "#" + "".join(
+        ["0{0:x}".format(v) if v < 16 else "{0:x}".format(v) for v in RGB]
+    )
 
 def linear_gradient(start_hex, finish_hex="#FFFFFF", n=10):
     '''
@@ -31,7 +32,7 @@ def linear_gradient(start_hex, finish_hex="#FFFFFF", n=10):
 
         # Interpolate RGB vector for color at the current value of t
         curr_vector = [
-            int(s[j] + (float(t)/(n-1))*(f[j]-s[j]))
+            int(s[j] + (float(t) / (n - 1)) * (f[j] - s[j]))
             for j in range(3)
         ]
 
@@ -55,20 +56,25 @@ def color_darkener(row, width, threshold, max_diff_value):
 
     # Ok, we have the color, now based on the column we make it a bit darker:
     if col_frac > threshold:
-        diff = (col_frac - threshold)/(1 - threshold)
-        factor = 1 - max_diff_value*diff
+        diff = (col_frac - threshold) / (1 - threshold)
+        factor = 1 - max_diff_value * diff
 
         # Get rgb code of the hexa code:
         rgb_code = hex_to_RGB(color)
 
         # Get the hls code of the rgb:
-        hls_code = colorsys.rgb_to_hls(rgb_code[0]/255,rgb_code[1]/255,rgb_code[2]/255)
+        hls_code = colorsys.rgb_to_hls(
+            rgb_code[0] / 255,
+            rgb_code[1] / 255,
+            rgb_code[2] / 255
+        )
 
-        # Get the modifed rgb code:
+        # Scaling luminosity then convert to RGB:
         new_rgb = colorsys.hls_to_rgb(hls_code[0],
-                                      hls_code[1]*factor,
+                                      hls_code[1] * factor,
                                       hls_code[2])
 
         # Get the modifed hexacode:
-        color = RGB_to_hex([ x * 255 for x in new_rgb ])
+        color = RGB_to_hex([x * 255 for x in new_rgb])
+
     return(color)
