@@ -15,6 +15,8 @@ dependencies:
   - certifi=2021.5.30=py36h79c6626_0
   - cffi=1.13.2=py36h33e799b_0
   - chardet=4.0.0=py36h79c6626_1
+  - codacy-coverage=1.3.11=pyhd8ed1ab_1
+  - coverage=5.5=py36hfa26744_0
   - cryptography=3.4.7=py36h3d45be8_0
   - cssselect2=0.2.1=py_0
   - curl=7.67.0=ha441bb4_0
