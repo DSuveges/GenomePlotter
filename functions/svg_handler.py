@@ -1,6 +1,7 @@
 import cairosvg
 
 class svg_handler(object):
+
     """Functions to manipulate svg"""
 
     __svg_rect__ = '<rect x="{}" y="{}" width="{}" height="{}" style="stroke-width:1;stroke:{}; fill: {}" />\n'

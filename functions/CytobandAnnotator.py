@@ -33,6 +33,7 @@ def get_centromere_position(cytobandFile, chromosome):
     return centr
 
 class CytobandAnnotator(object):
+
     """Adding cytological bands to plot"""
 
     # Built in strings with the cytoband definitions:
