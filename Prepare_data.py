@@ -2,28 +2,44 @@ import re
 import os
 import json
 import argparse
-import requests
-import logging 
-from datetime import datetime
-from dateutil import parser
-import pandas as pd
-import ftplib
+import logging
 import sys
 
 # Importing custom functions:
-from functions.input_parsers import Fetch_gwas, Fetch_genome, Fetch_gencode, Fetch_cytobands, Fetch_ensembl_version
+from functions.input_parsers import (
+    Fetch_gwas,
+    Fetch_genome,
+    Fetch_gencode,
+    Fetch_cytobands,
+    Fetch_ensembl_version
+)
 
-
-# Main 
 def main():
 
     # Parse command line arguments
-    parser = argparse.ArgumentParser(description='This script fetches and parses input data for the genome plotter project')
-    parser.add_argument('-d', '--dataDir', help='Folder into which the input data and the temporary files will be saved', required=True, type=str)
-    parser.add_argument('-c', '--config', help='JSON file with configuration data', required=True, type=str)    
-    parser.add_argument('-l', '--logfile', help='Name of the logfile', required=False, type=str)
-    parser.add_argument('-s', '--chunkSize', help='Chunk size to pool genomic sequence', required=True, type=int)
-    parser.add_argument('-t', '--tolerance', help='Fraction of a chunk that cannot be N.', required=True, type=float)
+    parser = argparse.ArgumentParser(
+        description='This script fetches and parses input data for the genome plotter project'
+    )
+    parser.add_argument(
+        '-d', '--dataDir', help='Folder into which the input data and the temporary files will be saved',
+        required=True, type=str
+    )
+    parser.add_argument(
+        '-c', '--config', help='JSON file with configuration data',
+        required=True, type=str
+    )
+    parser.add_argument(
+        '-l', '--logfile', help='Name of the logfile',
+        required=False, type=str
+    )
+    parser.add_argument(
+        '-s', '--chunkSize', help='Chunk size to pool genomic sequence',
+        required=True, type=int
+    )
+    parser.add_argument(
+        '-t', '--tolerance', help='Fraction of a chunk that cannot be N.',
+        required=True, type=float
+    )
 
     # Parse parameters:
     args = parser.parse_args()
@@ -34,9 +50,9 @@ def main():
     tolerance = args.tolerance
 
     # Initialize logger:
-    handlers = [ logging.StreamHandler(sys.stdout) ]
+    handlers = [logging.StreamHandler(sys.stdout)]
     if args.logfile != '':
-        handlers.append( logging.FileHandler(filename=args.logfile) )
+        handlers.append(logging.FileHandler(filename=args.logfile))
 
     # Initialize logger:
     logging.basicConfig(
@@ -71,9 +87,7 @@ def main():
     configuration['basic_parameters']['chunk_size'] = chunkSize
     configuration['basic_parameters']['missing_tolerance'] = tolerance
 
-    ##
-    ## Fetching GWAS Catalog data:
-    ##
+    # Fetching GWAS Catalog data:
     logging.info('Fetching GWAS data...')
     gwas_retrieve = Fetch_gwas(configuration['source_data']['gwas_data'])
     gwas_retrieve.retrieve_data()
@@ -81,9 +95,7 @@ def main():
     gwas_retrieve.save_gwas_data(data_dir)
     configuration['source_data']['gwas_data']['release_date'] = gwas_retrieve.get_release_date()
 
-    ##
-    ## Fetching cytological bands:
-    ##
+    # Fetching cytological bands:
     cytoband_url = configuration['source_data']['cytoband_data']['url']
     cytoband_output_file = f"{data_dir}/{configuration['source_data']['cytoband_data']['processed_file']}"
     logging.info('Fetching cytoband information.')
@@ -91,9 +103,7 @@ def main():
     cytoband_retrieve.save_cytoband_data(cytoband_output_file)
     configuration['source_data']['cytoband_data']['genome_build'] = cytoband_retrieve.get_assembly_build()
 
-    ##
-    ## Fetching GENCODE data:
-    ##
+    # Fetching GENCODE data:
     logging.info('Fetching GENCODE data.')
     gencode_retrieve = Fetch_gencode(configuration['source_data']['gencode_data'])
     gencode_retrieve.retrieve_data()
@@ -103,18 +113,14 @@ def main():
     configuration['source_data']['gencode_data']['version'] = gencode_retrieve.get_release()
     logging.info(f"Saving processed data: {configuration['source_data']['gencode_data']['processed_file']}.")
 
-    ##
-    ## Fetching Ensembl version and genome build:
-    ##
+    # Fetching Ensembl version and genome build:
     logging.info('Fetching Ensembl release...')
     ensembl_release_url = configuration['source_data']['ensembl_data']['version_url']
-    ensembl_release = get_ensembl_version(ensembl_release_url) 
+    ensembl_release = Fetch_ensembl_version(ensembl_release_url)
     configuration['source_data']['ensembl_data']['release'] = ensembl_release
     logging.info(f'Current Ensembl release: {ensembl_release}')
 
-    ##
-    ## Fetching the human genome:
-    ##
+    # Fetching the human genome:
     logging.info('Fetching the human genome sequence...')
     genome_retrieve = Fetch_genome(configuration['source_data']['ensembl_data'])
     genome_retrieve.retrieve_data()
@@ -128,4 +134,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

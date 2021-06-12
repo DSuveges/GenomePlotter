@@ -13,7 +13,6 @@ class gwas_annotator(object):
     # GWAS hit count cap:
     gwas_cap = 10
 
-
     def __init__(self, pixel, chromosome, gwasFile, chunkSize, width, xoffset = 0, yoffset = 0, gwasColor = "black"):
         '''
         This class generates gwas signals based on the provided parameters

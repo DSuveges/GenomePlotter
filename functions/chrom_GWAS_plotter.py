@@ -1,8 +1,7 @@
-
+import gzip
 class process_chrom:
     '''
     This class plots the chromosomes and saves a gzipped text file.
-    Also can create defs... whatever.
     '''
 
     def __init__(self, width, height, pixel, defs=0):
@@ -73,31 +72,35 @@ class process_chrom:
         print(centr_y_end, centr_y_start)
 
         # Creating the centromere path:
-        half_centromere = ('<path d="M %s %s C %s %s, %s %s, %s %s C %s %s, %s %s, %s %s Z" fill="white"/>' %
-                 ( 0, centr_y_start,
-                   0, centr_y_midpoint,
-                   centr_x_midpoint/2, centr_y_midpoint,
-                   centr_x_midpoint, centr_y_midpoint,
-                   centr_x_midpoint/2, centr_y_midpoint,
-                   0, centr_y_midpoint,
-                   0, centr_y_end))
+        half_centromere = ('<path d="M %s %s C %s %s, %s %s, %s %s C %s %s, %s %s, %s %s Z" fill="white"/>' % (
+            0, centr_y_start,
+            0, centr_y_midpoint,
+            centr_x_midpoint / 2, centr_y_midpoint,
+            centr_x_midpoint, centr_y_midpoint,
+            centr_x_midpoint / 2, centr_y_midpoint,
+            0, centr_y_midpoint,
+            0, centr_y_end
+        ))
 
         # Set position for the left side:
-        left_centromere_side = '<g transform="translate(0, %s)">\n\t%s\n</g>\n' %((centr_start * self.pixel)/self.width, half_centromere)
+        left_centromere_side = (
+            '<g transform="translate(0, %s)">\n\t%s\n</g>\n' % (
+                (centr_start * self.pixel) / self.width, half_centromere
+            )
+        )
 
         # Set position for the right side:
-        right_centromere_side = '<g transform="rotate(180 0 %s) translate(-%s, -%s)">\n\t%s\n</g>\n' %(
-            centr_y_midpoint, self.pixel*self.width,(centr_start * self.pixel)/self.width, half_centromere)
+        right_centromere_side = '<g transform="rotate(180 0 %s) translate(-%s, -%s)">\n\t%s\n</g>\n' % (
+            centr_y_midpoint, self.pixel * self.width, (centr_start * self.pixel) / self.width, half_centromere)
 
         # Adding centromeres to the plot:
         self.plot += '<g id="centromere">\n%s %s </g>\n' % (left_centromere_side, right_centromere_side)
 
     # Close svg document:
-    def save (self, chr_name):
+    def save(self, chr_name):
         '''
         This function saves the assembled lines into a textfile.
-        We don't expect to be included anything else.
+        We don't expect to be included anything else.w
         '''
-        filename = ("chr%s_genome_chunks.txt" % chr_name)
-        f.open('', 'w')
-        f.close
+        with gzip.open(f'chr{chr_name}_genome_chunks.txt.gz', 'wt') as f:
+            f.write(self.plot)
