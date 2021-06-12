@@ -2,9 +2,9 @@ import json
 import os
 
 class ConfigManager(object):
-
     """
     This class manages all configuration setting:
+    
     * Set new values
     * Retrives set ones
     * Updates configuration file.

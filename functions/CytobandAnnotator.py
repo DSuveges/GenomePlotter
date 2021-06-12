@@ -2,7 +2,6 @@ import pandas as pd
 import cairosvg
 
 def get_centromere_position(cytobandFile, chromosome):
-
     """
     This function parses the gzipped cytoband file and returns the location of the centromere for a given chromosome.
 
@@ -34,6 +33,8 @@ def get_centromere_position(cytobandFile, chromosome):
     return centr
 
 class CytobandAnnotator(object):
+    """Adding cytological bands to plot"""
+
     # Built in strings with the cytoband definitions:
     centromer = '<polygon points="{x1},{y1} {x2},{y2} {x3},{y3}" \
         style="fill:{fill_color};stroke:{border_color};stroke-width:{box_width};fill-rule:nonzero;" />\n'

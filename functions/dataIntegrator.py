@@ -4,7 +4,6 @@ import pybedtools
 from .color_fun import color_darkener
 
 class dataIntegrator(object):
-
     """
     This function assigns color for each chunk in the chromosome
     based on GC content + GENCODE annotation + darkened fraction

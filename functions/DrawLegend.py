@@ -5,7 +5,6 @@ from color_fun import linear_gradient
 from svg_handler import svg_handler
 
 class DrawLegend(object):
-
     """
     WARNING: This function is heavily in under development
 

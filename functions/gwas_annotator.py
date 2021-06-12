@@ -2,7 +2,6 @@ import pandas as pd
 import math
 
 class gwas_annotator(object):
-
     """Adds GWAS associations to the chromosome"""
 
     # GWAS hit svg definition:

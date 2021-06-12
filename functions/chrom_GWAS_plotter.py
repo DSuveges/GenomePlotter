@@ -1,6 +1,5 @@
 import gzip
 class process_chrom:
-
     """This class plots the chromosomes and saves a gzipped text file."""
 
     def __init__(self, width, height, pixel, defs=0):

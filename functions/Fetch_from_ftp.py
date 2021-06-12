@@ -6,7 +6,6 @@ import io
 import gzip
 
 class Fetch_from_ftp(object):
-
     """
     This class is to retrieve the association table from the most recent GWAS Catalog release.
     Expects the ftp host address.

@@ -1,7 +1,6 @@
 import cairosvg
 
 class chromosome_plotter(object):
-
     """
     Functions to store/process and save svg object of a single chromosome
     """
