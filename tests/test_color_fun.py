@@ -1,5 +1,4 @@
 import unittest
-import logging
 
 from functions.color_fun import linear_gradient, hex_to_RGB, RGB_to_hex
 
@@ -46,14 +45,9 @@ class TestColorFunctions(unittest.TestCase):
         self.assertEqual([255, 255, 255], hex_to_RGB(hex_col))
 
         # Testing for bad output:
-        with self.assertRaises(ValueError):
-            gradient = hex_to_RGB('cica')
-        with self.assertRaises(ValueError):
-            gradient = hex_to_RGB(True)
-        with self.assertRaises(ValueError):
-            gradient = hex_to_RGB('#23028394')
-        with self.assertRaises(ValueError):
-            gradient = hex_to_RGB('ffffff')
+        for bad_input in ['cica', True, 13, '#209345209', 'ffffff']:
+            with self.assertRaises(ValueError):
+                hex_to_RGB(bad_input)
 
     def test_rgb_to_hex(self):
 
