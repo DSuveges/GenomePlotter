@@ -1,7 +1,7 @@
 import numpy as np
 import pickle
 import pybedtools
-from .colorFunctions import color_darkener
+from .ColorFunctions import color_darkener
 
 class dataIntegrator(object):
 

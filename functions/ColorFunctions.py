@@ -1,7 +1,7 @@
 import colorsys
 import pandas as pd
 
-def hex_to_RGB(hex_color: str) -> list:
+def hex_to_rgb(hex_color: str) -> list:
     """Converting hexadecimal color to rgb
 
     params:
@@ -21,7 +21,7 @@ def hex_to_RGB(hex_color: str) -> list:
     # Pass 16 to the integer function for change of base
     return [int(hex_color[i:i + 2], 16) for i in range(1, 6, 2)]
 
-def RGB_to_hex(rgb_color: list) -> str:
+def rgb_to_hex(rgb_color: list) -> str:
     """Converting rgb color to hexadecimal representation
 
     params:
@@ -48,8 +48,8 @@ def linear_gradient(start_hex: str, finish_hex: str = "#FFFFFF", length: int = 1
         list: 'length' number of colors in hexadecimal format
     """
     # Starting and ending colors in RGB form
-    start_rgb = hex_to_RGB(start_hex)
-    finish_rgb = hex_to_RGB(finish_hex)
+    start_rgb = hex_to_rgb(start_hex)
+    finish_rgb = hex_to_rgb(finish_hex)
 
     # Initilize a list of the output colors with the starting color
     rgb_list = [start_hex.lower()]
@@ -69,7 +69,7 @@ def linear_gradient(start_hex: str, finish_hex: str = "#FFFFFF", length: int = 1
         ]
 
         # Add it to our list of output colors
-        rgb_list.append(RGB_to_hex(curr_vector))
+        rgb_list.append(rgb_to_hex(curr_vector))
 
     return rgb_list
 
@@ -109,7 +109,7 @@ def color_darkener(row: pd.Series, width: int, threshold: float, max_diff_value:
         factor = 1 - max_diff_value * diff
 
         # Get rgb code of the hexa code:
-        rgb_code = hex_to_RGB(color)
+        rgb_code = hex_to_rgb(color)
 
         # Get the hls code of the rgb:
         hls_code = colorsys.rgb_to_hls(
@@ -124,6 +124,6 @@ def color_darkener(row: pd.Series, width: int, threshold: float, max_diff_value:
                                       hls_code[2])
 
         # Get the modifed hexacode:
-        color = RGB_to_hex([x * 255 for x in new_rgb])
+        color = rgb_to_hex([x * 255 for x in new_rgb])
 
     return(color)
