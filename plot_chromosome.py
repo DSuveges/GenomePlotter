@@ -10,7 +10,7 @@ import pandas as pd
 
 # Importing custom functions:
 # from functions.helper_fun import *
-from functions.color_fun import linear_gradient
+from functions.colorFunctions import linear_gradient
 from functions.dataIntegrator import dataIntegrator
 from functions.chromosome_plotter import chromosome_plotter
 from functions.ConfigManager import ConfigManager

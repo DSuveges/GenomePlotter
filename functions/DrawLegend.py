@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from collections import OrderedDict
 
-from color_fun import linear_gradient
+from colorFunctions import linear_gradient
 from svg_handler import svg_handler
 
 class DrawLegend(object):

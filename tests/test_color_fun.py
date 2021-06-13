@@ -2,7 +2,7 @@ import unittest
 
 import pandas as pd
 
-from functions.color_fun import linear_gradient, hex_to_RGB, RGB_to_hex, color_darkener
+from functions.colorFunctions import linear_gradient, hex_to_RGB, RGB_to_hex, color_darkener
 
 class TestColorFunctions(unittest.TestCase):
     def test_linear_gradient(self):
