@@ -1,6 +1,8 @@
 import unittest
 
-from functions.color_fun import linear_gradient, hex_to_RGB, RGB_to_hex
+import pandas as pd
+
+from functions.color_fun import linear_gradient, hex_to_RGB, RGB_to_hex, color_darkener
 
 class TestColorFunctions(unittest.TestCase):
     def test_linear_gradient(self):
@@ -57,6 +59,44 @@ class TestColorFunctions(unittest.TestCase):
 
         self.assertIsInstance(hex_col, str)
         self.assertEqual(hex_col[0], '#')
+
+    def test_color_darkener(self):
+
+        # Basic correct input:
+        row = pd.DataFrame({
+            'x': [145, 100],
+            'color': ['#FFFFFF', '#123456'],
+        })
+        width = 200
+        threshold = 0.5
+        max_diff_value = 0.9
+
+        # Testing for input type:
+        with self.assertRaises(TypeError):
+            color_darkener('cicaful', width=width, threshold=threshold, max_diff_value=max_diff_value)
+        with self.assertRaises(TypeError):
+            color_darkener(row, width='pocok', threshold=threshold, max_diff_value=max_diff_value)
+        with self.assertRaises(TypeError):
+            color_darkener(row, width=width, threshold=3.0, max_diff_value=max_diff_value)
+        with self.assertRaises(TypeError):
+            color_darkener(row, width=width, threshold='pocok', max_diff_value=max_diff_value)
+        with self.assertRaises(TypeError):
+            color_darkener(row, width=width, threshold=threshold, max_diff_value=1232)
+
+        df = pd.DataFrame({
+            'x': [45, 130, 200],
+            'color': ['#FFFFFF', '#123456', '#234566'],
+        })
+
+        # Testing if the threshold is appreciated:
+        row = df.iloc[0]
+        self.assertEqual(color_darkener(row, width, threshold, max_diff_value), row['color'])
+        row = df.iloc[1]
+        self.assertNotEqual(color_darkener(row, width, threshold, max_diff_value), row['color'])
+
+        # Testing if the diff value is appreciated:
+        row = df.iloc[2]
+        self.assertEqual(color_darkener(row, width, threshold, 1.0), '#000000')
 
 if __name__ == '__main__':
     unittest.main()
