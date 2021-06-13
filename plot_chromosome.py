@@ -63,10 +63,10 @@ def gwas_annotation_wrapper(config_manager, chromosome):
     logging.info(f'Generating GWAS annotation from file: {gwas_file}.')
 
     gwasAnnot = gwas_annotator(
-        chromosome=chromosome, gwasColor=gwas_color, pixel=pixel,
-        chunkSize=chunk_size, gwasFile=gwas_file, width=width
+        chromosome=chromosome, gwas_color=gwas_color, pixel=pixel,
+        chunkSize=chunk_size, gwas_file=gwas_file, width=width
     )
-    return gwasAnnot.generateGWAS()
+    return gwasAnnot.generate_gwas()
 
 
 def integrator_wrapper(config_manager, is_dummy=False):
