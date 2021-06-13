@@ -9,8 +9,7 @@ import logging
 import pandas as pd
 
 # Importing custom functions:
-# from functions.helper_fun import *
-from functions.color_fun import linear_gradient
+from functions.ColorFunctions import linear_gradient
 from functions.dataIntegrator import dataIntegrator
 from functions.chromosome_plotter import chromosome_plotter
 from functions.ConfigManager import ConfigManager
@@ -80,15 +79,15 @@ def integrator_wrapper(config_manager, is_dummy=False):
 
     # Processing colors:
     colors_GENCODE = {
-        'centromere': linear_gradient(colorScheme['centromere'], n=20),
+        'centromere': linear_gradient(colorScheme['centromere'], length=20),
         'heterochromatin': linear_gradient(
             colorScheme['heterochromatin'],
             finish_hex=colorScheme['heterochromatin'],
-            n=20
+            length=20
         ),  # Monochrome, no gradient!
-        'intergenic': linear_gradient(colorScheme['intergenic'], n=20),
-        'exon': linear_gradient(colorScheme['exon'], n=20),
-        'gene': linear_gradient(colorScheme['gene'], n=20),
+        'intergenic': linear_gradient(colorScheme['intergenic'], length=20),
+        'exon': linear_gradient(colorScheme['exon'], length=20),
+        'gene': linear_gradient(colorScheme['gene'], length=20),
         'dummy': colorScheme['dummy']
     }
 

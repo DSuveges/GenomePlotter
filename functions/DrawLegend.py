@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from collections import OrderedDict
 
-from color_fun import linear_gradient
+from ColorFunctions import linear_gradient
 from svg_handler import svg_handler
 
 class DrawLegend(object):
@@ -44,7 +44,7 @@ class DrawLegend(object):
             x_position = 0
             start_color = colors[name]
             end_color = colors[name] if name == 'heterochromatin' else '#FFFFFF'
-            gradient = linear_gradient(start_color, end_color, n=20)
+            gradient = linear_gradient(start_color, end_color, length=20)
 
             # Drawing boxes:
             for color in gradient:
