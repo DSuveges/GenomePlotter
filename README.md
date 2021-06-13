@@ -1,5 +1,6 @@
 ## GenomePlotter
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/4e08fe8d9e2d4fb5be67437505a9d1fb)](https://app.codacy.com/gh/DSuveges/GenomePlotter?utm_source=github.com&utm_medium=referral&utm_content=DSuveges/GenomePlotter&utm_campaign=Badge_Grade_Settings)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/f1863e045a4f4bb3a0c6ad7e3d29dc96)](https://www.codacy.com/gh/DSuveges/GenomePlotter/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=DSuveges/GenomePlotter&amp;utm_campaign=Badge_Grade)
 
 The motivation behind this project was to create a scientifically correct visualization of the human genome with showing the location of genes, exons, already published genome-wide associations and many more. I chose a heat-map kind of visualization that allows the representation of the underlying chemical properties of the DNA ([GC content](https://en.wikipedia.org/wiki/GC-content)) as well.
