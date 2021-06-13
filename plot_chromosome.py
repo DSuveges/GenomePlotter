@@ -14,7 +14,7 @@ from functions.dataIntegrator import dataIntegrator
 from functions.chromosome_plotter import chromosome_plotter
 from functions.ConfigManager import ConfigManager
 from functions.svg_handler import svg_handler
-from functions.gwas_annotator import gwas_annotator
+from functions.GwasAnnotator import gwas_annotator
 from functions.CytobandAnnotator import CytobandAnnotator, get_centromere_position
 from functions.GeneAnnotator import GeneAnnotator
 
