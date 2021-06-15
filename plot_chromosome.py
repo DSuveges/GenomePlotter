@@ -11,7 +11,7 @@ import pandas as pd
 # Importing custom functions:
 from functions.ColorFunctions import linear_gradient
 from functions.dataIntegrator import dataIntegrator
-from functions.chromosome_plotter import chromosome_plotter
+from functions.ChromosomePlotter import ChromosomePlotter
 from functions.ConfigManager import ConfigManager
 from functions.svg_handler import svg_handler
 from functions.GwasAnnotator import gwas_annotator
@@ -233,7 +233,7 @@ if __name__ == '__main__':
 
     # Generate chromosome plot
     logging.info('Initializing plot.')
-    x = chromosome_plotter(integratedData, pixel=pixel)
+    x = ChromosomePlotter(integratedData, pixel=pixel)
 
     if dummy:
         logging.info('Generating dummy plot.')

@@ -32,7 +32,7 @@ def main():
         required=False, type=str
     )
     parser.add_argument(
-        '-s', '--chunkSize', help='Chunk size to pool genomic sequence',
+        '-s', '--chunk_size', help='Chunk size to pool genomic sequence',
         required=True, type=int
     )
     parser.add_argument(
@@ -45,7 +45,7 @@ def main():
     data_dir = args.dataDir
     data_dir = os.path.abspath(data_dir)
     config_file = args.config
-    chunkSize = args.chunkSize
+    chunk_size = args.chunk_size
     tolerance = args.tolerance
 
     # Initialize logger:
@@ -83,7 +83,7 @@ def main():
 
     # Update data folder:
     configuration['basic_parameters']['data_folder'] = data_dir
-    configuration['basic_parameters']['chunk_size'] = chunkSize
+    configuration['basic_parameters']['chunk_size'] = chunk_size
     configuration['basic_parameters']['missing_tolerance'] = tolerance
 
     # Fetching GWAS Catalog data:
@@ -123,7 +123,7 @@ def main():
     logging.info('Fetching the human genome sequence...')
     genome_retrieve = Fetch_genome(configuration['source_data']['ensembl_data'])
     genome_retrieve.retrieve_data()
-    genome_retrieve.parse_genome(chunkSize, tolerance, data_dir)
+    genome_retrieve.parse_genome(chunk_size, tolerance, data_dir)
 
     # Save config file:
     logging.info(f"Saving updated configuration as {config_file.replace('json', 'updated.json')}")
