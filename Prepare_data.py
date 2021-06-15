@@ -4,13 +4,12 @@ import argparse
 import logging
 import sys
 
-# Importing custom functions:
-from functions.input_parsers import (
-    Fetch_gwas,
-    Fetch_genome,
-    Fetch_gencode,
-    Fetch_cytobands,
-    Fetch_ensembl_version
+from functions.InputParsers import (
+    FetchGwas,
+    FetchGenome,
+    FetchCytobands,
+    FetchGencode,
+    fetch_ensembl_version
 )
 
 def main():
@@ -81,6 +80,10 @@ def main():
 
     logging.info(f'Configuration is read from {config_file}')
 
+    # Report the other command line parameters:
+    logging.info(f'Chunk size: {chunk_size}')
+    logging.info(f'Tolerance for unsequenced bases: {tolerance}')
+
     # Update data folder:
     configuration['basic_parameters']['data_folder'] = data_dir
     configuration['basic_parameters']['chunk_size'] = chunk_size
@@ -88,7 +91,7 @@ def main():
 
     # Fetching GWAS Catalog data:
     logging.info('Fetching GWAS data...')
-    gwas_retrieve = Fetch_gwas(configuration['source_data']['gwas_data'])
+    gwas_retrieve = FetchGwas(configuration['source_data']['gwas_data'])
     gwas_retrieve.retrieve_data()
     gwas_retrieve.process_gwas_data()
     gwas_retrieve.save_gwas_data(data_dir)
@@ -98,13 +101,13 @@ def main():
     cytoband_url = configuration['source_data']['cytoband_data']['url']
     cytoband_output_file = f"{data_dir}/{configuration['source_data']['cytoband_data']['processed_file']}"
     logging.info('Fetching cytoband information.')
-    cytoband_retrieve = Fetch_cytobands(cytoband_url)
+    cytoband_retrieve = FetchCytobands(cytoband_url)
     cytoband_retrieve.save_cytoband_data(cytoband_output_file)
     configuration['source_data']['cytoband_data']['genome_build'] = cytoband_retrieve.get_assembly_build()
 
     # Fetching GENCODE data:
     logging.info('Fetching GENCODE data.')
-    gencode_retrieve = Fetch_gencode(configuration['source_data']['gencode_data'])
+    gencode_retrieve = FetchGencode(configuration['source_data']['gencode_data'])
     gencode_retrieve.retrieve_data()
     gencode_retrieve.process_gencode_data()
     gencode_retrieve.save_gencode_data(data_dir)
@@ -115,13 +118,13 @@ def main():
     # Fetching Ensembl version and genome build:
     logging.info('Fetching Ensembl release...')
     ensembl_release_url = configuration['source_data']['ensembl_data']['version_url']
-    ensembl_release = Fetch_ensembl_version(ensembl_release_url)
+    ensembl_release = fetch_ensembl_version(ensembl_release_url)
     configuration['source_data']['ensembl_data']['release'] = ensembl_release
     logging.info(f'Current Ensembl release: {ensembl_release}')
 
     # Fetching the human genome:
     logging.info('Fetching the human genome sequence...')
-    genome_retrieve = Fetch_genome(configuration['source_data']['ensembl_data'])
+    genome_retrieve = FetchGenome(configuration['source_data']['ensembl_data'])
     genome_retrieve.retrieve_data()
     genome_retrieve.parse_genome(chunk_size, tolerance, data_dir)
 

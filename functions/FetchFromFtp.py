@@ -5,7 +5,7 @@ import ftplib
 import io
 import gzip
 
-class Fetch_from_ftp(object):
+class FetchFromFtp(object):
 
     """
     This class is to retrieve the association table from the most recent GWAS Catalog release.

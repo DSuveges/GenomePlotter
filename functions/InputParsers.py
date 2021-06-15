@@ -5,17 +5,17 @@ import requests
 
 
 # Load custom packages:
-from .Fetch_from_ftp import Fetch_from_ftp
+from .FetchFromFtp import FetchFromFtp
 
 # get ensembl version
-def Fetch_ensembl_version(url):
+def fetch_ensembl_version(url):
     response = requests.get(url)
     data = response.json()
     return data['releases'][0]
 
 
 # Fetch GWAS Catalog data and parse:
-class Fetch_gwas(Fetch_from_ftp):
+class FetchGwas(FetchFromFtp):
 
     """Function to fetch GWAS data from ftp and format as bed"""
 
@@ -85,8 +85,8 @@ class Fetch_gwas(Fetch_from_ftp):
             }, inplace=True
         )
 
-        # Order columns:
-        filt = filt[['#chr', 'start', 'end', 'rsID']]
+        # Order columns and getting rid of duplicates:
+        filt = filt[['#chr', 'start', 'end', 'rsID']].drop_duplicates()
 
         # Save dataframe:
         self.gwas_df = filt
@@ -102,7 +102,7 @@ class Fetch_gwas(Fetch_from_ftp):
 
 
 # get cytoband data:
-class Fetch_cytobands(object):
+class FetchCytobands(object):
 
     """Function to retrieve cytogenic bands from Ensembl"""
 
@@ -145,7 +145,7 @@ class Fetch_cytobands(object):
 
 
 # Fetch and process Gencode data:
-class Fetch_genome(Fetch_from_ftp):
+class FetchGenome(FetchFromFtp):
 
     """Function to retrieve genome sequence from Ensembl"""
 
@@ -233,7 +233,7 @@ class Fetch_genome(Fetch_from_ftp):
 
 
 # Fetch and process Gencode data:
-class Fetch_gencode(Fetch_from_ftp):
+class FetchGencode(FetchFromFtp):
 
     """Function to fetch gene data from GENCODE ftp"""
 
@@ -303,12 +303,7 @@ class Fetch_gencode(Fetch_from_ftp):
 
         # Filtering for protein coding genes:
         gencode_df_updated = gencode_df_updated.loc[gencode_df_updated.gene_type == 'protein_coding']
-        protein_coding_gene_count = len(
-            gencode_df_updated.loc[
-                (gencode_df_updated.gene_type == 'protein_coding')
-                & (gencode_df_updated.type == 'gene')
-            ]
-        )
+        protein_coding_gene_count = len(gencode_df_updated.loc[gencode_df_updated.type == 'gene'])
         logging.info(f"Number of protein coding genes: {protein_coding_gene_count}")
 
         # Updating types:
@@ -324,7 +319,7 @@ class Fetch_gencode(Fetch_from_ftp):
         for gene_id, features in gencode_df_updated.groupby(['gene_id']):
 
             # Adding length to all features:
-            features['length'] = features[['start', 'end']].apply(lambda row: row['end'] - row['start'], axis=1)
+            features = features.assign(length=lambda row: row['end'] - row['start'])
 
             # Selecting protein coding transcripts:
             transcripts = features.loc[(features.type == 'transcript')
