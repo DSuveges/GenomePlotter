@@ -2,7 +2,7 @@ import unittest
 
 import pandas as pd
 
-from functions.ColorFunctions import linear_gradient, hex_to_rgb, rgb_to_hex, color_darkener
+from functions.ColorFunctions import linear_gradient, hex_to_rgb, rgb_to_hex, color_darkener, color_picker
 
 class TestColorFunctions(unittest.TestCase):
     def test_linear_gradient(self):
@@ -97,6 +97,44 @@ class TestColorFunctions(unittest.TestCase):
         # Testing if the diff value is appreciated:
         row = df.iloc[2]
         self.assertEqual(color_darkener(row, width, threshold, 1.0), '#000000')
+
+    def test_color_picker(self):
+        # Basic correct input:
+        row = pd.DataFrame({
+            'GC_content': [145, 100],
+            'GENCODE': ['exon', 'intron', 'centromer', 'heterochromatin'],
+        })
+        width = 200
+        threshold = 0.5
+        max_diff_value = 0.9
+
+        # Testing for input type:
+        with self.assertRaises(TypeError):
+            color_picker('cicaful', width=width, threshold=threshold, max_diff_value=max_diff_value)
+        with self.assertRaises(TypeError):
+            color_picker(row, width='pocok', threshold=threshold, max_diff_value=max_diff_value)
+        with self.assertRaises(TypeError):
+            color_picker(row, width=width, threshold=3.0, max_diff_value=max_diff_value)
+        with self.assertRaises(TypeError):
+            color_picker(row, width=width, threshold='pocok', max_diff_value=max_diff_value)
+        with self.assertRaises(TypeError):
+            color_picker(row, width=width, threshold=threshold, max_diff_value=1232)
+
+        df = pd.DataFrame({
+            'x': [45, 130, 200],
+            'color': ['#FFFFFF', '#123456', '#234566'],
+        })
+
+        # Testing if the threshold is appreciated:
+        row = df.iloc[0]
+        self.assertEqual(color_picker(row, width, threshold, max_diff_value), row['color'])
+        row = df.iloc[1]
+        self.assertNotEqual(color_picker(row, width, threshold, max_diff_value), row['color'])
+
+        # Testing if the diff value is appreciated:
+        row = df.iloc[2]
+        self.assertEqual(color_picker(row, width, threshold, 1.0), '#000000')
+
 
 if __name__ == '__main__':
     unittest.main()

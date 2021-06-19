@@ -32,7 +32,7 @@ class FetchGwas(FetchFromFtp):
         self.release_date = None
 
         # Initialize host:
-        Fetch_from_ftp.__init__(self, self.host)
+        FetchFromFtp.__init__(self, self.host)
 
     def retrieve_data(self):
         """
@@ -158,11 +158,11 @@ class FetchGenome(FetchFromFtp):
         self.parsed_file = ensembl_parameters['processed_file']
 
         # Initialize host:
-        Fetch_from_ftp.__init__(self, self.host)
+        FetchFromFtp.__init__(self, self.host)
 
     def retrieve_data(self):
 
-        ftp = Fetch_from_ftp(self.host)
+        ftp = FetchFromFtp(self.host)
         self.resp = ftp.fetch_file(self.path, self.source_file)
 
         logging.info('Sequence data successfully fetched. Parsing...')
@@ -249,7 +249,7 @@ class FetchGencode(FetchFromFtp):
         self.release = None
 
         # Initialize host:
-        Fetch_from_ftp.__init__(self, self.host)
+        FetchFromFtp.__init__(self, self.host)
 
     def retrieve_data(self):
         """
@@ -356,6 +356,8 @@ class FetchGencode(FetchFromFtp):
 
     # Save data
     def save_gencode_data(self, data_dir):
+        self.processed = self.processed[['chr', 'end', 'gene_id', 'gene_name', 'start', 'transcript_id', 'type']]
+
         gwas_output_filename = f'{data_dir}/{self.processed_file}'
         self.processed.to_csv(gwas_output_filename, sep='\t', compression='infer', index=False)
 

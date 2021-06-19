@@ -1,5 +1,6 @@
 import colorsys
 import pandas as pd
+import numpy as np
 
 def hex_to_rgb(hex_color: str) -> list:
     """Converting hexadecimal color to rgb
@@ -127,3 +128,31 @@ def color_darkener(row: pd.Series, width: int, threshold: float, max_diff_value:
         color = rgb_to_hex([x * 255 for x in new_rgb])
 
     return(color)
+
+def color_picker(row: pd.Series, colors: dict) -> str:
+    """ Function to return a color based on mapping and genomic feature
+
+    params:
+        row (pd.Series): one row of the integrated genome chunks. Used columns: 'GENCODE', 'GC_content'
+        colors (dict): dictionary with list of colors for each genomic feature
+
+    returns:
+        str: color represented in hexadecimal values eg. '#ffffff'
+    """
+    expected_columns = ['GC_ratio', 'GENCODE']
+    if not isinstance(row, pd.Series) or not pd.Series(expected_columns).isin(row.index).all():
+        raise TypeError(f'The row has to be a pd.Series object with the following keys: {",".join(expected_columns)}')
+
+    if not isinstance(colors, dict):
+        raise TypeError(f'The provided color has to be a dictionary.')
+
+    gc_content = row['GC_ratio']
+    feature = row['GENCODE']
+
+    if np.isnan(gc_content):
+        color = colors['heterochromatin'][0]
+
+    else:
+        color = colors[feature][int(gc_content * 20)]
+
+    return color

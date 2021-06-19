@@ -10,7 +10,7 @@ import pandas as pd
 
 # Importing custom functions:
 from functions.ColorFunctions import linear_gradient
-from functions.dataIntegrator import dataIntegrator
+from functions.DataIntegrator import DataIntegrator
 from functions.ChromosomePlotter import ChromosomePlotter
 from functions.ConfigManager import ConfigManager
 from functions.svg_handler import svg_handler
@@ -64,7 +64,7 @@ def gwas_annotation_wrapper(config_manager, chromosome):
 
     gwasAnnot = gwas_annotator(
         chromosome=chromosome, gwas_color=gwas_color, pixel=pixel,
-        chunkSize=chunk_size, gwas_file=gwas_file, width=width
+        chunk_size=chunk_size, gwas_file=gwas_file, width=width
     )
     return gwasAnnot.generate_gwas()
 
@@ -121,7 +121,7 @@ def integrator_wrapper(config_manager, is_dummy=False):
     logging.info('Integrating data...')
 
     # Initialize data integrator:
-    integrator = dataIntegrator(chr_df)
+    integrator = DataIntegrator(chr_df)
 
     # Convert genomic coordinates to plot coordinates:
     integrator.add_xy_coordinates(width)
