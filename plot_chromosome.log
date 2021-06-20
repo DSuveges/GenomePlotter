@@ -640,3 +640,28 @@ Name: GENCODE, dtype: int64
 2021-06-20 20:52:31 INFO GeneAnnotator - __init__: Adding annotation for 19 genes on this chromosome.
 2021-06-20 20:52:31 INFO plot_chromosome - <module>: Saving image: /Users/dsuveges/repositories/GenomePlotter/plots/chr20_dummy.png
 2021-06-20 20:52:32 INFO plot_chromosome - <module>: All done.
+2021-06-20 21:31:55 INFO plot_chromosome - <module>: Generating plot for chromosome: 22
+2021-06-20 21:31:55 INFO plot_chromosome - <module>: Processing parameters.
+2021-06-20 21:31:55 INFO plot_chromosome - <module>: Number of chunks in one row: 200
+2021-06-20 21:31:55 INFO plot_chromosome - <module>: Pixel size: 9
+2021-06-20 21:31:55 INFO plot_chromosome - <module>: Dark start: 0.75, dark max: 0.15
+2021-06-20 21:31:55 INFO plot_chromosome - <module>: Plot is going to be saved into folder: /Users/dsuveges/repositories/GenomePlotter/plots
+2021-06-20 21:31:55 INFO plot_chromosome - <module>: Creating dummy without chromosome details.
+2021-06-20 21:31:55 INFO plot_chromosome - <module>: Updating config file: config.updated.json
+2021-06-20 21:31:55 INFO plot_chromosome - <module>: Integrating data...
+2021-06-20 21:31:55 INFO plot_chromosome - integrator_wrapper: Reading input files.
+2021-06-20 21:31:56 INFO plot_chromosome - integrator_wrapper: Number of genome chunks: 112931
+2021-06-20 21:31:56 INFO plot_chromosome - integrator_wrapper: Number of GENCODE annotations in the genome: 392082
+2021-06-20 21:31:56 INFO plot_chromosome - integrator_wrapper: Number of cytological bands in the genome: 862
+2021-06-20 21:31:56 INFO plot_chromosome - integrator_wrapper: Integrating data...
+2021-06-20 21:31:56 INFO DataIntegrator - __init__: Integrating data on chromosome: 22
+2021-06-20 21:31:56 INFO DataIntegrator - __init__: Number of chunks on chromosome 22: 112931
+2021-06-20 21:31:56 INFO DataIntegrator - add_xy_coordinates: Number of chunks in one row: 200
+2021-06-20 21:31:56 INFO DataIntegrator - add_xy_coordinates: Number of rows: 564
+2021-06-20 21:32:36 INFO plot_chromosome - <module>: Initializing plot.
+2021-06-20 21:32:36 INFO plot_chromosome - <module>: Generating dummy plot.
+2021-06-20 21:32:36 INFO plot_chromosome - gwas_annotation_wrapper: Generating GWAS annotation from file: /Users/dsuveges/repositories/GenomePlotter/source_data/processed_GWAS.bed.gz.
+2021-06-20 21:32:37 INFO plot_chromosome - cytoband_annotation_wrapper: Generating cytological band from file: /Users/dsuveges/repositories/GenomePlotter/source_data/processed_cytoBand.bed.gz.
+2021-06-20 21:32:37 INFO GeneAnnotator - __init__: Adding annotation for 15 genes on this chromosome.
+2021-06-20 21:32:37 INFO plot_chromosome - <module>: Saving image: /Users/dsuveges/repositories/GenomePlotter/plots/chr22_dummy.png
+2021-06-20 21:32:38 INFO plot_chromosome - <module>: All done.

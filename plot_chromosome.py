@@ -1,6 +1,4 @@
-#!/usr/bin/env python3
 
-# Importing standard libraries:
 import sys
 import argparse
 import os
@@ -9,7 +7,7 @@ import logging
 import pandas as pd
 
 # Importing custom functions:
-from functions.ColorFunctions import linear_gradient, ColorPicker
+from functions.ColorFunctions import ColorPicker
 from functions.DataIntegrator import DataIntegrator
 from functions.ChromosomePlotter import ChromosomePlotter
 from functions.ConfigManager import ConfigManager
@@ -18,7 +16,9 @@ from functions.GwasAnnotator import gwas_annotator
 from functions.CytobandAnnotator import CytobandAnnotator, get_centromere_position
 from functions.GeneAnnotator import GeneAnnotator
 
+
 def genes_annotation_wrapper(config_manager, chromosome, height, gene_filename):
+
     # Extractig config values:
     pixel = config_manager.get_pixel()
     chunk_size = config_manager.get_chunk_size()
@@ -33,7 +33,9 @@ def genes_annotation_wrapper(config_manager, chromosome, height, gene_filename):
     )
     return gene_annotator_object
 
+
 def cytoband_annotation_wrapper(config_manager, chromosome):
+
     # Extract config values:
     color_scheme = config_manager.get_color_scheme()
     pixel = config_manager.get_pixel()
@@ -50,7 +52,9 @@ def cytoband_annotation_wrapper(config_manager, chromosome):
     cytoband_annot.generate_bands()
     return cytoband_annot
 
+
 def gwas_annotation_wrapper(config_manager, chromosome):
+
     # Extract config values:
     color_scheme = config_manager.get_color_scheme()
     gwas_color = color_scheme['gwas_point']
@@ -67,6 +71,7 @@ def gwas_annotation_wrapper(config_manager, chromosome):
     )
     return gwasAnnot.generate_gwas()
 
+
 def integrator_wrapper(config_manager, dummy, chromosome):
     """
     Opens file, integrates data, returns with integrated dataframe
@@ -82,8 +87,9 @@ def integrator_wrapper(config_manager, dummy, chromosome):
     width = config_manager.get_width()
 
     # Initialize color picker object:
-    color_picker = ColorPicker(colorScheme, width=width, dark_threshold=dark_start,
-                               dark_max=dark_max, count=30)
+    color_picker = ColorPicker(
+        colorScheme, width=width, dark_threshold=dark_start, dark_max=dark_max, count=30
+    )
 
     # Reading datafiles:
     logging.info('Reading input files.')
