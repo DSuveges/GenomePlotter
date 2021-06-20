@@ -151,10 +151,10 @@ class ColorPicker(object):
 
     def map_color(self, feature: str, gc_content: float) -> str:
 
-        if gc_content is None or np.isnan(gc_content):
-            color = self.color_map['heterochromatin'][0]
-        elif feature == 'dummy':
+        if feature == 'dummy':
             color = self.color_map['dummy'][0]
+        elif gc_content is None or np.isnan(gc_content):
+            color = self.color_map['heterochromatin'][0]
         else:
             try:
                 color = self.color_map[feature][int(gc_content * (self.count - 1))]

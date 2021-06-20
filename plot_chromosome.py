@@ -174,26 +174,24 @@ if __name__ == '__main__':
                         action='store_true')
     parser.add_argument('--config', help='Specifying json file containing custom configuration',
                         type=str, required=True)
-    parser.add_argument('-l', '--logFile', help='File into which the logs are generated.',
+    parser.add_argument('-l', '--log_file', help='File into which the logs are generated.',
                         type=str, required=False, default='plot_chromosome.log')
-
-    # python plot_chromosome.py -c 22 -w 200 -p 9 -s 0.75 -m 0.15 -f plots/ --config config.json -l logfile.log
 
     # Extracting submitted options:
     args = parser.parse_args()
     chromosome = args.chromosome
     width = args.width
     pixel = args.pixel
-    darkStart = args.darkStart
-    darkMax = args.darkMax
+    dark_start = args.darkStart
+    dark_max = args.darkMax
     dummy = args.dummy
     config_file = args.config
     plot_folder = os.path.abspath(args.folder)
 
     # Initialize logger:
     handlers = [logging.StreamHandler(sys.stdout)]
-    if args.logFile != '':
-        handlers.append(logging.FileHandler(filename=args.logFile))
+    if args.log_file != '':
+        handlers.append(logging.FileHandler(filename=args.log_file))
 
     # Initialize logger:
     logging.basicConfig(
@@ -203,8 +201,15 @@ if __name__ == '__main__':
         handlers=handlers
     )
 
+    # Reporting parameters:
     logging.info(f'Generating plot for chromosome: {chromosome}')
     logging.info('Processing parameters.')
+    logging.info(f'Number of chunks in one row: {width}')
+    logging.info(f'Pixel size: {pixel}')
+    logging.info(f'Dark start: {dark_start}, dark max: {dark_max}')
+    logging.info(f'Plot is going to be saved into folder: {plot_folder}')
+    if dummy:
+        logging.info('Creating dummy without chromosome details.')
 
     # Output file name:
     output_filename = f'{plot_folder}/chr{chromosome}_dummy.png' if dummy else f'{plot_folder}/chr{chromosome}.png'
@@ -215,14 +220,16 @@ if __name__ == '__main__':
     # Set new configuration:
     config_manager.set_width(width)
     config_manager.set_pixel_size(pixel)
-    config_manager.set_dark_start(darkStart)
-    config_manager.set_dark_max(darkMax)
+    config_manager.set_dark_start(dark_start)
+    config_manager.set_dark_max(dark_max)
     config_manager.set_plot_folder(plot_folder)
 
     # Updating config file:
-    config_manager.save_config('pocok.json')
+    logging.info(f'Updating config file: {config_file}')
+    config_manager.save_config(config_file)
 
     # Integrating data:
+    logging.info('Integrating data...')
     integratedData = integrator_wrapper(config_manager, dummy, chromosome)
 
     # Generate chromosome plot
