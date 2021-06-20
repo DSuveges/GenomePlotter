@@ -146,7 +146,7 @@ class ColorPicker(object):
         """Initializing ColorPicker
 
         Params:
-            colors (dict): 
+            colors (dict):
             dark_max (float): How much darker color should be reached.
             dark_threshold (float): Where the darkenin should be started.
             count (int): Number of steps in the gradient.
@@ -212,9 +212,7 @@ class ColorPicker(object):
         color = self.map_color(row['GENCODE'], row['GC_ratio'])
 
         # Darken the color:
-        if row['GENCODE'] == 'dummy':
-            pass
-        elif self.width and (row['x'] / self.width) > self.dark_threshold:
+        if (row['GENCODE'] != 'dummy') and self.width is not None and (row['x'] / self.width) > self.dark_threshold:
             color = color_darkener(color, row['x'], self.width, self.dark_threshold, self.dark_max)
 
         return color

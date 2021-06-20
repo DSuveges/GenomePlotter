@@ -330,10 +330,10 @@ class FetchGencode(FetchFromFtp):
                 continue
 
             # Adding CDS length to all transcripts:
-            CDS_length = transcripts.transcript_id.apply(
+            cds_length = transcripts.transcript_id.apply(
                 lambda t_id: features.loc[(features.type == 'CDS') & (features.transcript_id == t_id)].length.sum()
             )
-            transcripts.insert(2, "CDS_length", CDS_length)
+            transcripts.insert(2, "cds_length", cds_length)
 
             # Get canonical transcript and properties:
             canonical_transcript_id = self.get_canonical_transcript(transcripts)
@@ -376,18 +376,18 @@ class FetchGencode(FetchFromFtp):
 
         # First choice: selecting the longest ccds transcript:
         if transcripts.ccdsid.notna().any():
-            longest_CDS = transcripts.loc[~transcripts.ccdsid.isna()].CDS_length.max()
-            canonical_transcript_id = transcripts.loc[longest_CDS == transcripts.CDS_length].transcript_id.tolist()[0]
+            longest_CDS = transcripts.loc[~transcripts.ccdsid.isna()].cds_length.max()
+            canonical_transcript_id = transcripts.loc[longest_CDS == transcripts.cds_length].transcript_id.tolist()[0]
 
         # Secong choice: selecting the longest havana transcript:
         elif transcripts.havana_transcript.notna().any():
-            longest_CDS = transcripts.loc[~transcripts.havana_transcript.isna()].CDS_length.max()
-            canonical_transcript_id = transcripts.loc[longest_CDS == transcripts.CDS_length].transcript_id.tolist()[0]
+            longest_CDS = transcripts.loc[~transcripts.havana_transcript.isna()].cds_length.max()
+            canonical_transcript_id = transcripts.loc[longest_CDS == transcripts.cds_length].transcript_id.tolist()[0]
 
         # Third choice: selecting the longest protein coding transcript:
         else:
-            longest_CDS = transcripts.CDS_length.max()
-            canonical_transcript_id = transcripts.loc[longest_CDS == transcripts.CDS_length].transcript_id.tolist()[0]
+            longest_CDS = transcripts.cds_length.max()
+            canonical_transcript_id = transcripts.loc[longest_CDS == transcripts.cds_length].transcript_id.tolist()[0]
 
         return canonical_transcript_id
 

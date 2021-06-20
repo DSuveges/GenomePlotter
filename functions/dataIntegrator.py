@@ -121,8 +121,8 @@ class DataIntegrator(object):
 
         self.__genome__['color'] = self.__genome__.apply(color_picker.pick_color, axis=1)
 
-    def save_pkl(self, fileName) -> None:
-        pickle.dump(self.__genome__, open(fileName, "wb"))
+    def save_pkl(self, file_name) -> None:
+        pickle.dump(self.__genome__, open(file_name, "wb"))
 
     def add_dummy(self) -> None:
         """This method just assumes the gencode annoation is just dummy"""

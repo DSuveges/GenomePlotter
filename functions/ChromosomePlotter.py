@@ -17,9 +17,6 @@ class ChromosomePlotter(object):
             pixel (int): size of pixel (one unit of genetic information)
         """
 
-        # Validate input data: checking if all columns are there.
-        required_columns = ['']
-
         self.__pixel__ = pixel
         self.__chromosome_data__ = input_data
         self.__chromosome_name__ = input_data.chr[0]
