@@ -1,6 +1,4 @@
-#!/usr/bin/env python3
 
-# Importing standard libraries:
 import sys
 import argparse
 import os
@@ -9,16 +7,18 @@ import logging
 import pandas as pd
 
 # Importing custom functions:
-from functions.ColorFunctions import linear_gradient
-from functions.dataIntegrator import dataIntegrator
-from functions.chromosome_plotter import chromosome_plotter
+from functions.ColorFunctions import ColorPicker
+from functions.DataIntegrator import DataIntegrator
+from functions.ChromosomePlotter import ChromosomePlotter
 from functions.ConfigManager import ConfigManager
 from functions.svg_handler import svg_handler
-from functions.gwas_annotator import gwas_annotator
+from functions.GwasAnnotator import gwas_annotator
 from functions.CytobandAnnotator import CytobandAnnotator, get_centromere_position
 from functions.GeneAnnotator import GeneAnnotator
 
+
 def genes_annotation_wrapper(config_manager, chromosome, height, gene_filename):
+
     # Extractig config values:
     pixel = config_manager.get_pixel()
     chunk_size = config_manager.get_chunk_size()
@@ -33,7 +33,9 @@ def genes_annotation_wrapper(config_manager, chromosome, height, gene_filename):
     )
     return gene_annotator_object
 
+
 def cytoband_annotation_wrapper(config_manager, chromosome):
+
     # Extract config values:
     color_scheme = config_manager.get_color_scheme()
     pixel = config_manager.get_pixel()
@@ -52,6 +54,7 @@ def cytoband_annotation_wrapper(config_manager, chromosome):
 
 
 def gwas_annotation_wrapper(config_manager, chromosome):
+
     # Extract config values:
     color_scheme = config_manager.get_color_scheme()
     gwas_color = color_scheme['gwas_point']
@@ -63,43 +66,32 @@ def gwas_annotation_wrapper(config_manager, chromosome):
     logging.info(f'Generating GWAS annotation from file: {gwas_file}.')
 
     gwasAnnot = gwas_annotator(
-        chromosome=chromosome, gwasColor=gwas_color, pixel=pixel,
-        chunkSize=chunk_size, gwasFile=gwas_file, width=width
+        chromosome=chromosome, gwas_color=gwas_color, pixel=pixel,
+        chunk_size=chunk_size, gwas_file=gwas_file, width=width
     )
-    return gwasAnnot.generateGWAS()
+    return gwasAnnot.generate_gwas()
 
 
-def integrator_wrapper(config_manager, is_dummy=False):
+def integrator_wrapper(config_manager, dummy, chromosome):
     """
     Opens file, integrates data, returns with integrated dataframe
     """
 
-    # Extracting colors:
-    colorScheme = config_manager.get_color_scheme()
-
-    # Processing colors:
-    colors_GENCODE = {
-        'centromere': linear_gradient(colorScheme['centromere'], length=20),
-        'heterochromatin': linear_gradient(
-            colorScheme['heterochromatin'],
-            finish_hex=colorScheme['heterochromatin'],
-            length=20
-        ),  # Monochrome, no gradient!
-        'intergenic': linear_gradient(colorScheme['intergenic'], length=20),
-        'exon': linear_gradient(colorScheme['exon'], length=20),
-        'gene': linear_gradient(colorScheme['gene'], length=20),
-        'dummy': colorScheme['dummy']
-    }
-
-    # Extracting file locations from config:
+    # Extracting parameters from config:
     cytoband_file = config_manager.get_cytoband_file()
     chromosome_file = config_manager.get_chromosome_file(chromosome)
     gencode_file = config_manager.get_gencode_file()
+    dark_start = config_manager.get_dark_start()
+    dark_max = config_manager.get_dark_max()
+    colorScheme = config_manager.get_color_scheme()
+    width = config_manager.get_width()
 
-    # Updating config file:
-    logging.info('Updating config file.')
+    # Initialize color picker object:
+    color_picker = ColorPicker(
+        colorScheme, width=width, dark_threshold=dark_start, dark_max=dark_max, count=30
+    )
 
-    # Reading datafile:
+    # Reading datafiles:
     logging.info('Reading input files.')
     chr_df = pd.read_csv(
         chromosome_file, compression='gzip', sep='\t',
@@ -121,23 +113,31 @@ def integrator_wrapper(config_manager, is_dummy=False):
     logging.info('Integrating data...')
 
     # Initialize data integrator:
-    integrator = dataIntegrator(chr_df)
+    integrator = DataIntegrator(chr_df)
 
     # Convert genomic coordinates to plot coordinates:
     integrator.add_xy_coordinates(width)
 
-    # Adding GENCODE annotation to genomic data:
-    integrator.add_genes(GENCODE_df)
+    # Downstream processing depends on dummy status:
+    if dummy:
+        # Adding cytological band information to the data:
+        integrator.add_centromere(cyb_df)
 
-    # Adding cytological band information to the data:
-    integrator.add_centromere(cyb_df)
+        # Adding dummy GENCODE annotation to genomic data:
+        integrator.add_dummy()
 
-    # Assigning heterocromatic regions:
-    integrator.assign_hetero()
+    else:
+        # Adding GENCODE annotation to genomic data:
+        integrator.add_genes(GENCODE_df)
+
+        # Adding cytological band information to the data:
+        integrator.add_centromere(cyb_df)
+
+        # Assigning heterocromatic regions:
+        integrator.assign_hetero()
 
     # Assigning colors to individual regions:
-    logging.info('Calculating colors for each chunk.')
-    integrator.add_colors(colors_GENCODE, darkStart, darkMax, is_dummy)
+    integrator.add_colors(color_picker)
 
     # Extract integrated data:
     integratedData = integrator.get_data()
@@ -180,26 +180,24 @@ if __name__ == '__main__':
                         action='store_true')
     parser.add_argument('--config', help='Specifying json file containing custom configuration',
                         type=str, required=True)
-    parser.add_argument('-l', '--logFile', help='File into which the logs are generated.',
+    parser.add_argument('-l', '--log_file', help='File into which the logs are generated.',
                         type=str, required=False, default='plot_chromosome.log')
-
-    # python plot_chromosome.py -c 22 -w 200 -p 9 -s 0.75 -m 0.15 -f plots/ --config config.json -l logfile.log
 
     # Extracting submitted options:
     args = parser.parse_args()
     chromosome = args.chromosome
     width = args.width
     pixel = args.pixel
-    darkStart = args.darkStart
-    darkMax = args.darkMax
+    dark_start = args.darkStart
+    dark_max = args.darkMax
     dummy = args.dummy
     config_file = args.config
     plot_folder = os.path.abspath(args.folder)
 
     # Initialize logger:
     handlers = [logging.StreamHandler(sys.stdout)]
-    if args.logFile != '':
-        handlers.append(logging.FileHandler(filename=args.logFile))
+    if args.log_file != '':
+        handlers.append(logging.FileHandler(filename=args.log_file))
 
     # Initialize logger:
     logging.basicConfig(
@@ -209,8 +207,15 @@ if __name__ == '__main__':
         handlers=handlers
     )
 
+    # Reporting parameters:
     logging.info(f'Generating plot for chromosome: {chromosome}')
     logging.info('Processing parameters.')
+    logging.info(f'Number of chunks in one row: {width}')
+    logging.info(f'Pixel size: {pixel}')
+    logging.info(f'Dark start: {dark_start}, dark max: {dark_max}')
+    logging.info(f'Plot is going to be saved into folder: {plot_folder}')
+    if dummy:
+        logging.info('Creating dummy without chromosome details.')
 
     # Output file name:
     output_filename = f'{plot_folder}/chr{chromosome}_dummy.png' if dummy else f'{plot_folder}/chr{chromosome}.png'
@@ -221,19 +226,21 @@ if __name__ == '__main__':
     # Set new configuration:
     config_manager.set_width(width)
     config_manager.set_pixel_size(pixel)
-    config_manager.set_dark_start(darkStart)
-    config_manager.set_dark_max(darkMax)
+    config_manager.set_dark_start(dark_start)
+    config_manager.set_dark_max(dark_max)
     config_manager.set_plot_folder(plot_folder)
 
     # Updating config file:
-    config_manager.save_config('pocok.json')
+    logging.info(f'Updating config file: {config_file}')
+    config_manager.save_config(config_file)
 
     # Integrating data:
-    integratedData = integrator_wrapper(config_manager, dummy)
+    logging.info('Integrating data...')
+    integratedData = integrator_wrapper(config_manager, dummy, chromosome)
 
     # Generate chromosome plot
     logging.info('Initializing plot.')
-    x = chromosome_plotter(integratedData, pixel=pixel)
+    x = ChromosomePlotter(integratedData, pixel=pixel)
 
     if dummy:
         logging.info('Generating dummy plot.')

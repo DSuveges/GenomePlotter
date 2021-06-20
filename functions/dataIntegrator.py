@@ -1,9 +1,10 @@
 import numpy as np
 import pickle
-import pybedtools
-from .ColorFunctions import color_darkener
+import logging
 
-class dataIntegrator(object):
+import pybedtools
+
+class DataIntegrator(object):
 
     """
     This function assigns color for each chunk in the chromosome
@@ -15,6 +16,10 @@ class dataIntegrator(object):
     def __init__(self, genome_df):
 
         self.__genome__ = genome_df.copy()
+        self.chromosome_name = genome_df.iloc[0]['chr']
+
+        logging.info(f'Integrating data on chromosome: {self.chromosome_name}')
+        logging.info(f'Number of chunks on chromosome {self.chromosome_name}: {len(self.__genome__)}')
 
         # Testing columns:
         for col in self.__required_columns:
@@ -23,35 +28,71 @@ class dataIntegrator(object):
 
     def add_xy_coordinates(self, width):
         self.__width__ = width
-        self.__genome__['x'] = self.__genome__.index % width
-        self.__genome__['y'] = [int(x / width) for x in self.__genome__.index]
+
+        self.__genome__ = (
+            self.__genome__
+            .assign(
+                # Get x position of the chunk:
+                x=self.__genome__.index.astype(int) % width,
+                # Set y position of the chunk:
+                y=self.__genome__.index.astype(int) / width
+            )
+            # Set proper type:
+            .astype({'y': 'int32'})
+        )
+        logging.info(f'Number of chunks in one row: {width}')
+        logging.info(f'Number of rows: {self.__genome__.y.max()}')
 
     def add_genes(self, GENCODE_df):
+        logging.info(f'Number of gencode features: {len(GENCODE_df)}')
+
+        # Filtering GENCODE data:
+        GENCODE_df = GENCODE_df.loc[GENCODE_df.chr == self.chromosome_name]
+
+        logging.info(f'Number of gencode features on chromosome {self.chromosome_name}: {len(GENCODE_df)}')
+
         # Creating bedtools objects:
-        gencode_bed = pybedtools.bedtool.BedTool.from_dataframe(GENCODE_df)
-        chrom_bed = pybedtools.bedtool.BedTool.from_dataframe(self.__genome__[['chr', 'start', 'end']])
+        gencode_bed = pybedtools.bedtool.BedTool.from_dataframe(GENCODE_df.rename(columns={'chr': 'chrom'}))
+        chrom_bed = pybedtools.bedtool.BedTool.from_dataframe(self.__genome__.rename(columns={'chr': 'chrom'}))
 
         # Run intersectbed and extract result as dataframe:
-        GencodeIntersect = chrom_bed.intersect(gencode_bed, wa=True, wb=True)
-        intersect_df = pybedtools.bedtool.BedTool.to_dataframe(GencodeIntersect)
+        try:
+            GencodeIntersect = chrom_bed.intersect(gencode_bed, wa=True, wb=True)
+            intersect_df = GencodeIntersect.to_dataframe(
+                header=None,
+                names=[
+                    'chr', 'start', 'end', 'GC_ratio', 'x', 'y', 'chr_2',
+                    'start_2', 'end_2', 'gene_id', 'gene_name',
+                    'transcript_id', 'type'
+                ]
+            )
+        except Exception as e:
+            print('Gencode data:')
+            print(gencode_bed.head())
+
+            print('Chromosome data:')
+            print(chrom_bed.head())
+
+            raise e
 
         # Parse out results:
         GENCODE_chunks = intersect_df.groupby('start').apply(
-            lambda x: 'exon' if 'exon' in x.thickStart.unique() else 'gene'
+            lambda x: 'exon' if 'exon' in x.type.unique() else 'gene'
         )
-        GENCODE_chunks.names = "GENCODE"
+        GENCODE_chunks.name = "GENCODE"
 
         # Updating index:
-        GENCODE_chunks.index = self.__genome__.loc[self.__genome__.start.isin(GENCODE_chunks.index)].index
+        genome_df = self.__genome__.merge(GENCODE_chunks, left_on='start', right_index=True, how='left')
+        genome_df.GENCODE.fillna('intergenic', inplace=True)
 
         # Adding annotation to df:
-        self.__genome__['GENCODE'] = 'intergenic'  # By default, all GENCODE values are intergenic
-        self.__genome__.GENCODE.update(GENCODE_chunks)  # This value will be overwritten if overlaps with exon or gene
+        self.__genome__ = genome_df
 
     def get_data(self):
         return(self.__genome__.copy())
 
     def add_centromere(self, cytoband_df):
+
         chromosome = self.__genome__.chr[1]
         centromer_loc = cytoband_df.loc[
             (cytoband_df.chr == str(chromosome))
@@ -70,28 +111,28 @@ class dataIntegrator(object):
             & (self.__genome__.start < centromer_loc[1]), 'GENCODE'
         ] = 'centromere'
 
-    def assign_hetero(self):
+    def assign_hetero(self) -> None:
         self.__genome__.loc[self.__genome__.GC_ratio.isnull(), 'GENCODE'] = 'heterochromatin'
 
-    def add_colors(self, colors, darkStart, darkMax, dummy=False):
+    def add_colors(self, color_picker) -> None:
         """
         Colors are also assigned to dummy: only color for the dummy + color for the centromere
         """
 
-        if dummy:
-            self.__genome__['color'] = self.__genome__.GENCODE.apply(
-                lambda x: colors['centromere'][0] if x == 'centromere' else colors['dummy']
-            )
+        self.__genome__['color'] = self.__genome__.apply(color_picker.pick_color, axis=1)
 
+    def save_pkl(self, file_name) -> None:
+        pickle.dump(self.__genome__, open(file_name, "wb"))
+
+    def add_dummy(self) -> None:
+        """This method just assumes the gencode annoation is just dummy"""
+        if 'GENCODE' not in self.__genome__.columns:
+            self.__genome__ = (
+                self.__genome__
+                .assign('GENCODE', 'dummy')
+            )
         else:
-            self.__genome__['color'] = self.__genome__.apply(
-                lambda x: colors[x['GENCODE']][int(x[3] * 20)] if not np.isnan(x[3]) else colors['heterochromatin'][0],
-                axis=1
+            self.__genome__['GENCODE'] = (
+                self.__genome__
+                .GENCODE.fillna('dummy')
             )
-
-            self.__genome__['color'] = self.__genome__.apply(
-                color_darkener, axis=1, args=(self.__width__, darkStart, darkMax)
-            )
-
-    def save_pkl(self, fileName):
-        pickle.dump(self.__genome__, open(fileName, "wb"))

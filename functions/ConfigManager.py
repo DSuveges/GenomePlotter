@@ -64,6 +64,12 @@ class ConfigManager(object):
     def get_color_scheme(self):
         return self.__data['color_schema']
 
+    def get_dark_max(self):
+        return self.__data['plot_parameters']['dark_max']
+
+    def get_dark_start(self):
+        return self.__data['plot_parameters']['dark_start']
+
     def get_data_folder(self):
         if not self.__data_folder:
             raise ValueError('Data folder is not yet set!')

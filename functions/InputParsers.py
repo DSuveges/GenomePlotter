@@ -5,17 +5,17 @@ import requests
 
 
 # Load custom packages:
-from .Fetch_from_ftp import Fetch_from_ftp
+from .FetchFromFtp import FetchFromFtp
 
 # get ensembl version
-def Fetch_ensembl_version(url):
+def fetch_ensembl_version(url):
     response = requests.get(url)
     data = response.json()
     return data['releases'][0]
 
 
 # Fetch GWAS Catalog data and parse:
-class Fetch_gwas(Fetch_from_ftp):
+class FetchGwas(FetchFromFtp):
 
     """Function to fetch GWAS data from ftp and format as bed"""
 
@@ -32,7 +32,7 @@ class Fetch_gwas(Fetch_from_ftp):
         self.release_date = None
 
         # Initialize host:
-        Fetch_from_ftp.__init__(self, self.host)
+        FetchFromFtp.__init__(self, self.host)
 
     def retrieve_data(self):
         """
@@ -85,8 +85,8 @@ class Fetch_gwas(Fetch_from_ftp):
             }, inplace=True
         )
 
-        # Order columns:
-        filt = filt[['#chr', 'start', 'end', 'rsID']]
+        # Order columns and getting rid of duplicates:
+        filt = filt[['#chr', 'start', 'end', 'rsID']].drop_duplicates()
 
         # Save dataframe:
         self.gwas_df = filt
@@ -102,7 +102,7 @@ class Fetch_gwas(Fetch_from_ftp):
 
 
 # get cytoband data:
-class Fetch_cytobands(object):
+class FetchCytobands(object):
 
     """Function to retrieve cytogenic bands from Ensembl"""
 
@@ -145,7 +145,7 @@ class Fetch_cytobands(object):
 
 
 # Fetch and process Gencode data:
-class Fetch_genome(Fetch_from_ftp):
+class FetchGenome(FetchFromFtp):
 
     """Function to retrieve genome sequence from Ensembl"""
 
@@ -158,11 +158,11 @@ class Fetch_genome(Fetch_from_ftp):
         self.parsed_file = ensembl_parameters['processed_file']
 
         # Initialize host:
-        Fetch_from_ftp.__init__(self, self.host)
+        FetchFromFtp.__init__(self, self.host)
 
     def retrieve_data(self):
 
-        ftp = Fetch_from_ftp(self.host)
+        ftp = FetchFromFtp(self.host)
         self.resp = ftp.fetch_file(self.path, self.source_file)
 
         logging.info('Sequence data successfully fetched. Parsing...')
@@ -233,7 +233,7 @@ class Fetch_genome(Fetch_from_ftp):
 
 
 # Fetch and process Gencode data:
-class Fetch_gencode(Fetch_from_ftp):
+class FetchGencode(FetchFromFtp):
 
     """Function to fetch gene data from GENCODE ftp"""
 
@@ -249,7 +249,7 @@ class Fetch_gencode(Fetch_from_ftp):
         self.release = None
 
         # Initialize host:
-        Fetch_from_ftp.__init__(self, self.host)
+        FetchFromFtp.__init__(self, self.host)
 
     def retrieve_data(self):
         """
@@ -303,12 +303,7 @@ class Fetch_gencode(Fetch_from_ftp):
 
         # Filtering for protein coding genes:
         gencode_df_updated = gencode_df_updated.loc[gencode_df_updated.gene_type == 'protein_coding']
-        protein_coding_gene_count = len(
-            gencode_df_updated.loc[
-                (gencode_df_updated.gene_type == 'protein_coding')
-                & (gencode_df_updated.type == 'gene')
-            ]
-        )
+        protein_coding_gene_count = len(gencode_df_updated.loc[gencode_df_updated.type == 'gene'])
         logging.info(f"Number of protein coding genes: {protein_coding_gene_count}")
 
         # Updating types:
@@ -324,7 +319,7 @@ class Fetch_gencode(Fetch_from_ftp):
         for gene_id, features in gencode_df_updated.groupby(['gene_id']):
 
             # Adding length to all features:
-            features['length'] = features[['start', 'end']].apply(lambda row: row['end'] - row['start'], axis=1)
+            features = features.assign(length=lambda row: row['end'] - row['start'])
 
             # Selecting protein coding transcripts:
             transcripts = features.loc[(features.type == 'transcript')
@@ -335,10 +330,10 @@ class Fetch_gencode(Fetch_from_ftp):
                 continue
 
             # Adding CDS length to all transcripts:
-            CDS_length = transcripts.transcript_id.apply(
+            cds_length = transcripts.transcript_id.apply(
                 lambda t_id: features.loc[(features.type == 'CDS') & (features.transcript_id == t_id)].length.sum()
             )
-            transcripts.insert(2, "CDS_length", CDS_length)
+            transcripts.insert(2, "cds_length", cds_length)
 
             # Get canonical transcript and properties:
             canonical_transcript_id = self.get_canonical_transcript(transcripts)
@@ -361,6 +356,8 @@ class Fetch_gencode(Fetch_from_ftp):
 
     # Save data
     def save_gencode_data(self, data_dir):
+        self.processed = self.processed[['chr', 'end', 'gene_id', 'gene_name', 'start', 'transcript_id', 'type']]
+
         gwas_output_filename = f'{data_dir}/{self.processed_file}'
         self.processed.to_csv(gwas_output_filename, sep='\t', compression='infer', index=False)
 
@@ -379,18 +376,18 @@ class Fetch_gencode(Fetch_from_ftp):
 
         # First choice: selecting the longest ccds transcript:
         if transcripts.ccdsid.notna().any():
-            longest_CDS = transcripts.loc[~transcripts.ccdsid.isna()].CDS_length.max()
-            canonical_transcript_id = transcripts.loc[longest_CDS == transcripts.CDS_length].transcript_id.tolist()[0]
+            longest_CDS = transcripts.loc[~transcripts.ccdsid.isna()].cds_length.max()
+            canonical_transcript_id = transcripts.loc[longest_CDS == transcripts.cds_length].transcript_id.tolist()[0]
 
         # Secong choice: selecting the longest havana transcript:
         elif transcripts.havana_transcript.notna().any():
-            longest_CDS = transcripts.loc[~transcripts.havana_transcript.isna()].CDS_length.max()
-            canonical_transcript_id = transcripts.loc[longest_CDS == transcripts.CDS_length].transcript_id.tolist()[0]
+            longest_CDS = transcripts.loc[~transcripts.havana_transcript.isna()].cds_length.max()
+            canonical_transcript_id = transcripts.loc[longest_CDS == transcripts.cds_length].transcript_id.tolist()[0]
 
         # Third choice: selecting the longest protein coding transcript:
         else:
-            longest_CDS = transcripts.CDS_length.max()
-            canonical_transcript_id = transcripts.loc[longest_CDS == transcripts.CDS_length].transcript_id.tolist()[0]
+            longest_CDS = transcripts.cds_length.max()
+            canonical_transcript_id = transcripts.loc[longest_CDS == transcripts.cds_length].transcript_id.tolist()[0]
 
         return canonical_transcript_id
 
