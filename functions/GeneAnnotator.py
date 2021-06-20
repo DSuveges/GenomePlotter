@@ -1,4 +1,5 @@
 import pandas as pd
+import logging
 
 class PositionConverter(object):
 
@@ -38,7 +39,7 @@ class GeneAnnotator(object):
         # Open gene file and store data:
         df = pd.read_csv(gene_file, sep="\t", compression='infer')
         self.__df = df.loc[df.chr == chromosome]
-        print("[Info] There are {} genes on this chromosome.".format(len(self.__df)))
+        logging.info("Adding annotation for {} genes on this chromosome.".format(len(self.__df)))
 
         # Store other values:
         self.__chunkSize = chunk_size

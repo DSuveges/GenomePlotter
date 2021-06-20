@@ -4,8 +4,6 @@ import logging
 
 import pybedtools
 
-from .ColorFunctions import color_darkener, color_picker
-
 class DataIntegrator(object):
 
     """
@@ -95,7 +93,6 @@ class DataIntegrator(object):
 
     def add_centromere(self, cytoband_df):
 
-        logging.info(self.__genome__.GENCODE.value_counts())
         chromosome = self.__genome__.chr[1]
         centromer_loc = cytoband_df.loc[
             (cytoband_df.chr == str(chromosome))
@@ -114,25 +111,28 @@ class DataIntegrator(object):
             & (self.__genome__.start < centromer_loc[1]), 'GENCODE'
         ] = 'centromere'
 
-    def assign_hetero(self):
+    def assign_hetero(self) -> None:
         self.__genome__.loc[self.__genome__.GC_ratio.isnull(), 'GENCODE'] = 'heterochromatin'
 
-    def add_colors(self, colors, darkStart, darkMax, dummy=False):
+    def add_colors(self, color_picker) -> None:
         """
         Colors are also assigned to dummy: only color for the dummy + color for the centromere
         """
 
-        if dummy:
-            self.__genome__['color'] = self.__genome__.GENCODE.apply(
-                lambda x: colors['centromere'][0] if x == 'centromere' else colors['dummy']
-            )
+        self.__genome__['color'] = self.__genome__.apply(color_picker.pick_color, axis=1)
 
-        else:
-            self.__genome__['color'] = self.__genome__.apply(color_picker, axis=1, args=(colors))
-
-            self.__genome__['color'] = self.__genome__.apply(
-                color_darkener, axis=1, args=(self.__width__, darkStart, darkMax)
-            )
-
-    def save_pkl(self, fileName):
+    def save_pkl(self, fileName) -> None:
         pickle.dump(self.__genome__, open(fileName, "wb"))
+
+    def add_dummy(self) -> None:
+        """This method just assumes the gencode annoation is just dummy"""
+        if 'GENCODE' not in self.__genome__.columns:
+            self.__genome__ = (
+                self.__genome__
+                .assign('GENCODE', 'dummy')
+            )
+        else:
+            self.__genome__['GENCODE'] = (
+                self.__genome__
+                .GENCODE.fillna('dummy')
+            )

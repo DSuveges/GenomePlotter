@@ -390,3 +390,182 @@ Name: GENCODE, dtype: int64
 2021-06-19 23:19:42 INFO plot_chromosome - cytoband_annotation_wrapper: Generating cytological band from file: /Users/dsuveges/repositories/GenomePlotter/source_data/processed_cytoBand.bed.gz.
 2021-06-19 23:19:42 INFO plot_chromosome - <module>: Saving image: /Users/dsuveges/repositories/GenomePlotter/plots/chr19.png
 2021-06-19 23:20:11 INFO plot_chromosome - <module>: All done.
+2021-06-20 18:49:57 INFO plot_chromosome - <module>: Generating plot for chromosome: 21
+2021-06-20 18:49:57 INFO plot_chromosome - <module>: Processing parameters.
+2021-06-20 18:50:26 INFO plot_chromosome - <module>: Generating plot for chromosome: 21
+2021-06-20 18:50:26 INFO plot_chromosome - <module>: Processing parameters.
+2021-06-20 18:50:26 INFO plot_chromosome - integrator_wrapper: Reading input files.
+2021-06-20 18:50:26 INFO plot_chromosome - integrator_wrapper: Number of genome chunks: 103801
+2021-06-20 18:50:26 INFO plot_chromosome - integrator_wrapper: Number of GENCODE annotations in the genome: 392082
+2021-06-20 18:50:26 INFO plot_chromosome - integrator_wrapper: Number of cytological bands in the genome: 862
+2021-06-20 18:50:26 INFO plot_chromosome - integrator_wrapper: Integrating data...
+2021-06-20 18:50:26 INFO DataIntegrator - __init__: Integrating data on chromosome: 21
+2021-06-20 18:50:26 INFO DataIntegrator - __init__: Number of chunks on chromosome 21: 103801
+2021-06-20 18:50:27 INFO DataIntegrator - add_xy_coordinates: Number of chunks in one row: 200
+2021-06-20 18:50:27 INFO DataIntegrator - add_xy_coordinates: Number of rows: 519
+2021-06-20 18:50:27 INFO DataIntegrator - add_genes: Number of gencode features: 392082
+2021-06-20 18:50:27 INFO DataIntegrator - add_genes: Number of gencode features on chromosome 21: 4086
+2021-06-20 18:51:29 INFO plot_chromosome - <module>: Generating plot for chromosome: 21
+2021-06-20 18:51:29 INFO plot_chromosome - <module>: Processing parameters.
+2021-06-20 18:51:29 INFO plot_chromosome - integrator_wrapper: Reading input files.
+2021-06-20 18:51:29 INFO plot_chromosome - integrator_wrapper: Number of genome chunks: 103801
+2021-06-20 18:51:29 INFO plot_chromosome - integrator_wrapper: Number of GENCODE annotations in the genome: 392082
+2021-06-20 18:51:29 INFO plot_chromosome - integrator_wrapper: Number of cytological bands in the genome: 862
+2021-06-20 18:51:29 INFO plot_chromosome - integrator_wrapper: Integrating data...
+2021-06-20 18:51:29 INFO DataIntegrator - __init__: Integrating data on chromosome: 21
+2021-06-20 18:51:29 INFO DataIntegrator - __init__: Number of chunks on chromosome 21: 103801
+2021-06-20 18:51:29 INFO DataIntegrator - add_xy_coordinates: Number of chunks in one row: 200
+2021-06-20 18:51:29 INFO DataIntegrator - add_xy_coordinates: Number of rows: 519
+2021-06-20 18:51:29 INFO DataIntegrator - add_genes: Number of gencode features: 392082
+2021-06-20 18:51:29 INFO DataIntegrator - add_genes: Number of gencode features on chromosome 21: 4086
+2021-06-20 18:51:52 INFO plot_chromosome - <module>: Generating plot for chromosome: 21
+2021-06-20 18:51:52 INFO plot_chromosome - <module>: Processing parameters.
+2021-06-20 18:51:52 INFO plot_chromosome - integrator_wrapper: Reading input files.
+2021-06-20 18:51:52 INFO plot_chromosome - integrator_wrapper: Number of genome chunks: 103801
+2021-06-20 18:51:52 INFO plot_chromosome - integrator_wrapper: Number of GENCODE annotations in the genome: 392082
+2021-06-20 18:51:52 INFO plot_chromosome - integrator_wrapper: Number of cytological bands in the genome: 862
+2021-06-20 18:51:52 INFO plot_chromosome - integrator_wrapper: Integrating data...
+2021-06-20 18:51:52 INFO DataIntegrator - __init__: Integrating data on chromosome: 21
+2021-06-20 18:51:52 INFO DataIntegrator - __init__: Number of chunks on chromosome 21: 103801
+2021-06-20 18:51:52 INFO DataIntegrator - add_xy_coordinates: Number of chunks in one row: 200
+2021-06-20 18:51:52 INFO DataIntegrator - add_xy_coordinates: Number of rows: 519
+2021-06-20 18:51:52 INFO DataIntegrator - add_genes: Number of gencode features: 392082
+2021-06-20 18:51:52 INFO DataIntegrator - add_genes: Number of gencode features on chromosome 21: 4086
+2021-06-20 18:52:31 INFO plot_chromosome - <module>: Initializing plot.
+2021-06-20 18:52:31 INFO plot_chromosome - <module>: Generating plot.
+2021-06-20 18:52:42 INFO plot_chromosome - gwas_annotation_wrapper: Generating GWAS annotation from file: /Users/dsuveges/repositories/GenomePlotter/source_data/processed_GWAS.bed.gz.
+2021-06-20 18:52:42 INFO plot_chromosome - cytoband_annotation_wrapper: Generating cytological band from file: /Users/dsuveges/repositories/GenomePlotter/source_data/processed_cytoBand.bed.gz.
+2021-06-20 18:52:42 INFO plot_chromosome - <module>: Saving image: /Users/dsuveges/repositories/GenomePlotter/plots/chr21.png
+2021-06-20 18:53:03 INFO plot_chromosome - <module>: All done.
+2021-06-20 19:00:44 INFO plot_chromosome - <module>: Generating plot for chromosome: 6
+2021-06-20 19:00:44 INFO plot_chromosome - <module>: Processing parameters.
+2021-06-20 19:00:44 INFO plot_chromosome - integrator_wrapper: Reading input files.
+2021-06-20 19:00:45 INFO plot_chromosome - integrator_wrapper: Number of genome chunks: 379569
+2021-06-20 19:00:45 INFO plot_chromosome - integrator_wrapper: Number of GENCODE annotations in the genome: 392082
+2021-06-20 19:00:45 INFO plot_chromosome - integrator_wrapper: Number of cytological bands in the genome: 862
+2021-06-20 19:00:45 INFO plot_chromosome - integrator_wrapper: Integrating data...
+2021-06-20 19:00:45 INFO DataIntegrator - __init__: Integrating data on chromosome: 6
+2021-06-20 19:00:45 INFO DataIntegrator - __init__: Number of chunks on chromosome 6: 379569
+2021-06-20 19:00:45 INFO DataIntegrator - add_xy_coordinates: Number of chunks in one row: 200
+2021-06-20 19:00:45 INFO DataIntegrator - add_xy_coordinates: Number of rows: 1897
+2021-06-20 19:00:45 INFO DataIntegrator - add_genes: Number of gencode features: 392082
+2021-06-20 19:00:45 INFO DataIntegrator - add_genes: Number of gencode features on chromosome 6: 19324
+2021-06-20 19:03:21 INFO plot_chromosome - <module>: Initializing plot.
+2021-06-20 19:03:21 INFO plot_chromosome - <module>: Generating plot.
+2021-06-20 19:03:59 INFO plot_chromosome - gwas_annotation_wrapper: Generating GWAS annotation from file: /Users/dsuveges/repositories/GenomePlotter/source_data/processed_GWAS.bed.gz.
+2021-06-20 19:04:01 INFO plot_chromosome - cytoband_annotation_wrapper: Generating cytological band from file: /Users/dsuveges/repositories/GenomePlotter/source_data/processed_cytoBand.bed.gz.
+2021-06-20 19:04:01 INFO plot_chromosome - <module>: Saving image: /Users/dsuveges/repositories/GenomePlotter/plots/chr6.png
+2021-06-20 19:05:24 INFO plot_chromosome - <module>: All done.
+2021-06-20 19:08:27 INFO plot_chromosome - <module>: Generating plot for chromosome: 6
+2021-06-20 19:08:27 INFO plot_chromosome - <module>: Processing parameters.
+2021-06-20 19:08:27 INFO plot_chromosome - integrator_wrapper: Reading input files.
+2021-06-20 19:08:27 INFO plot_chromosome - integrator_wrapper: Number of genome chunks: 379569
+2021-06-20 19:08:27 INFO plot_chromosome - integrator_wrapper: Number of GENCODE annotations in the genome: 392082
+2021-06-20 19:08:27 INFO plot_chromosome - integrator_wrapper: Number of cytological bands in the genome: 862
+2021-06-20 19:08:27 INFO plot_chromosome - integrator_wrapper: Integrating data...
+2021-06-20 19:08:27 INFO DataIntegrator - __init__: Integrating data on chromosome: 6
+2021-06-20 19:08:27 INFO DataIntegrator - __init__: Number of chunks on chromosome 6: 379569
+2021-06-20 19:08:27 INFO DataIntegrator - add_xy_coordinates: Number of chunks in one row: 200
+2021-06-20 19:08:27 INFO DataIntegrator - add_xy_coordinates: Number of rows: 1897
+2021-06-20 19:10:54 INFO plot_chromosome - <module>: Generating plot for chromosome: 6
+2021-06-20 19:10:54 INFO plot_chromosome - <module>: Processing parameters.
+2021-06-20 19:10:54 INFO plot_chromosome - integrator_wrapper: Reading input files.
+2021-06-20 19:10:55 INFO plot_chromosome - integrator_wrapper: Number of genome chunks: 379569
+2021-06-20 19:10:55 INFO plot_chromosome - integrator_wrapper: Number of GENCODE annotations in the genome: 392082
+2021-06-20 19:10:55 INFO plot_chromosome - integrator_wrapper: Number of cytological bands in the genome: 862
+2021-06-20 19:10:55 INFO plot_chromosome - integrator_wrapper: Integrating data...
+2021-06-20 19:10:55 INFO DataIntegrator - __init__: Integrating data on chromosome: 6
+2021-06-20 19:10:55 INFO DataIntegrator - __init__: Number of chunks on chromosome 6: 379569
+2021-06-20 19:10:55 INFO DataIntegrator - add_xy_coordinates: Number of chunks in one row: 200
+2021-06-20 19:10:55 INFO DataIntegrator - add_xy_coordinates: Number of rows: 1897
+2021-06-20 19:11:08 INFO plot_chromosome - <module>: Generating plot for chromosome: 6
+2021-06-20 19:11:08 INFO plot_chromosome - <module>: Processing parameters.
+2021-06-20 19:11:08 INFO plot_chromosome - integrator_wrapper: Reading input files.
+2021-06-20 19:11:09 INFO plot_chromosome - integrator_wrapper: Number of genome chunks: 379569
+2021-06-20 19:11:09 INFO plot_chromosome - integrator_wrapper: Number of GENCODE annotations in the genome: 392082
+2021-06-20 19:11:09 INFO plot_chromosome - integrator_wrapper: Number of cytological bands in the genome: 862
+2021-06-20 19:11:09 INFO plot_chromosome - integrator_wrapper: Integrating data...
+2021-06-20 19:11:09 INFO DataIntegrator - __init__: Integrating data on chromosome: 6
+2021-06-20 19:11:09 INFO DataIntegrator - __init__: Number of chunks on chromosome 6: 379569
+2021-06-20 19:11:09 INFO DataIntegrator - add_xy_coordinates: Number of chunks in one row: 200
+2021-06-20 19:11:09 INFO DataIntegrator - add_xy_coordinates: Number of rows: 1897
+2021-06-20 19:11:09 INFO DataIntegrator - add_genes: Number of gencode features: 392082
+2021-06-20 19:11:09 INFO DataIntegrator - add_genes: Number of gencode features on chromosome 6: 19324
+2021-06-20 19:12:12 INFO plot_chromosome - <module>: Generating plot for chromosome: 6
+2021-06-20 19:12:12 INFO plot_chromosome - <module>: Processing parameters.
+2021-06-20 19:12:12 INFO plot_chromosome - integrator_wrapper: Reading input files.
+2021-06-20 19:12:12 INFO plot_chromosome - integrator_wrapper: Number of genome chunks: 379569
+2021-06-20 19:12:12 INFO plot_chromosome - integrator_wrapper: Number of GENCODE annotations in the genome: 392082
+2021-06-20 19:12:12 INFO plot_chromosome - integrator_wrapper: Number of cytological bands in the genome: 862
+2021-06-20 19:12:12 INFO plot_chromosome - integrator_wrapper: Integrating data...
+2021-06-20 19:12:12 INFO DataIntegrator - __init__: Integrating data on chromosome: 6
+2021-06-20 19:12:12 INFO DataIntegrator - __init__: Number of chunks on chromosome 6: 379569
+2021-06-20 19:12:12 INFO DataIntegrator - add_xy_coordinates: Number of chunks in one row: 200
+2021-06-20 19:12:12 INFO DataIntegrator - add_xy_coordinates: Number of rows: 1897
+2021-06-20 19:13:21 INFO plot_chromosome - <module>: Generating plot for chromosome: 6
+2021-06-20 19:13:21 INFO plot_chromosome - <module>: Processing parameters.
+2021-06-20 19:13:21 INFO plot_chromosome - integrator_wrapper: Reading input files.
+2021-06-20 19:13:21 INFO plot_chromosome - integrator_wrapper: Number of genome chunks: 379569
+2021-06-20 19:13:21 INFO plot_chromosome - integrator_wrapper: Number of GENCODE annotations in the genome: 392082
+2021-06-20 19:13:21 INFO plot_chromosome - integrator_wrapper: Number of cytological bands in the genome: 862
+2021-06-20 19:13:21 INFO plot_chromosome - integrator_wrapper: Integrating data...
+2021-06-20 19:13:21 INFO DataIntegrator - __init__: Integrating data on chromosome: 6
+2021-06-20 19:13:21 INFO DataIntegrator - __init__: Number of chunks on chromosome 6: 379569
+2021-06-20 19:13:21 INFO DataIntegrator - add_xy_coordinates: Number of chunks in one row: 200
+2021-06-20 19:13:21 INFO DataIntegrator - add_xy_coordinates: Number of rows: 1897
+2021-06-20 19:14:14 INFO plot_chromosome - <module>: Generating plot for chromosome: 6
+2021-06-20 19:14:14 INFO plot_chromosome - <module>: Processing parameters.
+2021-06-20 19:14:14 INFO plot_chromosome - integrator_wrapper: Reading input files.
+2021-06-20 19:14:15 INFO plot_chromosome - integrator_wrapper: Number of genome chunks: 379569
+2021-06-20 19:14:15 INFO plot_chromosome - integrator_wrapper: Number of GENCODE annotations in the genome: 392082
+2021-06-20 19:14:15 INFO plot_chromosome - integrator_wrapper: Number of cytological bands in the genome: 862
+2021-06-20 19:14:15 INFO plot_chromosome - integrator_wrapper: Integrating data...
+2021-06-20 19:14:15 INFO DataIntegrator - __init__: Integrating data on chromosome: 6
+2021-06-20 19:14:15 INFO DataIntegrator - __init__: Number of chunks on chromosome 6: 379569
+2021-06-20 19:14:15 INFO DataIntegrator - add_xy_coordinates: Number of chunks in one row: 200
+2021-06-20 19:14:15 INFO DataIntegrator - add_xy_coordinates: Number of rows: 1897
+2021-06-20 19:16:25 INFO plot_chromosome - <module>: Initializing plot.
+2021-06-20 19:16:25 INFO plot_chromosome - <module>: Generating dummy plot.
+2021-06-20 19:16:25 INFO plot_chromosome - gwas_annotation_wrapper: Generating GWAS annotation from file: /Users/dsuveges/repositories/GenomePlotter/source_data/processed_GWAS.bed.gz.
+2021-06-20 19:16:26 INFO plot_chromosome - cytoband_annotation_wrapper: Generating cytological band from file: /Users/dsuveges/repositories/GenomePlotter/source_data/processed_cytoBand.bed.gz.
+2021-06-20 19:16:26 INFO GeneAnnotator - __init__: Adding annotation for 34 genes on this chromosome.
+2021-06-20 19:16:26 INFO plot_chromosome - <module>: Saving image: /Users/dsuveges/repositories/GenomePlotter/plots/chr6_dummy.png
+2021-06-20 19:16:30 INFO plot_chromosome - <module>: All done.
+2021-06-20 19:29:52 INFO plot_chromosome - <module>: Generating plot for chromosome: 21
+2021-06-20 19:29:52 INFO plot_chromosome - <module>: Processing parameters.
+2021-06-20 19:29:52 INFO plot_chromosome - integrator_wrapper: Reading input files.
+2021-06-20 19:29:52 INFO plot_chromosome - integrator_wrapper: Number of genome chunks: 103801
+2021-06-20 19:29:52 INFO plot_chromosome - integrator_wrapper: Number of GENCODE annotations in the genome: 392082
+2021-06-20 19:29:52 INFO plot_chromosome - integrator_wrapper: Number of cytological bands in the genome: 862
+2021-06-20 19:29:52 INFO plot_chromosome - integrator_wrapper: Integrating data...
+2021-06-20 19:29:52 INFO DataIntegrator - __init__: Integrating data on chromosome: 21
+2021-06-20 19:29:52 INFO DataIntegrator - __init__: Number of chunks on chromosome 21: 103801
+2021-06-20 19:29:53 INFO DataIntegrator - add_xy_coordinates: Number of chunks in one row: 200
+2021-06-20 19:29:53 INFO DataIntegrator - add_xy_coordinates: Number of rows: 519
+2021-06-20 19:30:25 INFO plot_chromosome - <module>: Initializing plot.
+2021-06-20 19:30:25 INFO plot_chromosome - <module>: Generating dummy plot.
+2021-06-20 19:30:25 INFO plot_chromosome - gwas_annotation_wrapper: Generating GWAS annotation from file: /Users/dsuveges/repositories/GenomePlotter/source_data/processed_GWAS.bed.gz.
+2021-06-20 19:30:25 INFO plot_chromosome - cytoband_annotation_wrapper: Generating cytological band from file: /Users/dsuveges/repositories/GenomePlotter/source_data/processed_cytoBand.bed.gz.
+2021-06-20 19:30:25 INFO GeneAnnotator - __init__: Adding annotation for 7 genes on this chromosome.
+2021-06-20 19:30:25 INFO plot_chromosome - <module>: Saving image: /Users/dsuveges/repositories/GenomePlotter/plots/chr21_dummy.png
+2021-06-20 19:30:26 INFO plot_chromosome - <module>: All done.
+2021-06-20 19:31:16 INFO plot_chromosome - <module>: Generating plot for chromosome: 21
+2021-06-20 19:31:16 INFO plot_chromosome - <module>: Processing parameters.
+2021-06-20 19:31:16 INFO plot_chromosome - integrator_wrapper: Reading input files.
+2021-06-20 19:31:17 INFO plot_chromosome - integrator_wrapper: Number of genome chunks: 103801
+2021-06-20 19:31:17 INFO plot_chromosome - integrator_wrapper: Number of GENCODE annotations in the genome: 392082
+2021-06-20 19:31:17 INFO plot_chromosome - integrator_wrapper: Number of cytological bands in the genome: 862
+2021-06-20 19:31:17 INFO plot_chromosome - integrator_wrapper: Integrating data...
+2021-06-20 19:31:17 INFO DataIntegrator - __init__: Integrating data on chromosome: 21
+2021-06-20 19:31:17 INFO DataIntegrator - __init__: Number of chunks on chromosome 21: 103801
+2021-06-20 19:31:17 INFO DataIntegrator - add_xy_coordinates: Number of chunks in one row: 200
+2021-06-20 19:31:17 INFO DataIntegrator - add_xy_coordinates: Number of rows: 519
+2021-06-20 19:31:17 INFO DataIntegrator - add_genes: Number of gencode features: 392082
+2021-06-20 19:31:17 INFO DataIntegrator - add_genes: Number of gencode features on chromosome 21: 4086
+2021-06-20 19:31:59 INFO plot_chromosome - <module>: Initializing plot.
+2021-06-20 19:31:59 INFO plot_chromosome - <module>: Generating plot.
+2021-06-20 19:32:10 INFO plot_chromosome - gwas_annotation_wrapper: Generating GWAS annotation from file: /Users/dsuveges/repositories/GenomePlotter/source_data/processed_GWAS.bed.gz.
+2021-06-20 19:32:11 INFO plot_chromosome - cytoband_annotation_wrapper: Generating cytological band from file: /Users/dsuveges/repositories/GenomePlotter/source_data/processed_cytoBand.bed.gz.
+2021-06-20 19:32:11 INFO GeneAnnotator - __init__: Adding annotation for 7 genes on this chromosome.
+2021-06-20 19:32:11 INFO plot_chromosome - <module>: Saving image: /Users/dsuveges/repositories/GenomePlotter/plots/chr21.png
+2021-06-20 19:32:33 INFO plot_chromosome - <module>: All done.

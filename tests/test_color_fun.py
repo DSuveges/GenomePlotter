@@ -101,24 +101,21 @@ class TestColorFunctions(unittest.TestCase):
     def test_color_picker(self):
         # Basic correct input:
         row = pd.DataFrame({
-            'GC_content': [145, 100],
+            'GC_content': [0.2, None, 1, 0.5, 'cica'],
             'GENCODE': ['exon', 'intron', 'centromer', 'heterochromatin'],
         })
-        width = 200
-        threshold = 0.5
-        max_diff_value = 0.9
+        colors = {
+            "centromere": "#9393FF",
+            "heterochromatin": "#F9D2C2",
+            "intergenic": "#A3E0D1",
+            "exon": "#FFD326",
+            "gene": "#6CB8CC"
+        }
 
         # Testing for input type:
         with self.assertRaises(TypeError):
             color_picker('cicaful', width=width, threshold=threshold, max_diff_value=max_diff_value)
-        with self.assertRaises(TypeError):
-            color_picker(row, width='pocok', threshold=threshold, max_diff_value=max_diff_value)
-        with self.assertRaises(TypeError):
-            color_picker(row, width=width, threshold=3.0, max_diff_value=max_diff_value)
-        with self.assertRaises(TypeError):
-            color_picker(row, width=width, threshold='pocok', max_diff_value=max_diff_value)
-        with self.assertRaises(TypeError):
-            color_picker(row, width=width, threshold=threshold, max_diff_value=1232)
+
 
         df = pd.DataFrame({
             'x': [45, 130, 200],

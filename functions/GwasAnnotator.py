@@ -57,7 +57,7 @@ class gwas_annotator(object):
         for _, row in positions.iterrows():
 
             # The radius of the circle is proportional to the number of GWAS hits in the given chunk:
-            radius = math.sqrt(row['counts'] * self.circle_unit / math.pi)
+            radius = math.sqrt(row['counts'] ** 2 * self.circle_unit / math.pi)
 
             # Adding point{}
             gwas_points.append(self.gwas_hit.format(
