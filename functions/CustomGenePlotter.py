@@ -3,32 +3,47 @@ import pandas as pd
 
 from .DataIntegrator import DataIntegrator
 
-class CustomGenePlotter(object):
+class CustomGeneIntegrator(object):
 
     GENE_WINDOW = 10_000  # Langth of the flanking on each end of the gene
 
-    def __init__(self, gene_name, config_manager) -> None:
+    def __init__(self, query, config_manager) -> None:
         self.width = config_manager.get_width()
+
+        logging.info(f'Generating integrated dataset for gene: {query}')
+
         # Reading gencode data:
         self.gencode_df = pd.read_csv(
             config_manager.get_gencode_file(), compression='infer', sep='\t',
             header=0, dtype={'chr': str, 'start': int, 'end': int, 'type': str}
         )
 
-        # Gene name:
-        self.gene_name = gene_name
-
         # Filter gencode dataset for a given gene:
-        self.filtered_gencode = self.filter_gencode_data(gene_name, self.gencode_df)
+        filtered_gencode = self.filter_gencode_data(query, self.gencode_df)
+
+        if len(filtered_gencode) == 0:
+            raise ValueError(f'The gene {query} cound not be found in the GENCODE database.')
+
+        # Report what we have:
+        self.gene_name = filtered_gencode.iloc[0]['gene_name']
+        self.gene_id = filtered_gencode.iloc[0]['gene_id']
+        logging.info(f'Gene name: {self.gene_name }, Ensembl gene identifier: {self.gene_id}')
+        logging.info(f'Number of gencode feature for this gene: {len(filtered_gencode)}')
 
         # Extract gene coordinates:
-        self.chromosome = self.filtered_gencode.iloc[0]['chr']
-        self.start = self.filtered_gencode.start.min()
-        self.end = self.filtered_gencode.end.max()
+        self.chromosome = filtered_gencode.iloc[0]['chr']
+        self.start = filtered_gencode.start.min()
+        self.end = filtered_gencode.end.max()
+        self.filtered_gencode = filtered_gencode
+
+        logging.info(f'Genomic coordinates: {self.chromosome}:{self.start}-{self.end}')
 
         # Get the relevant genome file:
         genome_file = config_manager.get_chromosome_file(self.chromosome)
-        self.genome_df = self.load_genome(genome_file)
+        genome_df = self.load_genome(genome_file)
+        logging.info(f'Number of genomic chunks for this gene: {len(genome_df)}')
+
+        self.genome_df = genome_df
 
     @staticmethod
     def filter_gencode_data(gene_name, gencode_df):
