@@ -76,7 +76,7 @@ class CustomGenePlotter(object):
         integrator.add_colors(color_picker)
 
         # Extract integrated data:
-        self.integratedData = integrator.get_data()
+        self.integrated_data = integrator.get_data()
 
     def get_integrated_data(self) -> pd.DataFrame:
-        return self.integratedData
+        return self.integrated_data
