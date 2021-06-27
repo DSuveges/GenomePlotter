@@ -55,6 +55,9 @@ class CustomGeneIntegrator(object):
 
         return gencode_filtered
 
+    def get_gencode_data(self):
+        return self.filtered_gencode
+
     def load_genome(self, genome_file):
         """This function loads genome for the gene"""
 
@@ -95,3 +98,8 @@ class CustomGeneIntegrator(object):
 
     def get_integrated_data(self) -> pd.DataFrame:
         return self.integrated_data
+
+class GeneToArrow(object):
+
+    def __init__(self, df, config_manager):
+        return None
