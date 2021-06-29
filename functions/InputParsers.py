@@ -245,6 +245,7 @@ class FetchGencode(FetchFromFtp):
         self.path = gencode_parameters['path']
         self.source_file = gencode_parameters['source_file']
         self.processed_file = gencode_parameters['processed_file']
+        self.arrow_file = gencode_parameters['arrow_file']
         self.release_date = None
         self.release = None
 

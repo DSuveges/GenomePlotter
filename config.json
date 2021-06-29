@@ -51,6 +51,7 @@
             "path": "/pub/databases/gencode/Gencode_human",
             "source_file": "/gencode.v{}.annotation.gtf.gz",
             "processed_file": "processed_gencode.bed.gz",
+            "arrow_file": "processed_gencode_arrow.bed.gz",
             "version": null,
             "release_date": null
         },
