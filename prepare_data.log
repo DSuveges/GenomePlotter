@@ -1,0 +1,62 @@
+2021-06-27 23:56:46 INFO Prepare_data - main: Fetching data for Genome Plotter started....
+2021-06-27 23:56:46 INFO Prepare_data - main: Pre-processed data is saved to /Users/dsuveges/repositories/GenomePlotter/source_data
+2021-06-27 23:56:46 INFO Prepare_data - main: Configuration is read from config.json
+2021-06-27 23:56:46 INFO Prepare_data - main: Chunk size: 450
+2021-06-27 23:56:46 INFO Prepare_data - main: Tolerance for unsequenced bases: 0.4
+2021-06-27 23:56:46 INFO Prepare_data - main: Fetching GENCODE data.
+2021-06-27 23:57:22 INFO InputParsers - retrieve_data: GENCODE data retrieved.
+2021-06-27 23:57:22 INFO InputParsers - retrieve_data: Number of rows in the table: 3150424
+2021-06-27 23:57:22 INFO InputParsers - retrieve_data: Number of genes in 38 release: 60649
+2021-06-27 23:57:22 INFO InputParsers - process_gencode_data: Parsing GTF annotation.
+2021-06-28 00:02:41 INFO Prepare_data - main: Fetching data for Genome Plotter started....
+2021-06-28 00:02:41 INFO Prepare_data - main: Pre-processed data is saved to /Users/dsuveges/repositories/GenomePlotter/source_data
+2021-06-28 00:02:41 INFO Prepare_data - main: Configuration is read from config.json
+2021-06-28 00:02:41 INFO Prepare_data - main: Chunk size: 450
+2021-06-28 00:02:41 INFO Prepare_data - main: Tolerance for unsequenced bases: 0.4
+2021-06-28 00:02:41 INFO Prepare_data - main: Fetching GENCODE data.
+2021-06-28 00:03:15 INFO InputParsers - retrieve_data: GENCODE data retrieved.
+2021-06-28 00:03:15 INFO InputParsers - retrieve_data: Number of rows in the table: 3150424
+2021-06-28 00:03:16 INFO InputParsers - retrieve_data: Number of genes in 38 release: 60649
+2021-06-28 00:03:16 INFO InputParsers - process_gencode_data: Parsing GTF annotation.
+2021-06-28 00:04:57 INFO InputParsers - process_gencode_data: Number of protein coding genes: 19955
+2021-06-28 00:05:00 INFO InputParsers - process_gencode_data: Generate exon/intron annotations for the canonical transcripts for each gene... (it will take a while.)
+2021-06-28 00:41:26 INFO Prepare_data - main: Saving processed data: processed_gencode.bed.gz.
+2021-06-28 00:49:16 INFO Prepare_data - main: Fetching data for Genome Plotter started....
+2021-06-28 00:49:16 INFO Prepare_data - main: Pre-processed data is saved to /Users/dsuveges/repositories/GenomePlotter/source_data
+2021-06-28 00:49:16 INFO Prepare_data - main: Configuration is read from config.json
+2021-06-28 00:49:16 INFO Prepare_data - main: Chunk size: 450
+2021-06-28 00:49:16 INFO Prepare_data - main: Tolerance for unsequenced bases: 0.4
+2021-06-28 00:49:16 INFO Prepare_data - main: Fetching GENCODE data.
+2021-06-28 00:49:52 INFO InputParsers - retrieve_data: GENCODE data retrieved.
+2021-06-28 00:49:52 INFO InputParsers - retrieve_data: Number of rows in the table: 3150424
+2021-06-28 00:49:53 INFO InputParsers - retrieve_data: Number of genes in 38 release: 60649
+2021-06-28 00:49:53 INFO InputParsers - process_gencode_data: Parsing GTF annotation.
+2021-06-28 00:51:31 INFO InputParsers - process_gencode_data: Number of protein coding genes: 19955
+2021-06-28 00:51:34 INFO InputParsers - process_gencode_data: Generate exon/intron annotations for the canonical transcripts for each gene... (it will take a while.)
+2021-06-28 08:14:18 INFO Prepare_data - main: Saving processed data: processed_gencode.bed.gz.
+2021-06-28 21:45:33 INFO Prepare_data - main: Fetching data for Genome Plotter started....
+2021-06-28 21:45:33 INFO Prepare_data - main: Pre-processed data is saved to /Users/dsuveges/repositories/GenomePlotter/source_data
+2021-06-28 21:45:33 INFO Prepare_data - main: Configuration is read from config.json
+2021-06-28 21:45:33 INFO Prepare_data - main: Chunk size: 450
+2021-06-28 21:45:33 INFO Prepare_data - main: Tolerance for unsequenced bases: 0.4
+2021-06-28 21:45:33 INFO Prepare_data - main: Fetching GENCODE data.
+2021-06-28 21:46:10 INFO InputParsers - retrieve_data: GENCODE data retrieved.
+2021-06-28 21:46:10 INFO InputParsers - retrieve_data: Number of rows in the table: 3150424
+2021-06-28 21:46:10 INFO InputParsers - retrieve_data: Number of genes in 38 release: 60649
+2021-06-28 21:46:10 INFO InputParsers - process_gencode_data: Parsing GTF annotation.
+2021-06-28 21:47:58 INFO InputParsers - process_gencode_data: Number of protein coding genes: 19955
+2021-06-28 21:48:02 INFO InputParsers - process_gencode_data: Generate exon/intron annotations for the canonical transcripts for each gene... (it will take a while.)
+2021-06-28 22:34:46 INFO Prepare_data - main: Saving processed data: processed_gencode.bed.gz.
+2021-06-29 01:06:40 INFO Prepare_data - main: Fetching data for Genome Plotter started....
+2021-06-29 01:06:40 INFO Prepare_data - main: Pre-processed data is saved to /Users/dsuveges/repositories/GenomePlotter/source_data
+2021-06-29 01:06:40 INFO Prepare_data - main: Configuration is read from config.json
+2021-06-29 01:06:40 INFO Prepare_data - main: Chunk size: 450
+2021-06-29 01:06:40 INFO Prepare_data - main: Tolerance for unsequenced bases: 0.4
+2021-06-29 01:06:40 INFO Prepare_data - main: Fetching GENCODE data.
+2021-06-29 01:07:13 INFO InputParsers - retrieve_data: GENCODE data retrieved.
+2021-06-29 01:07:13 INFO InputParsers - retrieve_data: Number of rows in the table: 3150424
+2021-06-29 01:07:14 INFO InputParsers - retrieve_data: Number of genes in 38 release: 60649
+2021-06-29 01:07:14 INFO InputParsers - process_gencode_data: Parsing GTF annotation.
+2021-06-29 01:09:02 INFO InputParsers - process_gencode_data: Number of protein coding genes: 19955
+2021-06-29 01:09:07 INFO InputParsers - process_gencode_data: Generate exon/intron annotations for the canonical transcripts for each gene... (it will take a while.)
+2021-06-29 01:32:03 INFO Prepare_data - main: Saving processed data: processed_gencode.bed.gz.

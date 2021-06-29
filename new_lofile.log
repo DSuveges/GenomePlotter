@@ -1,0 +1,28 @@
+2021-06-19 20:18:55 INFO prepare_data - main: Fetching data for Genome Plotter started....
+2021-06-19 20:19:31 INFO prepare_data - main: Fetching data for Genome Plotter started....
+2021-06-19 20:19:31 INFO prepare_data - main: Pre-processed data is saved to /Users/dsuveges/repositories/GenomePlotter/source_data
+2021-06-19 20:19:31 INFO prepare_data - main: Configuration is read from config.json
+2021-06-19 20:19:31 INFO prepare_data - main: Chunk size: 450
+2021-06-19 20:19:31 INFO prepare_data - main: Tolerance for unsequenced bases: 0.5
+2021-06-19 20:19:31 INFO prepare_data - main: Fetching GWAS data...
+2021-06-19 20:21:38 INFO prepare_data - main: Fetching data for Genome Plotter started....
+2021-06-19 20:21:38 INFO prepare_data - main: Pre-processed data is saved to /Users/dsuveges/repositories/GenomePlotter/source_data
+2021-06-19 20:21:38 INFO prepare_data - main: Configuration is read from config.json
+2021-06-19 20:21:38 INFO prepare_data - main: Chunk size: 450
+2021-06-19 20:21:38 INFO prepare_data - main: Tolerance for unsequenced bases: 0.5
+2021-06-19 20:21:38 INFO prepare_data - main: Fetching GWAS data...
+2021-06-19 20:22:28 INFO InputParsers - retrieve_data: Successfully fetched 258738 GWAS associations.
+2021-06-19 20:22:28 INFO InputParsers - process_gwas_data: Number of filtered associations:  246386.
+2021-06-19 20:22:28 INFO InputParsers - process_gwas_data: Formatting data...
+2021-06-19 20:22:29 INFO prepare_data - main: Fetching cytoband information.
+2021-06-19 20:22:30 INFO InputParsers - __init__: Cytobands successfully fetched. Parsing.
+2021-06-19 20:22:30 INFO InputParsers - __init__: Current genome assembly: GRCh38
+2021-06-19 20:22:30 INFO InputParsers - __init__: Number of bands in the genome: 862.
+2021-06-19 20:22:30 INFO InputParsers - save_cytoband_data: Saving cytoband file: /Users/dsuveges/repositories/GenomePlotter/source_data/processed_cytoBand.bed.gz.
+2021-06-19 20:22:30 INFO prepare_data - main: Fetching GENCODE data.
+2021-06-19 20:22:59 INFO InputParsers - retrieve_data: GENCODE data retrieved.
+2021-06-19 20:22:59 INFO InputParsers - retrieve_data: Number of rows in the table: 3150424
+2021-06-19 20:22:59 INFO InputParsers - retrieve_data: Number of genes in 38 release: 60649
+2021-06-19 20:22:59 INFO InputParsers - process_gencode_data: Parsing GTF annotation.
+2021-06-19 20:24:41 INFO InputParsers - process_gencode_data: Number of protein coding genes: 19955
+2021-06-19 20:24:45 INFO InputParsers - process_gencode_data: Generate exon/intron annotations for the canonical transcripts for each gene... (it will take a while.)

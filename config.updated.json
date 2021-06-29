@@ -1,0 +1,65 @@
+{
+    "plot_parameters": {
+        "width": 200,
+        "pixel_size": 9,
+        "dark_start": 0.75,
+        "dark_max": 0.15
+    },
+    "basic_parameters": {
+        "data_folder": "/Users/dsuveges/repositories/GenomePlotter/source_data",
+        "chunk_size": 450,
+        "row_length": null,
+        "missing_tolerance": 0.4,
+        "plot_folder": "/Users/dsuveges/repositories/GenomePlotter/plots"
+    },
+    "color_schema": {
+        "centromere": "#9393FF",
+        "heterochromatin": "#F9D2C2",
+        "intergenic": "#A3E0D1",
+        "exon": "#FFD326",
+        "gene": "#6CB8CC",
+        "gwas_point": "black",
+        "dummy": "#B3F29D",
+        "cytoband_colors": {
+            "gneg": "#FFFFFF",
+            "gpos25": "#E5E5E5",
+            "gpos50": "#CCCCCC",
+            "gpos75": "#B3B3B3",
+            "gpos100": "#999999",
+            "acen": "#CCCCCC",
+            "gvar": "#999999",
+            "stalk": "#E5E5E5",
+            "border": "#000000"
+        }
+    },
+    "source_data": {
+        "cytoband_data": {
+            "url": "http://rest.ensembl.org/info/assembly/homo_sapiens?content-type=application/json&bands=1",
+            "processed_file": "processed_cytoBand.bed.gz",
+            "genome_build": "GRCh38"
+        },
+        "ensembl_data": {
+            "host": "ftp.ensembl.org",
+            "path": "/pub/release-{}/fasta/homo_sapiens/dna",
+            "source_file": "Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz",
+            "version_url": "http://rest.ensembl.org/info/data/?content-type=application/json",
+            "release": 104,
+            "processed_file": "processed_chr{}.bed.gz"
+        },
+        "gencode_data": {
+            "host": "ftp.ebi.ac.uk",
+            "path": "/pub/databases/gencode/Gencode_human",
+            "source_file": "/gencode.v{}.annotation.gtf.gz",
+            "processed_file": "processed_gencode.bed.gz",
+            "version": 38,
+            "release_date": "2021-05-05"
+        },
+        "gwas_data": {
+            "host": "ftp.ebi.ac.uk",
+            "path": "/pub/databases/gwas/releases/latest/",
+            "source_file": "gwas-catalog-associations_ontology-annotated.tsv",
+            "processed_file": "processed_GWAS.bed.gz",
+            "release_date": "2021-06-08"
+        }
+    }
+}

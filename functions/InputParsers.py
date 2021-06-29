@@ -365,7 +365,7 @@ class FetchGencode(FetchFromFtp):
                 features.loc[(features.transcript_id == canonical_transcript_id) & (features.type == 'exon')]
             )
             # appending to existing data:
-            processed = processed.appen   d(gene_df, ignore_index=True)
+            processed = processed.append(gene_df, ignore_index=True)
 
         # Saving data:
         self.processed = processed
