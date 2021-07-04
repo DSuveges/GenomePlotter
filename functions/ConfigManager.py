@@ -60,16 +60,20 @@ class ConfigManager(object):
     def set_plot_folder(self, plot_folder):
         self.__data['basic_parameters']['plot_folder'] = plot_folder
 
-    # Get functions:
-    def get_color_scheme(self):
-        return self.__data['color_schema']
+    # Get colors:
+    def get_chromosome_colors(self):
+        return self.__data['color_schema']['chromosome_colors']
 
-    def get_dark_max(self):
-        return self.__data['plot_parameters']['dark_max']
+    def get_cytobanc_colors(self):
+        return self.__data['color_schema']['cytoband_colors']
 
-    def get_dark_start(self):
-        return self.__data['plot_parameters']['dark_start']
+    def get_gwas_color(self):
+        return self.__data['color_schema']['gwas_point']
 
+    def get_arrow_colors(self):
+        return self.__data['color_schema']['arrow_colors']
+
+    # Get operational parameters:
     def get_data_folder(self):
         if not self.__data_folder:
             raise ValueError('Data folder is not yet set!')
@@ -78,7 +82,6 @@ class ConfigManager(object):
 
         return self.__data_folder
 
-    # Functions returning files, tests if the file exists or not:
     def get_source(self, resource, key, chromosome=None):
         """
         This function returns values belonging to a specified key in a selected resource.
@@ -138,6 +141,7 @@ class ConfigManager(object):
 
         return full_path
 
+    # Get plot parameters:
     def get_pixel(self):
         return self.__data['plot_parameters']['pixel_size']
 
@@ -146,3 +150,9 @@ class ConfigManager(object):
 
     def get_width(self):
         return self.__data['plot_parameters']['width']
+
+    def get_dark_max(self):
+        return self.__data['plot_parameters']['dark_max']
+
+    def get_dark_start(self):
+        return self.__data['plot_parameters']['dark_start']

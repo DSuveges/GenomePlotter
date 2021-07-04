@@ -13,13 +13,20 @@
         "plot_folder": null
     },
     "color_schema": {
-        "centromere": "#9393FF",
-        "heterochromatin": "#F9D2C2",
-        "intergenic": "#A3E0D1",
-        "exon": "#FFD326",
-        "gene": "#6CB8CC",
-        "gwas_point": "black",
-        "dummy": "#B3F29D",
+        "chromosome_colors": {
+            "centromere": "#9393FF",
+            "heterochromatin": "#F9D2C2",
+            "intergenic": "#A3E0D1",
+            "exon": "#FFD326",
+            "gene": "#6CB8CC",
+            "dummy": "#B3F29D"
+        },
+        "gwas_point": "#000000",
+        "arrow_colors": {
+            "line_color": "#00CED1",
+            "utr_color": "#FF1493",
+            "cds_color": "#FFD700"
+        },
         "cytoband_colors": {
             "gneg": "#FFFFFF",
             "gpos25": "#E5E5E5",
