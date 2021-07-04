@@ -245,6 +245,7 @@ class FetchGencode(FetchFromFtp):
         self.path = gencode_parameters['path']
         self.source_file = gencode_parameters['source_file']
         self.processed_file = gencode_parameters['processed_file']
+        self.arrow_file = gencode_parameters['arrow_file']
         self.release_date = None
         self.release = None
 
@@ -270,7 +271,7 @@ class FetchGencode(FetchFromFtp):
         self.fetch_tsv(path_to_last_release, self.source_file.format(self.release), skiprows=5, header=None)
 
         # Parse data:
-        columns = {0: 'chr', 2: 'type', 3: 'start', 4: 'end', 8: 'annotation'}
+        columns = {0: 'chr', 2: 'type', 3: 'start', 4: 'end', 6: 'strand', 8: 'annotation'}
         self.gencode_raw = self.tsv_data.rename(columns=columns)[columns.values()]
 
         # Close connection:
@@ -301,6 +302,12 @@ class FetchGencode(FetchFromFtp):
         # Drop unparsed annotation column:
         gencode_df_updated.drop(['annotation'], axis=1, inplace=True)
 
+        # Removing gene identifier version:
+        gencode_df_updated = (
+            gencode_df_updated
+            .assign(gene_id=gencode_df_updated.gene_id.str.split('.').str[0])
+        )
+
         # Filtering for protein coding genes:
         gencode_df_updated = gencode_df_updated.loc[gencode_df_updated.gene_type == 'protein_coding']
         protein_coding_gene_count = len(gencode_df_updated.loc[gencode_df_updated.type == 'gene'])
@@ -310,18 +317,20 @@ class FetchGencode(FetchFromFtp):
         gencode_df_updated['start'] = gencode_df_updated.start.astype(int)
         gencode_df_updated['end'] = gencode_df_updated.end.astype(int)
 
-        # Initialize empty dataframe:
+        # Adding length to all features:
+        gencode_df_updated = gencode_df_updated.assign(length=lambda row: row['end'] - row['start'])
+
+        # Initialize empty dataframes:
         processed = pd.DataFrame(columns=['chr', 'start', 'end', 'type', 'gene_id', 'gene_name', 'transcript_id'])
+        arrow_data = pd.DataFrame(columns=['chr', 'start', 'end', 'strand', 'type', 'gene_id', 'gene_name'])
 
         logging.info(
             "Generate exon/intron annotations for the canonical transcripts for each gene... (it will take a while.)"
         )
+
         for gene_id, features in gencode_df_updated.groupby(['gene_id']):
 
-            # Adding length to all features:
-            features = features.assign(length=lambda row: row['end'] - row['start'])
-
-            # Selecting protein coding transcripts:
+            # Selecting protein coding transcript identifiers:
             transcripts = features.loc[(features.type == 'transcript')
                                        & (features.transcript_type == 'protein_coding')]
 
@@ -329,7 +338,7 @@ class FetchGencode(FetchFromFtp):
             if len(transcripts) == 0:
                 continue
 
-            # Adding CDS length to all transcripts:
+            # Adding the length of the CDS to all transcripts:
             cds_length = transcripts.transcript_id.apply(
                 lambda t_id: features.loc[(features.type == 'CDS') & (features.transcript_id == t_id)].length.sum()
             )
@@ -343,6 +352,14 @@ class FetchGencode(FetchFromFtp):
                 .tolist()
             )
 
+            # Get data for the arrow plot:
+            arrow_part = features.loc[
+                (features.transcript_id == canonical_transcript_id)
+                & (features.type.isin(['CDS', 'UTR'])),
+                ['chr', 'start', 'end', 'strand', 'type', 'gene_id', 'gene_name']
+            ]
+            arrow_data = pd.concat([arrow_data, arrow_part])
+
             # Generate exon-intron splice:
             gene_df = self.generate_exon_intron_structure(
                 gene_id, canonical_transcript_id, start, end,
@@ -353,13 +370,17 @@ class FetchGencode(FetchFromFtp):
 
         # Saving data:
         self.processed = processed
+        self.arrow_data = arrow_data
 
     # Save data
     def save_gencode_data(self, data_dir):
-        self.processed = self.processed[['chr', 'end', 'gene_id', 'gene_name', 'start', 'transcript_id', 'type']]
+        self.processed = self.processed[['chr', 'start', 'end', 'gene_id', 'gene_name', 'transcript_id', 'type']]
 
-        gwas_output_filename = f'{data_dir}/{self.processed_file}'
-        self.processed.to_csv(gwas_output_filename, sep='\t', compression='infer', index=False)
+        gencode_output_filename = f'{data_dir}/{self.processed_file}'
+        self.processed.to_csv(gencode_output_filename, sep='\t', compression='infer', index=False)
+
+        gencode_arrow_filename = f'{data_dir}/{self.arrow_file}'
+        self.arrow_data.to_csv(gencode_arrow_filename, sep='\t', compression='infer', index=False)
 
     # Extract release date:
     def get_release_date(self):
