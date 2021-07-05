@@ -116,7 +116,7 @@ class GenerateArrowPlot(object):
     ARROW_SVG = '<polygon points="{}" style="fill:{};stroke:{};stroke-width:1" />\n'
 
     def __init__(self, config_manager, arrow_width):
-        self.arrow_data = xf = pd.read_csv(config_manager.get_gencode_arrow_file(), sep='\t', compression='infer')
+        self.arrow_data = pd.read_csv(config_manager.get_gencode_arrow_file(), sep='\t', compression='infer')
 
         # Extract colors:
         arrow_colors = config_manager.get_arrow_colors()
