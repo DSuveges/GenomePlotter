@@ -35,7 +35,7 @@ class TestConfigManager(unittest.TestCase):
     def test_get_chromosome_colors(self):
 
         chromosome_colors = self.config_obj.get_chromosome_colors()
-        
+
         # Test return types:
         self.assertIsInstance(chromosome_colors, dict)
 
@@ -52,7 +52,7 @@ class TestConfigManager(unittest.TestCase):
     def test_get_cytobanc_colors(self):
 
         cytobanc_colors = self.config_obj.get_cytobanc_colors()
-        
+
         # Test return types:
         self.assertIsInstance(cytobanc_colors, dict)
 
@@ -69,7 +69,7 @@ class TestConfigManager(unittest.TestCase):
     def test_get_arrow_colors(self):
 
         arrow_colors = self.config_obj.get_arrow_colors()
-        
+
         # Test return types:
         self.assertIsInstance(arrow_colors, dict)
 
