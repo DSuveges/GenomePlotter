@@ -156,3 +156,6 @@ class ConfigManager(object):
 
     def get_dark_start(self):
         return self.__data['plot_parameters']['dark_start']
+
+    def get_custom_gene_window(self):
+        return self.__data['plot_parameters']['custom_gene_window']

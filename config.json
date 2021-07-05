@@ -1,13 +1,14 @@
 {
     "plot_parameters": {
-        "width": null,
-        "pixel_size": null,
-        "dark_start": null,
-        "dark_max": null
+        "width": 200,
+        "pixel_size": 18,
+        "dark_start": 0.75,
+        "dark_max": 0.4,
+        "custom_gene_window": 10000
     },
     "basic_parameters": {
         "data_folder": null,
-        "chunk_size": null,
+        "chunk_size": 450,
         "row_length": null,
         "missing_tolerance": null,
         "plot_folder": null

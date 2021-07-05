@@ -3,8 +3,8 @@ import re
 
 from functions.ConfigManager import ConfigManager
 
-class ConfigManager(unittest.TestCase):
-    
+class TestConfigManager(unittest.TestCase):
+
     CONFIG_JSON = 'config.json'
     config_obj = ConfigManager(CONFIG_JSON)
     hex_color_match = re.compile(r'^#[0-9A-F]{6}$', re.IGNORECASE)
@@ -87,6 +87,10 @@ class ConfigManager(unittest.TestCase):
         gwas_color = self.config_obj.get_gwas_color()
         self.assertIsInstance(gwas_color, str)
         self.assertTrue(self.hex_color_match.match(gwas_color))
+
+    def test_get_custom_gene_window(self):
+        gene_window = self.config_obj.get_custom_gene_window()
+        self.assertIsInstance(gene_window, int)
 
 if __name__ == '__main__':
     unittest.main()

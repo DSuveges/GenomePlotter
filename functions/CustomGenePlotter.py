@@ -5,10 +5,9 @@ from .DataIntegrator import DataIntegrator
 
 class CustomGeneIntegrator(object):
 
-    GENE_WINDOW = 10_000  # Langth of the flanking on each end of the gene
-
     def __init__(self, query, config_manager) -> None:
         self.width = config_manager.get_width()
+        self.gene_window = config_manager.get_custom_gene_window()
 
         logging.info(f'Generating integrated dataset for gene: {query}')
 
@@ -70,8 +69,8 @@ class CustomGeneIntegrator(object):
         genome_filtered = (
             genome_df
             .loc[
-                (genome_df.start >= self.start - self.GENE_WINDOW)
-                & (genome_df.end <= self.end + self.GENE_WINDOW)
+                (genome_df.start >= self.start - self.gene_window)
+                & (genome_df.end <= self.end + self.gene_window)
             ]
         )
 
@@ -99,7 +98,123 @@ class CustomGeneIntegrator(object):
     def get_integrated_data(self) -> pd.DataFrame:
         return self.integrated_data
 
-class GeneToArrow(object):
+class GenerateArrowPlot(object):
+    
+    CHUNK_SVG = '<rect x="{}" y="0" width="{}" height="{}" style="stroke-width:1;stroke:{};fill:{}" />\n'
+    LINE_SVG = '<line x1="{}" y1="{}" x2="{}" y2="{}" stroke="{}" stroke-width="1" />\n'
+    ARROW_SVG = '<polygon points="{}" style="fill:{};stroke:{};stroke-width:1" />\n'
+    
+    def __init__(self, arrow_data, config_manager, arrow_width):
+        self.arrow_data = arrow_data
+        
+        # Extract colors:
+        arrow_colors = config_manager.get_arrow_colors()
+        self.line_color = arrow_colors['line_color']
+        self.utr_color = arrow_colors['utr_color']
+        self.cds_color = arrow_colors['cds_color']
+        
+        # Extract other values
+        self.chunk_size = config_manager.get_chunk_size()
+        self.pixel_size = config_manager.get_pixel()
+        
+        self.arrow_width = arrow_width
+        
+    def generate_arrow_polt(self, gene_name):
 
-    def __init__(self, df, config_manager):
-        return None
+        # Get CDS and UTR for a given gene:
+        gene_df = (
+            self.arrow_data
+            .loc[lambda df: df.gene_name == gene_name]
+            .sort_values('start')
+            .reset_index(drop=True)
+            .drop(['chr', 'gene_name', 'gene_id'], axis=1)
+        )
+        
+        # If nothing found raise:
+        assert len(gene_df) > 1, f'Gene name ({gene_name}) was not found in the data.'
+
+        # Scaling genomic coordinates to screen coordinates:
+        gene_df = (
+            gene_df
+            .assign(
+                relative_start = lambda row: (row['start'] - gene_df.start.min())/self.chunk_size * self.pixel_size,
+                relative_end = lambda row: (row['end'] - gene_df.start.min())/self.chunk_size * self.pixel_size,
+            )
+            .assign(
+                length = lambda row: row['relative_end'] - row['relative_start']
+            )
+        )
+
+        # Calculate intron midpoints:
+        gene_df['next_start'] = (
+            gene_df.relative_start.drop(0)
+            .reset_index(drop=True)
+        )
+        
+        gene_df['midpoint'] = (gene_df.next_start - gene_df.relative_end)/2 + gene_df.relative_end
+        self.df = gene_df.head()
+        
+        # Generate boxes:
+        boxes = gene_df.apply(self.draw_box, axis=1).dropna()
+        
+        # Generate lines connecting boxes:
+        lines = gene_df.loc[gene_df.midpoint.notna()].apply(self.draw_lines, axis=1).dropna()
+
+        # Generate closing arrow:
+        arrow = self.draw_arrow(gene_df)
+        
+        # Concatenate into single string:
+        svg_string = ''.join(lines.to_list() + boxes.to_list()) + arrow
+        svg_object = svg_handler(svg_string, gene_df.relative_end.max(), arrow_width)
+        
+        return svg_object
+
+    def draw_arrow(self, df):
+        
+        arrow_width = self.arrow_width
+        
+        # Get orientation:
+        row = df.iloc[0] if df.iloc[0]['strand'] == '-' else df.tail(1).iloc[0]
+
+        if row['strand'] == '+':
+            coordinates = [
+                (row['relative_start'],0), (row['relative_end'], 0), 
+                (row['relative_end'], -arrow_width/2), (row['relative_end'] + arrow_width, arrow_width/2),
+                (row['relative_end'], arrow_width * 1.5), (row['relative_end'],arrow_width), 
+                (row['relative_start'], arrow_width)
+            ]
+        else:
+            coordinates = [
+                (row['relative_start'],0),(row['relative_end'], 0),
+                (row['relative_end'], arrow_width), (row['relative_start'], arrow_width),
+                (row['relative_start'], 1.5 * arrow_width), (row['relative_start'] - arrow_width, arrow_width / 2),
+                (row['relative_start'], -arrow_width/2)
+            ]
+
+        coordinate_str = ' '.join([f'{x[0]},{x[1]}' for x in coordinates])
+
+        return ARROW_SVG.format(coordinate_str, self.utr_color, self.line_color)
+    
+    def draw_box(self, row):
+
+        if row['type'] == 'UTR':
+            fill_color = self.utr_color
+        elif row['type'] == 'CDS':
+            fill_color = self.cds_color
+        else:
+            fill_color = 'black'
+
+        return self.CHUNK_SVG.format(row['relative_start'], row['length'], self.arrow_width, self.line_color, fill_color)
+    
+    def draw_lines(self, row):
+        
+        if row['next_start'] - row['relative_end'] < 5:
+            return None
+
+        # Two bits are required:
+        connector = self.LINE_SVG.format(row['relative_end'], 0, row['midpoint'], -self.arrow_width/2, self.line_color)
+        connector += self.LINE_SVG.format(row['midpoint'], -self.arrow_width/2, row['next_start'], 0, self.line_color)
+
+        return connector
+        
+
