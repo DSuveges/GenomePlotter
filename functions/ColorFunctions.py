@@ -171,7 +171,7 @@ class ColorPicker(object):
 
         # Checking dark max and the threshold:
         for val in [dark_max, dark_threshold]:
-            if (not isinstance(val, float)) or (val > 1) or (val < 0):
+            if (not isinstance(val, float)) or (val >= 1) or (val <= 0):
                 raise ValueError(f'dark_max and dark_threshold has to be float between 0 and 1 instead: {val}')
 
         # Checking dark max and the threshold:

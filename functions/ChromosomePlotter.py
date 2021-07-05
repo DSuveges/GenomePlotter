@@ -31,6 +31,10 @@ class ChromosomePlotter(object):
 
     def __add_centromere(self):
 
+        # If the plotted chromosome region doesn't have centromere, we skip:
+        if 'centromere' not in self.__chromosome_data__.GENCODE.to_list():
+            return None
+
         # We use the Gencode annotation in the chromosome dataframe to get start and end:
         centromere_start = (
             self.__chromosome_data__.loc[self.__chromosome_data__.GENCODE == 'centromere'].y.min() * self.__pixel__

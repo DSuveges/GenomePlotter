@@ -2,7 +2,6 @@ import logging
 import pandas as pd
 
 from .DataIntegrator import DataIntegrator
-from .svg_handler import svg_handler
 class CustomGeneIntegrator(object):
 
     def __init__(self, query, config_manager) -> None:
@@ -18,7 +17,7 @@ class CustomGeneIntegrator(object):
         )
 
         # Filter gencode dataset for a given gene:
-        filtered_gencode = self.filter_gencode_data(query, self.gencode_df)
+        filtered_gencode = self.__filter_gencode_data(query, self.gencode_df)
 
         if len(filtered_gencode) == 0:
             raise ValueError(f'The gene {query} cound not be found in the GENCODE database.')
@@ -39,13 +38,13 @@ class CustomGeneIntegrator(object):
 
         # Get the relevant genome file:
         genome_file = config_manager.get_chromosome_file(self.chromosome)
-        genome_df = self.load_genome(genome_file)
+        genome_df = self.__load_genome(genome_file)
         logging.info(f'Number of genomic chunks for this gene: {len(genome_df)}')
 
         self.genome_df = genome_df
 
     @staticmethod
-    def filter_gencode_data(gene_name, gencode_df):
+    def __filter_gencode_data(gene_name, gencode_df):
 
         if gene_name.startswith('ENSG'):
             gencode_filtered = gencode_df.loc[gencode_df.gene_id.str.match(gene_name)]
@@ -57,7 +56,7 @@ class CustomGeneIntegrator(object):
     def get_gencode_data(self):
         return self.filtered_gencode
 
-    def load_genome(self, genome_file):
+    def __load_genome(self, genome_file):
         """This function loads genome for the gene"""
 
         genome_df = pd.read_csv(
@@ -81,7 +80,7 @@ class CustomGeneIntegrator(object):
         integrator = DataIntegrator(self.genome_df)
 
         # Convert genomic coordinates to plot coordinates:
-        integrator.add_xy_coordinates(self.width)
+        integrator.add_xy_coordinates()
 
         # Adding GENCODE annotation to genomic data:
         integrator.add_genes(self.filtered_gencode)
@@ -93,10 +92,22 @@ class CustomGeneIntegrator(object):
         integrator.add_colors(color_picker)
 
         # Extract integrated data:
-        self.integrated_data = integrator.get_data()
+        integrated_data = integrator.get_data()
+        self.integrated_data = (
+            integrated_data
+            .assign(
+                x=lambda df: df.x - integrated_data.x.min(),
+                y=lambda df: df.y - integrated_data.y.min()
+            )
+            .reset_index(drop=True)
+        )
 
     def get_integrated_data(self) -> pd.DataFrame:
         return self.integrated_data
+
+    def get_data_width(self) -> int:
+        return self.integrated_data.x.max()
+
 
 class GenerateArrowPlot(object):
 
@@ -104,8 +115,8 @@ class GenerateArrowPlot(object):
     LINE_SVG = '<line x1="{}" y1="{}" x2="{}" y2="{}" stroke="{}" stroke-width="1" />\n'
     ARROW_SVG = '<polygon points="{}" style="fill:{};stroke:{};stroke-width:1" />\n'
 
-    def __init__(self, arrow_data, config_manager, arrow_width):
-        self.arrow_data = arrow_data
+    def __init__(self, config_manager, arrow_width):
+        self.arrow_data = xf = pd.read_csv(config_manager.get_gencode_arrow_file(), sep='\t', compression='infer')
 
         # Extract colors:
         arrow_colors = config_manager.get_arrow_colors()
@@ -165,9 +176,9 @@ class GenerateArrowPlot(object):
 
         # Concatenate into single string:
         svg_string = ''.join(lines.to_list() + boxes.to_list()) + arrow
-        svg_object = svg_handler(svg_string, gene_df.relative_end.max(), self.arrow_width)
+        # svg_object = svg_handler(svg_string, gene_df.relative_end.max(), self.arrow_width)
 
-        return svg_object
+        return svg_string, gene_df.relative_end.max()
 
     def draw_arrow(self, df):
 
@@ -210,7 +221,7 @@ class GenerateArrowPlot(object):
 
     def draw_lines(self, row):
 
-        if row['next_start'] - row['relative_end'] < 5:
+        if row['next_start'] - row['relative_end'] < 2:
             return None
 
         # Two bits are required:

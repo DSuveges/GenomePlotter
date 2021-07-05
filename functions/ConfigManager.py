@@ -141,6 +141,15 @@ class ConfigManager(object):
 
         return full_path
 
+    def get_gencode_arrow_file(self):
+        file = self.__sources['gencode_data']['arrow_file']
+        full_path = f'{self.__data_folder}/{file}'
+
+        if not os.path.isfile(full_path):
+            raise ValueError(f'Processed GENCODE file ({full_path}) doesn\'t exists.')
+
+        return full_path
+
     # Get plot parameters:
     def get_pixel(self):
         return self.__data['plot_parameters']['pixel_size']

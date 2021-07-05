@@ -9,10 +9,11 @@ class svg_handler(object):
         font-size="{}px" fill="{}">{}</text>\n'
     __svg_line__ = '<line x1="{}" y1="{}" x2="{}" y2="{}" stroke="{}" stroke-width="{}" {} />\n'
 
-    def __init__(self, svg_string, width, height):
+    def __init__(self, svg_string, width, height, background=None):
         self.__svg__ = svg_string
         self.__width__ = width
         self.__height__ = height
+        self.__background = background
 
     def group(self, translate=(0, 0)):
         """
@@ -38,8 +39,12 @@ class svg_handler(object):
         svg_header = (
             f'<svg version="1.1" xmlns="http://www.w3.org/2000/svg" \
             xmlns:xlink="http://www.w3.org/1999/xlink" \
-            xml:space="preserve"  width = "{self.__width__}" height = "{self.__height__}">\n'
+            xml:space="preserve"  width = "{self.__width__}" height = "{self.__height__}" >\n'
         )
+
+        # If background color is set, we use it:
+        if self.__background is not None:
+            svg_header += f'<rect width="100%" height="100%" fill="{self.__background}" />'
 
         self.__closedSVG__ = svg_header + self.__svg__ + '\n</svg>\n'
 

@@ -26,7 +26,13 @@ class DataIntegrator(object):
             if col not in genome_df.columns:
                 raise ValueError(f'Manadatory colum: {col} is not found in the provided dataframe.')
 
-    def add_xy_coordinates(self, width):
+    def add_xy_coordinates(self, width=None):
+
+        # By default, all chunks are written into the same row:
+        if not width:
+            width = len(self.__genome__)
+            self.__genome__.reset_index(drop=True, inplace=True)
+
         self.__width__ = width
 
         self.__genome__ = (

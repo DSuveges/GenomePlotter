@@ -24,9 +24,9 @@
         },
         "gwas_point": "#000000",
         "arrow_colors": {
-            "line_color": "#00CED1",
-            "utr_color": "#FF1493",
-            "cds_color": "#FFD700"
+            "line_color": "#6495ED",
+            "utr_color": "#FFE4B5",
+            "cds_color": "#ADD8E6"
         },
         "cytoband_colors": {
             "gneg": "#FFFFFF",
