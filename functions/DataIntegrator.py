@@ -26,7 +26,13 @@ class DataIntegrator(object):
             if col not in genome_df.columns:
                 raise ValueError(f'Manadatory colum: {col} is not found in the provided dataframe.')
 
-    def add_xy_coordinates(self, width):
+    def add_xy_coordinates(self, width=None):
+
+        # By default, all chunks are written into the same row:
+        if not width:
+            width = len(self.__genome__)
+            self.__genome__.reset_index(drop=True, inplace=True)
+
         self.__width__ = width
 
         self.__genome__ = (
@@ -43,22 +49,22 @@ class DataIntegrator(object):
         logging.info(f'Number of chunks in one row: {width}')
         logging.info(f'Number of rows: {self.__genome__.y.max()}')
 
-    def add_genes(self, GENCODE_df):
-        logging.info(f'Number of gencode features: {len(GENCODE_df)}')
+    def add_genes(self, gencode_df):
+        logging.info(f'Number of gencode features: {len(gencode_df)}')
 
         # Filtering GENCODE data:
-        GENCODE_df = GENCODE_df.loc[GENCODE_df.chr == self.chromosome_name]
+        gencode_df = gencode_df.loc[gencode_df.chr == self.chromosome_name]
 
-        logging.info(f'Number of gencode features on chromosome {self.chromosome_name}: {len(GENCODE_df)}')
+        logging.info(f'Number of gencode features on chromosome {self.chromosome_name}: {len(gencode_df)}')
 
         # Creating bedtools objects:
-        gencode_bed = pybedtools.bedtool.BedTool.from_dataframe(GENCODE_df.rename(columns={'chr': 'chrom'}))
+        gencode_bed = pybedtools.bedtool.BedTool.from_dataframe(gencode_df.rename(columns={'chr': 'chrom'}))
         chrom_bed = pybedtools.bedtool.BedTool.from_dataframe(self.__genome__.rename(columns={'chr': 'chrom'}))
 
         # Run intersectbed and extract result as dataframe:
         try:
-            GencodeIntersect = chrom_bed.intersect(gencode_bed, wa=True, wb=True)
-            intersect_df = GencodeIntersect.to_dataframe(
+            gencode_intersect = chrom_bed.intersect(gencode_bed, wa=True, wb=True)
+            intersect_df = gencode_intersect.to_dataframe(
                 header=None,
                 names=[
                     'chr', 'start', 'end', 'GC_ratio', 'x', 'y', 'chr_2',
@@ -76,13 +82,13 @@ class DataIntegrator(object):
             raise e
 
         # Parse out results:
-        GENCODE_chunks = intersect_df.groupby('start').apply(
+        gencode_chunks = intersect_df.groupby('start').apply(
             lambda x: 'exon' if 'exon' in x.type.unique() else 'gene'
         )
-        GENCODE_chunks.name = "GENCODE"
+        gencode_chunks.name = "GENCODE"
 
         # Updating index:
-        genome_df = self.__genome__.merge(GENCODE_chunks, left_on='start', right_index=True, how='left')
+        genome_df = self.__genome__.merge(gencode_chunks, left_on='start', right_index=True, how='left')
         genome_df.GENCODE.fillna('intergenic', inplace=True)
 
         # Adding annotation to df:

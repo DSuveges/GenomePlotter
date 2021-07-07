@@ -83,12 +83,13 @@ def integrator_wrapper(config_manager, dummy, chromosome):
     gencode_file = config_manager.get_gencode_file()
     dark_start = config_manager.get_dark_start()
     dark_max = config_manager.get_dark_max()
-    colorScheme = config_manager.get_color_scheme()
+    color_map = {k: v for k, v in config_manager.get_color_scheme().items() if isinstance(v, str) and v.startswith('#')}
+
     width = config_manager.get_width()
 
     # Initialize color picker object:
     color_picker = ColorPicker(
-        colorScheme, width=width, dark_threshold=dark_start, dark_max=dark_max, count=30
+        color_map, width=width, dark_threshold=dark_start, dark_max=dark_max, count=30
     )
 
     # Reading datafiles:

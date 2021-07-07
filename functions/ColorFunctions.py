@@ -93,8 +93,8 @@ def color_darkener(color: str, x: int, width: int, threshold: float, max_diff_va
         str: the darkness adjusted color in hex
     """
 
-    if not isinstance(color, str) or not re.match(r'#[0-9A-F]{6}', color):
-        raise TypeError('Color is expected to be given as a hexadecimal value (eg. "#F12AC4").')
+    if not isinstance(color, str) or not re.match(r'#[0-9A-Fa-f]{6}', color):
+        raise TypeError(f'Color is expected to be given as a hexadecimal value (eg. "#F12AC4"). Given: {color}.')
 
     if not isinstance(x, int):
         raise TypeError('x has to be integer giving the numeric position of the chunk.')
@@ -171,7 +171,7 @@ class ColorPicker(object):
 
         # Checking dark max and the threshold:
         for val in [dark_max, dark_threshold]:
-            if (not isinstance(val, float)) or (val > 1) or (val < 0):
+            if (not isinstance(val, float)) or (val >= 1) or (val <= 0):
                 raise ValueError(f'dark_max and dark_threshold has to be float between 0 and 1 instead: {val}')
 
         # Checking dark max and the threshold:
