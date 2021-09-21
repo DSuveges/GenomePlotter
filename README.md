@@ -25,7 +25,7 @@ The project is divided into several parts:
 * [cairosvg](http://cairosvg.org/)
 * [pybedtools](https://pypi.python.org/pypi/pybedtools)
 
-### Source data:
+### Source data: 
 
 All applied source data is mapped to the GRCh38 build of the human genome.
 
