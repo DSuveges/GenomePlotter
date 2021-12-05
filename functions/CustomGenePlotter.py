@@ -1,8 +1,10 @@
 import logging
 import pandas as pd
+from requests import get
 
 from .DataIntegrator import DataIntegrator
-class CustomGeneIntegrator(object):
+from .svg_handler import svg_handler
+class CustomGeneIntegrator:
 
     def __init__(self, query, config_manager) -> None:
         self.width = config_manager.get_width()
@@ -57,7 +59,6 @@ class CustomGeneIntegrator(object):
         return self.filtered_gencode
 
     def __load_genome(self, genome_file):
-        """This function loads genome for the gene"""
 
         genome_df = pd.read_csv(
             genome_file, sep='\t', compression='infer', quotechar='"',
@@ -109,7 +110,7 @@ class CustomGeneIntegrator(object):
         return self.integrated_data.x.max()
 
 
-class GenerateArrowPlot(object):
+class GenerateArrowPlot:
 
     CHUNK_SVG = '<rect x="{}" y="0" width="{}" height="{}" style="stroke-width:1;stroke:{};fill:{}" />\n'
     LINE_SVG = '<line x1="{}" y1="{}" x2="{}" y2="{}" stroke="{}" stroke-width="1" />\n'
@@ -163,7 +164,9 @@ class GenerateArrowPlot(object):
         )
 
         gene_df['midpoint'] = (gene_df.next_start - gene_df.relative_end) / 2 + gene_df.relative_end
-        self.df = gene_df.head()
+
+        # Storing the data:
+        self.gene_df = gene_df
 
         # Generate boxes:
         boxes = gene_df.apply(self.draw_box, axis=1).dropna()
@@ -176,7 +179,6 @@ class GenerateArrowPlot(object):
 
         # Concatenate into single string:
         svg_string = ''.join(lines.to_list() + boxes.to_list()) + arrow
-        # svg_object = svg_handler(svg_string, gene_df.relative_end.max(), self.arrow_width)
 
         return svg_string, gene_df.relative_end.max()
 
@@ -231,3 +233,45 @@ class GenerateArrowPlot(object):
         connector += self.LINE_SVG.format(row['midpoint'], -self.arrow_width / 2, row['next_start'], 0, self.line_color)
 
         return connector
+
+    def get_translation_start(self) -> int:
+        '''Based on UTR/CDS positions + strand, return the translation start position'''
+
+        gene_df = (
+            self.gene_df
+            .reset_index()
+
+            # Get next type:
+            .assign(type2=lambda df: df.type.shift(-1))
+        )
+
+        if gene_df.strand.loc[0] == '+':
+            row = gene_df.query('''type == "UTR" and type2 == "CDS"''')
+            translate_start = row['end'].iloc[0] + 1
+        else:
+            row = gene_df.query('''type == "CDS" and type2 == "UTR"''')
+            translate_start = row['end'].iloc[0]
+
+        return translate_start
+
+
+def get_translation_start_chunk(translation_start: int, chunks: pd.DataFrame) -> str:
+    '''Given a translation start position and a chunk dataframe, return chunk sequence'''
+
+    # Get the chunk overlapping the translation start:
+    chunk_row = (
+        chunks
+        .query('start <= @translation_start and end >= @translation_start')
+        .iloc[0]
+    )
+
+    # Retrieve the sequence for the chunk:
+    ensembl_rest_url = 'https://rest.ensembl.org/sequence/region/human'
+    r = get(f'{ensembl_rest_url}/{chunk_row["chr"]}:{chunk_row["start"]}..{chunk_row["end"]}:1?content-type=application/json')
+    sequence = r.json()['seq']
+
+    # Test sequence:
+    assert len(sequence) == chunk_row['end'] - chunk_row['start'] + 1, 'Sequence length does not match chunk length'
+
+    # Return sequence
+    print(sequence)
