@@ -1,10 +1,19 @@
+"""Steps to fetch and process required data for genome plotter."""
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+import hydra
+
+if TYPE_CHECKING:
+    from omegaconf import DictConfig
+
 import os
 import json
-import argparse
 import logging
 import sys
 
-from functions.InputParsers import (
+from modules.InputParsers import (
     FetchGwas,
     FetchGenome,
     FetchCytobands,
@@ -12,45 +21,12 @@ from functions.InputParsers import (
     fetch_ensembl_version
 )
 
-def main():
-
-    # Parse command line arguments
-    parser = argparse.ArgumentParser(
-        description='This script fetches and parses input data for the genome plotter project'
-    )
-    parser.add_argument(
-        '-d', '--dataDir', help='Folder into which the input data and the temporary files will be saved',
-        required=True, type=str
-    )
-    parser.add_argument(
-        '-c', '--config', help='JSON file with configuration data',
-        required=True, type=str
-    )
-    parser.add_argument(
-        '-l', '--logfile', help='Name of the logfile',
-        required=False, type=str
-    )
-    parser.add_argument(
-        '-s', '--chunk_size', help='Chunk size to pool genomic sequence',
-        required=True, type=int
-    )
-    parser.add_argument(
-        '-t', '--tolerance', help='Fraction of a chunk that cannot be N.',
-        required=True, type=float
-    )
-
-    # Parse parameters:
-    args = parser.parse_args()
-    data_dir = args.dataDir
-    data_dir = os.path.abspath(data_dir)
-    config_file = args.config
-    chunk_size = args.chunk_size
-    tolerance = args.tolerance
+@hydra.main(version_base=None, config_path=".", config_name="config")
+def main(cfg: DictConfig) -> None:
+    """Downloading data."""
 
     # Initialize logger:
     handlers = [logging.StreamHandler(sys.stdout)]
-    if args.logfile != '':
-        handlers.append(logging.FileHandler(filename=args.logfile))
 
     # Initialize logger:
     logging.basicConfig(
@@ -63,43 +39,26 @@ def main():
     logging.info('Fetching data for Genome Plotter started....')
 
     # Checking if output dir exists:
-    if not os.path.isdir(data_dir):
-        raise ValueError(f'The provided folder ({data_dir}) does not exist')
+    if not os.path.isdir(cfg.shared_parameters.source_data_folder):
+        raise ValueError(f'The provided folder ({cfg.shared_parameters.source_data_folder}) does not exist')
 
-    logging.info(f'Pre-processed data is saved to {data_dir}')
-
-    # Reading configuration file:
-    if not os.path.isfile(config_file):
-        raise ValueError(f'The provided config file ({config_file}) does not exist.')
-
-    with open(config_file) as f:
-        try:
-            configuration = json.load(f)
-        except json.decoder.JSONDecodeError:
-            raise ValueError(f'The provided config file ({config_file}) is not a valid JSON file.')
-
-    logging.info(f'Configuration is read from {config_file}')
+    logging.info(f'Pre-processed data is saved to {cfg.shared_parameters.source_data_folder}')
 
     # Report the other command line parameters:
-    logging.info(f'Chunk size: {chunk_size}')
+    logging.info(f'Chunk size: {cfg.basic_parameters.chunk_size}')
     logging.info(f'Tolerance for unsequenced bases: {tolerance}')
-
-    # Update data folder:
-    configuration['basic_parameters']['data_folder'] = data_dir
-    configuration['basic_parameters']['chunk_size'] = chunk_size
-    configuration['basic_parameters']['missing_tolerance'] = tolerance
 
     # Fetching GWAS Catalog data:
     logging.info('Fetching GWAS data...')
     gwas_retrieve = FetchGwas(configuration['source_data']['gwas_data'])
     gwas_retrieve.retrieve_data()
     gwas_retrieve.process_gwas_data()
-    gwas_retrieve.save_gwas_data(data_dir)
+    gwas_retrieve.save_gwas_data(cfg.shared_parameters.source_data_folder)
     configuration['source_data']['gwas_data']['release_date'] = gwas_retrieve.get_release_date()
 
     # Fetching cytological bands:
     cytoband_url = configuration['source_data']['cytoband_data']['url']
-    cytoband_output_file = f"{data_dir}/{configuration['source_data']['cytoband_data']['processed_file']}"
+    cytoband_output_file = f"{cfg.shared_parameters.source_data_folder}/{configuration['source_data']['cytoband_data']['processed_file']}"
     logging.info('Fetching cytoband information.')
     cytoband_retrieve = FetchCytobands(cytoband_url)
     cytoband_retrieve.save_cytoband_data(cytoband_output_file)

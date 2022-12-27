@@ -1,21 +1,20 @@
-
+"""Logic to handle ftp data transfer."""
 from dateutil import parser
 import pandas as pd
 import ftplib
 import io
 import gzip
 
-class FetchFromFtp(object):
+class FetchFromFtp:
+    """This class is to retrieve the association table from the most recent GWAS Catalog release.
 
-    """
-    This class is to retrieve the association table from the most recent GWAS Catalog release.
     Expects the ftp host address.
-
-    It also returns the release date.
+    - It returns the release date.
+    - Fetch file or directory
     """
 
-    def __init__(self, url):
-        self.FTP_HOST = url
+    def __init__(self, host: str) -> None:
+        self.FTP_HOST = host
 
         # Initialize connection and go to folder:
         self.ftp = ftplib.FTP(self.FTP_HOST, 'anonymous', '')
@@ -26,9 +25,8 @@ class FetchFromFtp(object):
         self.ftp.cwd(path)
         self.ftp.dir(files.append)
 
-        files = [' '.join(x.split()[8:]) for x in files]
+        return [' '.join(x.split()[8:]) for x in files]
 
-        return files
 
     def fetch_last_update_date(self, path):
         """

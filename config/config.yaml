@@ -1,0 +1,130 @@
+shared_parameters:
+  source_data_folder: source_data
+  processed_data_folder: processed_data
+  plot_folder: plots
+basic_parameters:
+  horizontal_chunks: 200
+  pixel_size: 18
+  chunk_size: 450
+modules:
+  chromosome_chunks:
+    data:
+      ensembl:
+        host: ftp.ensembl.org
+        path": /pub/release-{}/fasta/homo_sapiens/dna
+        source_file": Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
+        version_url": http://rest.ensembl.org/info/data/?content-type=application/json
+        release": 104
+        processed_file": ${shared_parameters.source_data_folder}/processed_chr{}.bed.gz
+      gencode_data:
+        host: ftp.ebi.ac.uk
+        path: /pub/databases/gencode/Gencode_human
+        source_file: ${shared_parameters.source_data_folder}/gencode.v{}.annotation.gtf.gz
+        processed_file: ${shared_parameters.processed_data}/processed_gencode.bed.gz
+        arrow_file: ${shared_parameters.processed_data}/processed_gencode_arrow.bed.gz
+        version: 38
+        release_date: 2021-05-05
+    data_process_parameters:
+      missing_tolerance: 0.4
+    plot_parameters:
+      dark_start: 0.75
+      dark_max: 0.4
+      color_schema:
+        chromosome_colors:
+          centromere: '#9393FF'
+          heterochromatin: "#F9D2C2"
+          intergenic: "#A3E0D1"
+          exon: "#FFD326"
+          gene: "#6CB8CC"
+  dummy:
+    plot_parameters:
+      color_schema:
+        centromere: '#9393FF'
+        dummy: "#B3F29D"
+  cytoband:
+    data:
+      url: "http://rest.ensembl.org/info/assembly/homo_sapiens?content-type=application/json&bands=1"
+      processed_file: ${shared_parameters.processed_data}/processed_cytoBand.bed.gz
+      genome_build: GRCh38
+    plot_parameters:
+      gneg: "#FFFFFF"
+      gpos25: "#E5E5E5"
+      gpos50: "#CCCCCC"
+      gpos75: "#B3B3B3"
+      gpos100: "#999999"
+      acen: "#CCCCCC"
+      gvar: "#999999"
+      stalk: "#E5E5E5"
+      border: "#000000"
+  gwas_data:
+    data:
+      host: ftp.ebi.ac.uk
+      path: /pub/databases/gwas/releases/latest/
+      source_file: ${shared_parameters.source_data_folder}/gwas-catalog-associations_ontology-annotated.tsv
+      processed_file: ${shared_parameters.processed_data}/processed_GWAS.bed.gz
+      release_date:
+    plot_parameters:
+      color_schema:
+        gwas_point: "#000000"
+  genes_with_drugs:
+    data:
+      host: ftp.ebi.ac.uk
+      target_index: /pub/databases/opentargets/platform/22.11/output/etl/parquet/targets
+      drug_index: /pub/databases/opentargets/platform/22.11/output/etl/parquet/molecule
+      disease_index: /pub/databases/opentargets/platform/22.11/output/etl/parquet/diseases
+    plot_parameters:
+      font_size:
+      font_type:
+      color_schema:
+        gene_color:
+chromosome_list:
+  - length: 57227415
+    name: 'Y'
+  - length: 64444167
+    name: '20'
+  - length: 156040895
+    name: X
+  - length: 114364328
+    name: '13'
+  - length: 50818468
+    name: '22'
+  - length: 133797422
+    name: '10'
+  - length: 170805979
+    name: '6'
+  - length: 58617616
+    name: '19'
+  - length: 107043718
+    name: '14'
+  - length: 80373285
+    name: '18'
+  - length: 242193529
+    name: '2'
+  - length: 190214555
+    name: '4'
+  - length: 46709983
+    name: '21'
+  - length: 138394717
+    name: '9'
+  - length: 135086622
+    name: '11'
+  - length: 83257441
+    name: '17'
+  - length: 145138636
+    name: '8'
+  - length: 159345973
+    name: '7'
+  - length: 101991189
+    name: '15'
+  - length: 133275309
+    name: '12'
+  - length: 248956422
+    name: '1'
+  - length: 90338345
+    name: '16'
+  - length: 181538259
+    name: '5'
+  - length: 198295559
+    name: '3'
+  - length: 16569
+    name: MT
