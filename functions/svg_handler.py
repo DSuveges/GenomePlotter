@@ -1,13 +1,18 @@
+from __future__ import annotations
+
 import cairosvg
 
-class svg_handler(object):
+
+class svg_handler:
 
     """Functions to manipulate svg"""
 
     __svg_rect__ = '<rect x="{}" y="{}" width="{}" height="{}" style="stroke-width:1;stroke:{}; fill: {}" />\n'
     __svg_label__ = '<text x="{}" y="{}" text-anchor="{}" font-family="sans-serif" \
         font-size="{}px" fill="{}">{}</text>\n'
-    __svg_line__ = '<line x1="{}" y1="{}" x2="{}" y2="{}" stroke="{}" stroke-width="{}" {} />\n'
+    __svg_line__ = (
+        '<line x1="{}" y1="{}" x2="{}" y2="{}" stroke="{}" stroke-width="{}" {} />\n'
+    )
 
     def __init__(self, svg_string, width, height, background=None):
         self.__svg__ = svg_string
@@ -19,8 +24,9 @@ class svg_handler(object):
         """
         Grouping and transforming object. Should have been more functionally rich
         """
-        self.__svg__ = '<g transform="translate(%s %s)">\n%s\n</g>\n' % (
-            translate[0], translate[1], self.__svg__)
+        self.__svg__ = '<g transform="translate({} {})">\n{}\n</g>\n'.format(
+            translate[0], translate[1], self.__svg__
+        )
 
         # Updating coordinates:
         self.__width__ += abs(translate[0])
@@ -36,49 +42,51 @@ class svg_handler(object):
         self.__height__ = max(self.__height__, svg_obj.getHeight())
 
     def __closeSvg(self):
-        svg_header = (
-            f'<svg version="1.1" xmlns="http://www.w3.org/2000/svg" \
+        svg_header = f'<svg version="1.1" xmlns="http://www.w3.org/2000/svg" \
             xmlns:xlink="http://www.w3.org/1999/xlink" \
             xml:space="preserve"  width = "{self.__width__}" height = "{self.__height__}" >\n'
-        )
 
         # If background color is set, we use it:
         if self.__background is not None:
-            svg_header += f'<rect width="100%" height="100%" fill="{self.__background}" />'
+            svg_header += (
+                f'<rect width="100%" height="100%" fill="{self.__background}" />'
+            )
 
-        self.__closedSVG__ = svg_header + self.__svg__ + '\n</svg>\n'
+        self.__closedSVG__ = svg_header + self.__svg__ + "\n</svg>\n"
 
-    def savePng(self, filename='test.png'):
+    def savePng(self, filename="test.png"):
         self.__closeSvg()
 
         cairosvg.svg2png(bytestring=self.__closedSVG__, write_to=filename)
 
-    def saveSvg(self, filename='test.svg'):
+    def saveSvg(self, filename="test.svg"):
         self.__closeSvg()
 
-        with open(filename, 'w') as f:
+        with open(filename, "w") as f:
             f.write(self.__closedSVG__)
 
     def getSvg(self):
-        return(self.__svg__)
+        return self.__svg__
 
     def getWidth(self):
-        return(self.__width__)
+        return self.__width__
 
     def getHeight(self):
-        return(self.__height__)
+        return self.__height__
 
     def draw_rectangle(self, x, y, width, height, stroke, fill):
         self.__svg__ += self.__svg_rect__.format(x, y, width, height, stroke, fill)
 
     def draw_line(self, x1, y1, x2, y2, stroke="#000000", stroke_width=3, **kwargs):
-        extra_args = ''
+        extra_args = ""
 
         if kwargs:
             for key, value in kwargs.items():
                 extra_args += f' {key.replace("_","-")}="{value}"'
         print(extra_args)
-        self.__svg__ += self.__svg_line__.format(x1, y1, x2, y2, stroke, stroke_width, extra_args)
+        self.__svg__ += self.__svg_line__.format(
+            x1, y1, x2, y2, stroke, stroke_width, extra_args
+        )
 
-    def add_text(self, x, y, text, size=10, fill="#000000", anchor='start'):
+    def add_text(self, x, y, text, size=10, fill="#000000", anchor="start"):
         self.__svg__ += self.__svg_label__.format(x, y, anchor, size, fill, text)

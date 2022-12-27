@@ -1,74 +1,74 @@
 {
-    "plot_parameters": {
-        "width": 200,
-        "pixel_size": 18,
-        "dark_start": 0.75,
-        "dark_max": 0.4,
-        "custom_gene_window": 10000
+  "plot_parameters": {
+    "width": 200,
+    "pixel_size": 18,
+    "dark_start": 0.75,
+    "dark_max": 0.4,
+    "custom_gene_window": 10000
+  },
+  "basic_parameters": {
+    "data_folder": null,
+    "chunk_size": 450,
+    "row_length": null,
+    "missing_tolerance": null,
+    "plot_folder": null
+  },
+  "color_schema": {
+    "chromosome_colors": {
+      "centromere": "#9393FF",
+      "heterochromatin": "#F9D2C2",
+      "intergenic": "#A3E0D1",
+      "exon": "#FFD326",
+      "gene": "#6CB8CC",
+      "dummy": "#B3F29D"
     },
-    "basic_parameters": {
-        "data_folder": null,
-        "chunk_size": 450,
-        "row_length": null,
-        "missing_tolerance": null,
-        "plot_folder": null
+    "gwas_point": "#000000",
+    "arrow_colors": {
+      "line_color": "#6495ED",
+      "utr_color": "#FFE4B5",
+      "cds_color": "#ADD8E6"
     },
-    "color_schema": {
-        "chromosome_colors": {
-            "centromere": "#9393FF",
-            "heterochromatin": "#F9D2C2",
-            "intergenic": "#A3E0D1",
-            "exon": "#FFD326",
-            "gene": "#6CB8CC",
-            "dummy": "#B3F29D"
-        },
-        "gwas_point": "#000000",
-        "arrow_colors": {
-            "line_color": "#6495ED",
-            "utr_color": "#FFE4B5",
-            "cds_color": "#ADD8E6"
-        },
-        "cytoband_colors": {
-            "gneg": "#FFFFFF",
-            "gpos25": "#E5E5E5",
-            "gpos50": "#CCCCCC",
-            "gpos75": "#B3B3B3",
-            "gpos100": "#999999",
-            "acen": "#CCCCCC",
-            "gvar": "#999999",
-            "stalk": "#E5E5E5",
-            "border": "#000000"
-        }
-    },
-    "source_data": {
-        "cytoband_data": {
-            "url": "http://rest.ensembl.org/info/assembly/homo_sapiens?content-type=application/json&bands=1",
-            "processed_file": "processed_cytoBand.bed.gz",
-            "genome_build": null
-        },
-        "ensembl_data": {
-            "host": "ftp.ensembl.org",
-            "path": "/pub/release-{}/fasta/homo_sapiens/dna",
-            "source_file": "Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz",
-            "version_url": "http://rest.ensembl.org/info/data/?content-type=application/json",
-            "release": null,
-            "processed_file": "processed_chr{}.bed.gz"
-        },
-        "gencode_data": {
-            "host": "ftp.ebi.ac.uk",
-            "path": "/pub/databases/gencode/Gencode_human",
-            "source_file": "/gencode.v{}.annotation.gtf.gz",
-            "processed_file": "processed_gencode.bed.gz",
-            "arrow_file": "processed_gencode_arrow.bed.gz",
-            "version": null,
-            "release_date": null
-        },
-        "gwas_data": {
-            "host": "ftp.ebi.ac.uk",
-            "path": "/pub/databases/gwas/releases/latest/",
-            "source_file": "gwas-catalog-associations_ontology-annotated.tsv",
-            "processed_file": "processed_GWAS.bed.gz",
-            "release_date": null
-        }
+    "cytoband_colors": {
+      "gneg": "#FFFFFF",
+      "gpos25": "#E5E5E5",
+      "gpos50": "#CCCCCC",
+      "gpos75": "#B3B3B3",
+      "gpos100": "#999999",
+      "acen": "#CCCCCC",
+      "gvar": "#999999",
+      "stalk": "#E5E5E5",
+      "border": "#000000"
     }
+  },
+  "source_data": {
+    "cytoband_data": {
+      "url": "http://rest.ensembl.org/info/assembly/homo_sapiens?content-type=application/json&bands=1",
+      "processed_file": "processed_cytoBand.bed.gz",
+      "genome_build": null
+    },
+    "ensembl_data": {
+      "host": "ftp.ensembl.org",
+      "path": "/pub/release-{}/fasta/homo_sapiens/dna",
+      "source_file": "Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz",
+      "version_url": "http://rest.ensembl.org/info/data/?content-type=application/json",
+      "release": null,
+      "processed_file": "processed_chr{}.bed.gz"
+    },
+    "gencode_data": {
+      "host": "ftp.ebi.ac.uk",
+      "path": "/pub/databases/gencode/Gencode_human",
+      "source_file": "/gencode.v{}.annotation.gtf.gz",
+      "processed_file": "processed_gencode.bed.gz",
+      "arrow_file": "processed_gencode_arrow.bed.gz",
+      "version": null,
+      "release_date": null
+    },
+    "gwas_data": {
+      "host": "ftp.ebi.ac.uk",
+      "path": "/pub/databases/gwas/releases/latest/",
+      "source_file": "gwas-catalog-associations_ontology-annotated.tsv",
+      "processed_file": "processed_GWAS.bed.gz",
+      "release_date": null
+    }
+  }
 }

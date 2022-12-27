@@ -1,13 +1,16 @@
-import unittest
+from __future__ import annotations
+
 import re
+import unittest
 
 from functions.ConfigManager import ConfigManager
 
+
 class TestConfigManager(unittest.TestCase):
 
-    CONFIG_JSON = 'config.json'
+    CONFIG_JSON = "config.json"
     config_obj = ConfigManager(CONFIG_JSON)
-    hex_color_match = re.compile(r'^#[0-9A-F]{6}$', re.IGNORECASE)
+    hex_color_match = re.compile(r"^#[0-9A-F]{6}$", re.IGNORECASE)
 
     # def save_config(self, filename=None):
     # def set_data_folder(self, data_folder):
@@ -40,7 +43,14 @@ class TestConfigManager(unittest.TestCase):
         self.assertIsInstance(chromosome_colors, dict)
 
         # Fields are checked:
-        chromosome_features = ['centromere', 'heterochromatin', 'intergenic', 'exon', 'gene', 'dummy']
+        chromosome_features = [
+            "centromere",
+            "heterochromatin",
+            "intergenic",
+            "exon",
+            "gene",
+            "dummy",
+        ]
         for feature in chromosome_features:
             self.assertIn(feature, chromosome_colors)
 
@@ -57,7 +67,17 @@ class TestConfigManager(unittest.TestCase):
         self.assertIsInstance(cytobanc_colors, dict)
 
         # Fields are checked:
-        chromosome_features = ['border', 'stalk', 'gvar', 'gneg', 'gpos25', 'gpos50', 'gpos75', 'gpos100', 'acen']
+        chromosome_features = [
+            "border",
+            "stalk",
+            "gvar",
+            "gneg",
+            "gpos25",
+            "gpos50",
+            "gpos75",
+            "gpos100",
+            "acen",
+        ]
         for feature in chromosome_features:
             self.assertIn(feature, cytobanc_colors)
 
@@ -74,7 +94,7 @@ class TestConfigManager(unittest.TestCase):
         self.assertIsInstance(arrow_colors, dict)
 
         # Fields are checked:
-        chromosome_features = ['line_color', 'utr_color', 'cds_color']
+        chromosome_features = ["line_color", "utr_color", "cds_color"]
         for feature in chromosome_features:
             self.assertIn(feature, arrow_colors)
 
@@ -92,5 +112,6 @@ class TestConfigManager(unittest.TestCase):
         gene_window = self.config_obj.get_custom_gene_window()
         self.assertIsInstance(gene_window, int)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

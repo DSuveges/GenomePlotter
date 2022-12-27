@@ -17,4 +17,3 @@ gsutil cp -r gs://open-targets-data-releases/${OT_RELEASE}/output/etl/parquet/mo
 
 # Fetch disease:
 gsutil cp -r gs://open-targets-data-releases/${OT_RELEASE}/output/etl/parquet/diseases ${TARGET_DIR}/
-
