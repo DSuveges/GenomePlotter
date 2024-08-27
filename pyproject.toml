@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "genomeplotter"
+version = "0.1.0"
+description = "A set of script to create accurate visualisation of the human genome"
+authors = ["DSuveges <daniel.suveges@protonmail.com>"]
+license = "Apache 2.0"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "3.12.0"
+pycairo = "^1.26.1"
+numpy = "^2.1.0"
+pandas = "^2.2.2"
+pybedtools = "^0.10.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.2"
+coverage = "^7.6.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
