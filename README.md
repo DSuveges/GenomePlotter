@@ -1,6 +1,6 @@
 ## GenomePlotter
 
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/f1863e045a4f4bb3a0c6ad7e3d29dc96)](https://www.codacy.com/gh/DSuveges/GenomePlotter/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=DSuveges/GenomePlotter&amp;utm_campaign=Badge_Grade) [![CircleCI build](https://circleci.com/gh/DSuveges/GenomePlotter.svg?style=svg)](https://app.circleci.com/pipelines/github/DSuveges/GenomePlotter) [![Codacy Badge](https://app.codacy.com/project/badge/Coverage/f1863e045a4f4bb3a0c6ad7e3d29dc96)](https://www.codacy.com/gh/DSuveges/GenomePlotter/dashboard?utm_source=github.com&utm_medium=referral&utm_content=DSuveges/GenomePlotter&utm_campaign=Badge_Coverage)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/f1863e045a4f4bb3a0c6ad7e3d29dc96)](https://www.codacy.com/gh/DSuveges/GenomePlotter/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=DSuveges/GenomePlotter&amp;utm_campaign=Badge_Grade) [![Codacy Badge](https://app.codacy.com/project/badge/Coverage/f1863e045a4f4bb3a0c6ad7e3d29dc96)](https://www.codacy.com/gh/DSuveges/GenomePlotter/dashboard?utm_source=github.com&utm_medium=referral&utm_content=DSuveges/GenomePlotter&utm_campaign=Badge_Coverage)
 
 The motivation behind this project was to create a scientifically correct visualization of the human genome with showing the location of genes, exons, already published genome-wide associations and many more. I chose a heat-map kind of visualization that allows the representation of the underlying chemical properties of the DNA ([GC content](https://en.wikipedia.org/wiki/GC-content)) as well.
 
@@ -13,21 +13,26 @@ The project is divided into several parts:
 
 ### Requirements
 
-**Required tools:**
+**Required command line tools:**
 
-* [cairo graphics library](https://www.cairographics.org/download/)
-* [bedtools](http://bedtools.readthedocs.io/en/latest/content/installation.html) v2.27 or above
+- [cairo graphics library](https://www.cairographics.org/download/)
+- [bedtools](http://bedtools.readthedocs.io/en/latest/content/installation.html) v2.27 or above
+- [python-poetry](https://python-poetry.org/)
 
-**Besides standard libraries, the following Python packages were used:**
+### Installing package:
 
-* [pandas](https://pandas.pydata.org/)
-* [numpy](http://www.numpy.org/)
-* [cairosvg](http://cairosvg.org/)
-* [pybedtools](https://pypi.python.org/pypi/pybedtools)
+```bash
+# Cloning repo:
+git clone https://github.com/DSuveges/GenomePlotter
+
+# Creating environment:
+cd GenomePlotter 
+poetry install 
+```
 
 ### Source data:
 
-All applied source data is mapped to the GRCh38 build of the human genome.
+Input datasets are pulled from the respected sources via the parser script. All source data are mapped to the GRCh38 build of the human genome.
 
 * **The sequnce of the human genome** is dowloaded from [Ensembl](http://www.ensembl.org/info/data/ftp/index.html) (checking for the most recent version).
 * **Genome wide association signals** most recent version of the NHGRI-EBI [GWAS catalog](https://www.ebi.ac.uk/gwas/) (checking the most recent version).
