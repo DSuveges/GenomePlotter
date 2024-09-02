@@ -1,5 +1,8 @@
-import pandas as pd
+from __future__ import annotations
+
 import cairosvg
+import pandas as pd
+
 
 def get_centromere_position(cytobandFile, chromosome):
     """

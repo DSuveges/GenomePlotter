@@ -26,8 +26,8 @@ The project is divided into several parts:
 git clone https://github.com/DSuveges/GenomePlotter
 
 # Creating environment:
-cd GenomePlotter 
-poetry install 
+cd GenomePlotter
+poetry install
 ```
 
 ### Source data:
@@ -72,7 +72,7 @@ optional arguments:
 * *<DATADIR>* folder into which the files are going to be saved.
 * *<CONFIG>* JSON file containing the project level configuration. Will be used for multiple scripts
 * *<LOGFILE>* information on the run is saved here.
-* *<CHUNKSIZE>* the length of non-overlapping window used to pool together to calculate [GC content](https://en.wikipedia.org/wiki/GC-content). In basepairs. 
+* *<CHUNKSIZE>* the length of non-overlapping window used to pool together to calculate [GC content](https://en.wikipedia.org/wiki/GC-content). In basepairs.
 * *<TOLERANCE>* Ns are discarded from the GC content calculation. This float (ranging from 0-1) shows the maximum of Ns in a chunk tolerated. Chunks with too high N ratio is considered as heterochromatic region on the plot.
 
 
@@ -143,6 +143,5 @@ The combined plot showing the entire genome with all the protein kinases highlig
 
 ### TO-DOs
 
-1. Extra script to generate figure legend also as a csv and png. 
+1. Extra script to generate figure legend also as a csv and png.
 2. Script to create the whole composition with all the chromosomes. Resolving the alignment is not trivial.
-

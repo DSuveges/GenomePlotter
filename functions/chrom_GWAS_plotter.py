@@ -1,4 +1,8 @@
+from __future__ import annotations
+
 import gzip
+
+
 class process_chrom:
     """This class plots the chromosomes and saves a gzipped text file."""
 

@@ -1,8 +1,11 @@
 #!/usr/bin/env python
+from __future__ import annotations
+
 from collections import OrderedDict
 
 from ColorFunctions import linear_gradient
 from svg_handler import svg_handler
+
 
 class DrawLegend(object):
 

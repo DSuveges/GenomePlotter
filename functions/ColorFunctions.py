@@ -1,8 +1,12 @@
+from __future__ import annotations
+
 import colorsys
-import pandas as pd
-import numpy as np
 import logging
 import re
+
+import numpy as np
+import pandas as pd
+
 
 def hex_to_rgb(hex_color: str) -> list:
     """Converting hexadecimal color to rgb

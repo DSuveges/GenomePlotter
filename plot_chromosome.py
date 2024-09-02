@@ -1,42 +1,43 @@
+from __future__ import annotations
 
 import argparse
-import os
-import logging.config
-import yaml
 import json
+import logging.config
+import os
 
 import pandas as pd
+import yaml
+
+from functions.ChromosomePlotter import ChromosomePlotter
 
 # Importing custom functions:
 from functions.ColorFunctions import ColorPicker
-from functions.DataIntegrator import DataIntegrator
-from functions.ChromosomePlotter import ChromosomePlotter
-from functions.ConfigManager import ConfigManager, Config
-from functions.svg_handler import svg_handler
-from functions.GwasAnnotator import gwas_annotator
+from functions.ConfigManager import Config, ConfigManager
 from functions.CytobandAnnotator import CytobandAnnotator, get_centromere_position
+from functions.DataIntegrator import DataIntegrator
 from functions.GeneAnnotator import GeneAnnotator
+from functions.GwasAnnotator import gwas_annotator
+from functions.svg_handler import svg_handler
 
 
 def genes_annotation_wrapper(config_manager, chromosome, height, gene_filename):
-
     # Extractig config values:
     pixel = config_manager.get_pixel()
     chunk_size = config_manager.get_chunk_size()
     width = config_manager.get_width()
     chunk_size = config_manager.get_chunk_size()
-    centromere_position = get_centromere_position(config_manager.get_cytoband_file(), chromosome)
+    centromere_position = get_centromere_position(
+        config_manager.get_cytoband_file(), chromosome
+    )
 
     # gene_file, centromerePosition, chromosome, chunk_size, pixel, height, width
     gene_annotator_object = GeneAnnotator(
-        gene_filename, centromere_position,
-        chromosome, chunk_size, pixel, height, width
+        gene_filename, centromere_position, chromosome, chunk_size, pixel, height, width
     )
     return gene_annotator_object
 
 
 def cytoband_annotation_wrapper(config_manager, chromosome):
-
     # Extract config values:
     color_scheme = config_manager.get_color_scheme()
     pixel = config_manager.get_pixel()
@@ -44,31 +45,38 @@ def cytoband_annotation_wrapper(config_manager, chromosome):
     width = config_manager.get_width()
     cytoband_file = config_manager.get_cytoband_file()
 
-    logger.info(f'Generating cytological band from file: {cytoband_file}.')
+    logger.info(f"Generating cytological band from file: {cytoband_file}.")
     # pixel, chromosome, bandFile, chunkSize, width, cytbandColors
     cytoband_annot = CytobandAnnotator(
-        pixel, chromosome, cytoband_file,
-        chunk_size, width, color_scheme['cytoband_colors']
+        pixel,
+        chromosome,
+        cytoband_file,
+        chunk_size,
+        width,
+        color_scheme["cytoband_colors"],
     )
     cytoband_annot.generate_bands()
     return cytoband_annot
 
 
 def gwas_annotation_wrapper(config_manager, chromosome):
-
     # Extract config values:
     color_scheme = config_manager.get_color_scheme()
-    gwas_color = color_scheme['gwas_point']
+    gwas_color = color_scheme["gwas_point"]
     pixel = config_manager.get_pixel()
     chunk_size = config_manager.get_chunk_size()
     width = config_manager.get_width()
     gwas_file = config_manager.get_gwas_file()
 
-    logger.info(f'Generating GWAS annotation from file: {gwas_file}.')
+    logger.info(f"Generating GWAS annotation from file: {gwas_file}.")
 
     gwasAnnot = gwas_annotator(
-        chromosome=chromosome, gwas_color=gwas_color, pixel=pixel,
-        chunk_size=chunk_size, gwas_file=gwas_file, width=width
+        chromosome=chromosome,
+        gwas_color=gwas_color,
+        pixel=pixel,
+        chunk_size=chunk_size,
+        gwas_file=gwas_file,
+        width=width,
     )
     return gwasAnnot.generate_gwas()
 
@@ -84,7 +92,11 @@ def integrator_wrapper(config_manager, dummy, chromosome):
     gencode_file = config_manager.get_gencode_file()
     dark_start = config_manager.get_dark_start()
     dark_max = config_manager.get_dark_max()
-    color_map = {k: v for k, v in config_manager.get_color_scheme().items() if isinstance(v, str) and v.startswith('#')}
+    color_map = {
+        k: v
+        for k, v in config_manager.get_color_scheme().items()
+        if isinstance(v, str) and v.startswith("#")
+    }
 
     width = config_manager.get_width()
 
@@ -94,25 +106,35 @@ def integrator_wrapper(config_manager, dummy, chromosome):
     )
 
     # Reading datafiles:
-    logger.info('Reading input files.')
+    logger.info("Reading input files.")
     chr_df = pd.read_csv(
-        chromosome_file, compression='gzip', sep='\t',
-        quotechar='"', header=0, dtype={'chr': str, 'start': int, 'end': int, 'GC_ratio': float}
+        chromosome_file,
+        compression="gzip",
+        sep="\t",
+        quotechar='"',
+        header=0,
+        dtype={"chr": str, "start": int, "end": int, "GC_ratio": float},
     )
     GENCODE_df = pd.read_csv(
-        gencode_file, compression='gzip', sep='\t',
-        header=0, dtype={'chr': str, 'start': int, 'end': int, 'type': str}
+        gencode_file,
+        compression="gzip",
+        sep="\t",
+        header=0,
+        dtype={"chr": str, "start": int, "end": int, "type": str},
     )
     cyb_df = pd.read_csv(
-        cytoband_file, compression='gzip', sep='\t',
-        header=0, dtype={'chr': str, 'start': int, 'end': int, 'name': str, 'type': str}
+        cytoband_file,
+        compression="gzip",
+        sep="\t",
+        header=0,
+        dtype={"chr": str, "start": int, "end": int, "name": str, "type": str},
     )
-    logger.info(f'Number of genome chunks: {len(chr_df)}')
-    logger.info(f'Number of GENCODE annotations in the genome: {len(GENCODE_df)}')
-    logger.info(f'Number of cytological bands in the genome: {len(cyb_df)}')
+    logger.info(f"Number of genome chunks: {len(chr_df)}")
+    logger.info(f"Number of GENCODE annotations in the genome: {len(GENCODE_df)}")
+    logger.info(f"Number of cytological bands in the genome: {len(cyb_df)}")
 
     # Integrating cytoband, sequence and gene data:
-    logger.info('Integrating data...')
+    logger.info("Integrating data...")
 
     # Initialize data integrator:
     integrator = DataIntegrator(chr_df)
@@ -145,7 +167,7 @@ def integrator_wrapper(config_manager, dummy, chromosome):
     integratedData = integrator.get_data()
 
     # Save data for diagnostic purposes:
-    integratedData.to_csv('cica.tsv.gz', sep='\t', index=False, compression='infer')
+    integratedData.to_csv("cica.tsv.gz", sep="\t", index=False, compression="infer")
 
     return integratedData
 
@@ -153,40 +175,82 @@ def integrator_wrapper(config_manager, dummy, chromosome):
 def parse_arguments() -> argparse.Namespace:
     # Processing command line parameters:
     parser = argparse.ArgumentParser(
-        description='Script to plot genome chunks colored based on GC content and gene annotation. \
-            See github: https://github.com/DSuveges/GenomePlotter'
+        description="Script to plot genome chunks colored based on GC content and gene annotation. \
+            See github: https://github.com/DSuveges/GenomePlotter"
     )
-    parser.add_argument('-c', '--chromosome', help='Selected chromosome to process',
-                        required=True, type=str)
-    parser.add_argument('-w', '--width', help='Number of chunks in one row.',
-                        type=int, default=200)
-    parser.add_argument('-p', '--pixel', help='The size of a plotted chunk in pixels (default: 3).',
-                        type=int, default=9)
-    parser.add_argument('-s', '--darkStart',
-                        help='Fraction of the width from where the colors start getting darker (default: 0.75).',
-                        type=float, default=0.75)
-    parser.add_argument('-m', '--darkMax',
-                        help='How dark a pixel can get at the right end of the plot (default: 0.15).',
-                        type=float, default=0.15)
-    parser.add_argument('-f', '--folder', help='Folder into which the plots are saved.',
-                        type=str, required=True)
-    parser.add_argument('--textFile', help='Flag to indicate if svg file should also be saved.',
-                        action='store_true')
-    parser.add_argument('-g', '--geneFile', help='A .bed file with genes to add to the chromosome.',
-                        type=str, required=False)
-    parser.add_argument('-t', '--test',
-                        help='The number of chunks to be read (by default the whole chromosome is processed.)',
-                        type=int, default=0)
-    parser.add_argument('--dummy', help='If instead of the chunks, a dummy is drawn with identical dimensions',
-                        action='store_true')
-    parser.add_argument('--config', help='Specifying json file containing custom configuration',
-                        type=str, required=True)
+    parser.add_argument(
+        "-c",
+        "--chromosome",
+        help="Selected chromosome to process",
+        required=True,
+        type=str,
+    )
+    parser.add_argument(
+        "-w", "--width", help="Number of chunks in one row.", type=int, default=200
+    )
+    parser.add_argument(
+        "-p",
+        "--pixel",
+        help="The size of a plotted chunk in pixels (default: 3).",
+        type=int,
+        default=9,
+    )
+    parser.add_argument(
+        "-s",
+        "--darkStart",
+        help="Fraction of the width from where the colors start getting darker (default: 0.75).",
+        type=float,
+        default=0.75,
+    )
+    parser.add_argument(
+        "-m",
+        "--darkMax",
+        help="How dark a pixel can get at the right end of the plot (default: 0.15).",
+        type=float,
+        default=0.15,
+    )
+    parser.add_argument(
+        "-f",
+        "--folder",
+        help="Folder into which the plots are saved.",
+        type=str,
+        required=True,
+    )
+    parser.add_argument(
+        "--textFile",
+        help="Flag to indicate if svg file should also be saved.",
+        action="store_true",
+    )
+    parser.add_argument(
+        "-g",
+        "--geneFile",
+        help="A .bed file with genes to add to the chromosome.",
+        type=str,
+        required=False,
+    )
+    parser.add_argument(
+        "-t",
+        "--test",
+        help="The number of chunks to be read (by default the whole chromosome is processed.)",
+        type=int,
+        default=0,
+    )
+    parser.add_argument(
+        "--dummy",
+        help="If instead of the chunks, a dummy is drawn with identical dimensions",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--config",
+        help="Specifying json file containing custom configuration",
+        type=str,
+        required=True,
+    )
 
     return parser.parse_args()
 
 
-if __name__ == '__main__':
-    
+if __name__ == "__main__":
     # Extracting submitted options:
     args = parse_arguments()
 
@@ -200,7 +264,7 @@ if __name__ == '__main__':
     plot_folder = os.path.abspath(args.folder)
 
     # Initialise logger:
-    with open('logger_config.yaml', 'r') as stream:
+    with open("logger_config.yaml", "r") as stream:
         logger_config = yaml.load(stream, Loader=yaml.FullLoader)
 
     logging.config.dictConfig(logger_config)
@@ -211,21 +275,26 @@ if __name__ == '__main__':
         try:
             configuration = Config(**json.load(f))
         except json.decoder.JSONDecodeError:
-            raise ValueError(f'The provided config file ({args.config}) is not a valid JSON file.')
-
+            raise ValueError(
+                f"The provided config file ({args.config}) is not a valid JSON file."
+            )
 
     # Reporting parameters:
-    logger.info(f'Generating plot for chromosome: {chromosome}')
-    logger.info('Processing parameters.')
-    logger.info(f'Number of chunks in one row: {width}')
-    logger.info(f'Pixel size: {pixel}')
-    logger.info(f'Dark start: {dark_start}, dark max: {dark_max}')
-    logger.info(f'Plot is going to be saved into folder: {plot_folder}')
+    logger.info(f"Generating plot for chromosome: {chromosome}")
+    logger.info("Processing parameters.")
+    logger.info(f"Number of chunks in one row: {width}")
+    logger.info(f"Pixel size: {pixel}")
+    logger.info(f"Dark start: {dark_start}, dark max: {dark_max}")
+    logger.info(f"Plot is going to be saved into folder: {plot_folder}")
     if dummy:
-        logger.info('Creating dummy without chromosome details.')
+        logger.info("Creating dummy without chromosome details.")
 
     # Output file name:
-    output_filename = f'{plot_folder}/chr{chromosome}_dummy.png' if dummy else f'{plot_folder}/chr{chromosome}.png'
+    output_filename = (
+        f"{plot_folder}/chr{chromosome}_dummy.png"
+        if dummy
+        else f"{plot_folder}/chr{chromosome}.png"
+    )
 
     # initialize config manager:
     config_manager = ConfigManager(config_file)
@@ -238,22 +307,22 @@ if __name__ == '__main__':
     config_manager.set_plot_folder(plot_folder)
 
     # Updating config file:
-    logger.info(f'Updating config file: {config_file}')
+    logger.info(f"Updating config file: {config_file}")
     config_manager.save_config(config_file)
 
     # Integrating data:
-    logger.info('Integrating data...')
+    logger.info("Integrating data...")
     integratedData = integrator_wrapper(config_manager, dummy, chromosome)
 
     # Generate chromosome plot
-    logger.info('Initializing plot.')
+    logger.info("Initializing plot.")
     x = ChromosomePlotter(integratedData, pixel=pixel)
 
     if dummy:
-        logger.info('Generating dummy plot.')
+        logger.info("Generating dummy plot.")
         x.draw_dummy()
     else:
-        logger.info('Generating plot.')
+        logger.info("Generating plot.")
         x.draw_chromosome()
 
     # Extract data after plotting:
@@ -277,23 +346,29 @@ if __name__ == '__main__':
     chromosomeSvgObject.mergeSvg(cyb_svg)
 
     if args.geneFile:
-
         # Get centromere position:
-        centromerePos = get_centromere_position(config_manager.get_cytoband_file(), chromosome)
+        centromerePos = get_centromere_position(
+            config_manager.get_cytoband_file(), chromosome
+        )
 
         # Get plot dimension:
         plot_height = chromosomeSvgObject.getHeight()
 
         # Create gene annotator object:
-        gene_annot = genes_annotation_wrapper(config_manager, chromosome, plot_height, args.geneFile)
+        gene_annot = genes_annotation_wrapper(
+            config_manager, chromosome, plot_height, args.geneFile
+        )
 
         # Generate annotation:
         gene_annot.generate_gene_annotation()
 
         dimensions = gene_annot.get_dimensions()
 
-        gene_svg = svg_handler(width=800, height=abs(
-            dimensions[0]) + dimensions[1], svg_string=gene_annot.get_annotation())
+        gene_svg = svg_handler(
+            width=800,
+            height=abs(dimensions[0]) + dimensions[1],
+            svg_string=gene_annot.get_annotation(),
+        )
 
         # Move svg object if there are negative values:
         if abs(dimensions[0]) > 0:
@@ -305,11 +380,11 @@ if __name__ == '__main__':
         chromosomeSvgObject.mergeSvg(gene_svg)
 
     # Save file:
-    logger.info(f'Saving image: {output_filename}')
+    logger.info(f"Saving image: {output_filename}")
     chromosomeSvgObject.savePng(output_filename)
 
     if args.textFile:
         logger.info(f'Saving svg file: {output_filename.replace("png","svg")}')
-        chromosomeSvgObject.saveSvg(output_filename.replace('png', 'svg'))
+        chromosomeSvgObject.saveSvg(output_filename.replace("png", "svg"))
 
-    logger.info('All done.')
+    logger.info("All done.")

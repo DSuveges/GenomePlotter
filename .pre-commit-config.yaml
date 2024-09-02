@@ -1,6 +1,20 @@
+default_language_version:
+  python: python3.12
+ci:
+  autoupdate_commit_msg: "chore: pre-commit autoupdate"
+  autofix_commit_msg: "chore: pre-commit auto fixes [...]"
 repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.1
+    hooks:
+      - id: ruff
+        args:
+          - --fix
+      - id: ruff-format
+        files: ^((gentropy|utils|tests)/.+)?[^/]+\.py$
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.6.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -20,7 +34,7 @@ repos:
       - id: check-docstring-first
 
   - repo: https://github.com/pre-commit/pygrep-hooks
-    rev: v1.9.0
+    rev: v1.10.0
     hooks:
       - id: python-check-mock-methods
       - id: python-use-type-annotations
@@ -30,32 +44,26 @@ repos:
 
 
   - repo: https://github.com/hadialqattan/pycln
-    rev: v2.1.2
+    rev: v2.4.0
     hooks:
       - id: pycln
         args: [--all]
 
   - repo: https://github.com/pycqa/isort
-    rev: 5.10.1
+    rev: 5.13.2
     hooks:
       - id: isort
         args: [--add-import, from __future__ import annotations, --profile, black]
 
-
-  - repo: https://github.com/psf/black
-    rev: 22.10.0
-    hooks:
-      - id: black
-
   - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
-    rev: v9.3.0
+    rev: v9.16.0
     hooks:
       - id: commitlint
         additional_dependencies: ['@commitlint/config-conventional']
         stages: [commit-msg]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: 'v0.991'
+    rev: "v1.11.1"
     hooks:
       - id: mypy
         args:
@@ -71,13 +79,13 @@ repos:
           - "--disallow-untyped-defs"
 
   - repo: https://github.com/econchick/interrogate
-    rev: 1.5.0
+    rev: 1.7.0
     hooks:
       - id: interrogate
         args: [--verbose]
 
   - repo: https://github.com/pycqa/pydocstyle
-    rev: 6.1.1
+    rev: 6.3.0
     hooks:
     -   id: pydocstyle
         args: [--convention=google]

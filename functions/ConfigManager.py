@@ -1,11 +1,10 @@
 """Managing configuration settings for the Genome Plotter."""
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
 import json
 import os
+from dataclasses import asdict, dataclass
 from typing import Optional
-
 
 # List of dataclasses to describe the configuration file:
 
@@ -74,12 +73,12 @@ class SourceData:
         # Iterating over expected fields and populate data:
         for field in self.__dataclass_fields__.keys():
             self.__setattr__(
-                field, 
+                field,
                 eval(self.__dataclass_fields__[field].type)(
                     **self.__getattribute__(field)
                 )
             )
-            
+
 
 @dataclass
 class Config:
@@ -93,7 +92,7 @@ class Config:
         # Iterating over expected fields and populate data:
         for field in self.__dataclass_fields__.keys():
             self.__setattr__(
-                field, 
+                field,
                 eval(self.__dataclass_fields__[field].type)(
                     **self.__getattribute__(field)
                 )
@@ -102,17 +101,17 @@ class Config:
     # Saving the configuration file:
     def save(self, file_path: str) -> None:
         """Save the configuration file.
-        
+
         Args:
             file_path (str): Path to the configuration file.
-        """ 
+        """
         with open(file_path, "w") as file:
             json.dump(asdict(self), file, indent=3)
 
     # Updating basic configuration based on command line arguments:
     def update_basic_parameters(self, **kwargs) -> None:
         """Update basic parameters based on command line arguments.
-        
+
         Args:
             **kwargs: Command line arguments.
         """
