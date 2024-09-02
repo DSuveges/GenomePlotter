@@ -1,8 +1,11 @@
-import numpy as np
+
 import pickle
 import logging
-
 import pybedtools
+
+logger = logging.getLogger(__name__)
+
+
 
 class DataIntegrator(object):
 
@@ -18,8 +21,8 @@ class DataIntegrator(object):
         self.__genome__ = genome_df.copy()
         self.chromosome_name = genome_df.iloc[0]['chr']
 
-        logging.info(f'Integrating data on chromosome: {self.chromosome_name}')
-        logging.info(f'Number of chunks on chromosome {self.chromosome_name}: {len(self.__genome__)}')
+        logger.info(f'Integrating data on chromosome: {self.chromosome_name}')
+        logger.info(f'Number of chunks on chromosome {self.chromosome_name}: {len(self.__genome__)}')
 
         # Testing columns:
         for col in self.__required_columns:
@@ -46,16 +49,16 @@ class DataIntegrator(object):
             # Set proper type:
             .astype({'y': 'int32'})
         )
-        logging.info(f'Number of chunks in one row: {width}')
-        logging.info(f'Number of rows: {self.__genome__.y.max()}')
+        logger.info(f'Number of chunks in one row: {width}')
+        logger.info(f'Number of rows: {self.__genome__.y.max()}')
 
     def add_genes(self, gencode_df):
-        logging.info(f'Number of gencode features: {len(gencode_df)}')
+        logger.info(f'Number of gencode features: {len(gencode_df)}')
 
         # Filtering GENCODE data:
         gencode_df = gencode_df.loc[gencode_df.chr == self.chromosome_name]
 
-        logging.info(f'Number of gencode features on chromosome {self.chromosome_name}: {len(gencode_df)}')
+        logger.info(f'Number of gencode features on chromosome {self.chromosome_name}: {len(gencode_df)}')
 
         # Creating bedtools objects:
         gencode_bed = pybedtools.bedtool.BedTool.from_dataframe(gencode_df.rename(columns={'chr': 'chrom'}))
@@ -73,11 +76,10 @@ class DataIntegrator(object):
                 ]
             )
         except Exception as e:
-            print('Gencode data:')
-            print(gencode_bed.head())
-
-            print('Chromosome data:')
-            print(chrom_bed.head())
+            logger.error('Gencode data:')
+            logger.error(gencode_bed.head())
+            logger.error('Chromosome data:')
+            logger.error(chrom_bed.head())
 
             raise e
 

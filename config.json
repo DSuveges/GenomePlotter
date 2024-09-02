@@ -57,7 +57,7 @@
         "gencode_data": {
             "host": "ftp.ebi.ac.uk",
             "path": "/pub/databases/gencode/Gencode_human",
-            "source_file": "/gencode.v{}.annotation.gtf.gz",
+            "source_file": "gencode.v{}.annotation.gtf.gz",
             "processed_file": "processed_gencode.bed.gz",
             "arrow_file": "processed_gencode_arrow.bed.gz",
             "version": null,
@@ -65,7 +65,7 @@
         },
         "gwas_data": {
             "host": "ftp.ebi.ac.uk",
-            "path": "/pub/databases/gwas/releases/latest/",
+            "path": "/pub/databases/gwas/releases/latest",
             "source_file": "gwas-catalog-associations_ontology-annotated.tsv",
             "processed_file": "processed_GWAS.bed.gz",
             "release_date": null
