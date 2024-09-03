@@ -1,9 +1,13 @@
 
-from dateutil import parser
-import pandas as pd
+from __future__ import annotations
+
 import ftplib
-import io
 import gzip
+import io
+
+import pandas as pd
+from dateutil import parser
+
 
 class FetchFromFtp(object):
 

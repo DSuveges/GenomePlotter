@@ -1,5 +1,9 @@
-import pandas as pd
+from __future__ import annotations
+
 import logging
+
+import pandas as pd
+
 
 class PositionConverter(object):
     """

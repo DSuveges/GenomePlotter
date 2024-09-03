@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import cairosvg
 import pandas as pd
+
 
 class ChromosomePlotter(object):
 

@@ -1,7 +1,12 @@
+from __future__ import annotations
+
 import logging
+
 import pandas as pd
 
 from .DataIntegrator import DataIntegrator
+
+
 class CustomGeneIntegrator(object):
 
     def __init__(self, query, config_manager) -> None:

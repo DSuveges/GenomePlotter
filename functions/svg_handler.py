@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import cairosvg
+
 
 class svg_handler(object):
 
