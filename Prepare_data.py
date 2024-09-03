@@ -1,3 +1,4 @@
+"""This script fetches and prepares the input data for the genome plotter project."""
 from __future__ import annotations
 
 import argparse
@@ -19,6 +20,11 @@ from input_parsers.fetch_gencode import FetchGencode
 
 
 def parse_args() -> argparse.Namespace:
+    """Parse command line arguments.
+
+    Returns:
+        argparse.Namespace: The parsed command line arguments.
+    """
     parser = argparse.ArgumentParser(
         description="This script fetches and parses input data for the genome plotter project"
     )
@@ -58,13 +64,26 @@ def parse_args() -> argparse.Namespace:
 
 
 def get_cytoband_data(cytoband_url: str, cytoband_output_file: str) -> str:
-    """Fetch cytoband data from the given URL and save it to the output file."""
+    """Fetch cytoband data from the given URL and save it to the output file.
+    
+    Args:
+        cytoband_url (str): URL to fetch the cytoband data from.
+        cytoband_output_file (str): File to save the cytoband data to.
+    
+    Returns:
+        str: The genome build of the cytoband data.
+    """
     cytoband_retrieve = FetchCytobands(cytoband_url)
     cytoband_retrieve.save_cytoband_data(cytoband_output_file)
     return cytoband_retrieve.get_assembly_build()
 
 
 def main(configuration: Config) -> None:
+    """Main function to fetch and prepare the input data for the genome plotter project.
+    
+    Args:
+        configuration (Config): The configuration object containing the input data.
+    """
     # Extracting relevant parameters:
     basic_parameters = configuration.basic_parameters
     data_dir = basic_parameters.data_folder
@@ -122,6 +141,15 @@ def main(configuration: Config) -> None:
 
 
 def validate_input(data_dir: str, config_file: str) -> None:
+    """Validate the input parameters.
+    
+    Args:
+        data_dir (str): The directory to save the data to.
+        config_file (str): The configuration file.
+        
+    Raises:
+        ValueError: If the data directory or the configuration file do not exist.
+    """
     # Checking if output dir exists:
     if not os.path.abspath(data_dir):
         raise ValueError(f"The provided folder ({data_dir}) does not exist")
@@ -137,7 +165,7 @@ if __name__ == "__main__":
 
     # Initialise logger:
     with open("logger_config.yaml", "r") as stream:
-        logger_config = yaml.load(stream, Loader=yaml.FullLoader)
+        logger_config = yaml.safe_load(stream, Loader=yaml.FullLoader)
 
     logging.config.dictConfig(logger_config)
     logger = logging.getLogger(__name__)
