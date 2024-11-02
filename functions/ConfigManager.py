@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import os
-from dataclasses import asdict, dataclass, is_dataclass
+from dataclasses import asdict, dataclass
 from typing import Optional
 
 
@@ -35,10 +35,10 @@ class BasicParameters:
 class ColorSchema:
     """Dataclass to store color schema."""
 
-    chromosome_colors: dict
-    cytoband_colors: dict
+    chromosome_colors: dict[str, str]
+    cytoband_colors: dict[str, str]
     gwas_point: str
-    arrow_colors: dict
+    arrow_colors: dict[str, str]
 
 
 @dataclass
@@ -78,9 +78,14 @@ class SourceData:
     gencode_data: SourcePrototype
     gwas_data: SourcePrototype
 
-    def __post_init__(self):
+    def __post_init__(self: SourceData) -> None:
+        """Convert values to the appropriate data types."""
         for field in self.__dataclass_fields__.keys():
-            field_type = globals()[self.__dataclass_fields__[field].type]
+            if isinstance(field_type := self.__dataclass_fields__[field].type, str):
+                field_type = globals()[field_type]
+            else:
+                field_type = self.__dataclass_fields__[field].type
+
             self.__setattr__(
                 field,
                 field_type(**self.__getattribute__(field)),
@@ -96,16 +101,21 @@ class Config:
     color_schema: ColorSchema
     source_data: SourceData
 
-    def __post_init__(self):
+    def __post_init__(self: Config) -> None:
+        """Convert values to the appropriate data types."""
         for field in self.__dataclass_fields__.keys():
-            field_type = globals()[self.__dataclass_fields__[field].type]
+            if isinstance(field_type := self.__dataclass_fields__[field].type, str):
+                field_type = globals()[field_type]
+            else:
+                field_type = self.__dataclass_fields__[field].type
+
             self.__setattr__(
                 field,
                 field_type(**self.__getattribute__(field)),
             )
 
     # Saving the configuration file:
-    def save(self, file_path: str) -> None:
+    def save(self: Config, file_path: str) -> None:
         """Save the configuration file.
 
         Args:
@@ -115,7 +125,7 @@ class Config:
             json.dump(asdict(self), file, indent=3)
 
     # Updating basic configuration based on command line arguments:
-    def update_basic_parameters(self, **kwargs) -> None:
+    def update_basic_parameters(self: Config, **kwargs) -> None:  # type: ignore[no-untyped-def]
         """Update basic parameters based on command line arguments.
 
         Args:
