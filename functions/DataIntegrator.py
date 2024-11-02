@@ -78,6 +78,7 @@ class DataIntegrator(object):
                     'transcript_id', 'type'
                 ]
             )
+        # At this point we should have a dataframe with all the data:
         except Exception as e:
             logger.error('Gencode data:')
             logger.error(gencode_bed.head())

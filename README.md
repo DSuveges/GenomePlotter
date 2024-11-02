@@ -32,9 +32,9 @@ poetry install
 
 ### Source data:
 
-Input datasets are pulled from the respected sources via the parser script. All source data are mapped to the GRCh38 build of the human genome.
+As input, the most recent datasets are pulled from the respected sources as part of the data preparation process. All source data are mapped to the GRCh38 build of the human genome.
 
-* **The sequnce of the human genome** is dowloaded from [Ensembl](http://www.ensembl.org/info/data/ftp/index.html) (checking for the most recent version).
+* **The sequence of the human genome** is dowloaded from [Ensembl](http://www.ensembl.org/info/data/ftp/index.html) (checking for the most recent version).
 * **Genome wide association signals** most recent version of the NHGRI-EBI [GWAS catalog](https://www.ebi.ac.uk/gwas/) (checking the most recent version).
 * **Gene annotation** the most recent gene coordinates are downloaded from [GENCODE](http://www.gencodegenes.org/releases/current.html).
 * **Canonical transcripts** of protein coding genes are defined according to [Ensembl](https://www.ensembl.org/Help/Glossary).
@@ -45,13 +45,13 @@ More information on the sources can be found in the `config.json` configuration 
 ### Step 1 - Pre-processing
 
 ```bash
-python Prepare_data.py -d data_folder/ -c config.json -l lofile.log -s 450 -t 0.5
+python Prepare_data.py -d data_folder/ -c config.json -s 450 -t 0.5
 ```
 
 help output:
 
 ```
-usage: prepare_data.py [-h] -d DATADIR -c CONFIG [-l LOGFILE] -s CHUNKSIZE -t TOLERANCE
+usage: prepare_data.py [-h] -d DATADIR -c CONFIG -s CHUNKSIZE -t TOLERANCE
 
 This script fetches and parses input data for the genome plotter project
 
@@ -61,10 +61,8 @@ optional arguments:
                         Folder into which the input data and the temporary files will be saved
   -c CONFIG, --config CONFIG
                         JSON file with configuration data
-  -l LOGFILE, --logfile LOGFILE
-                        Name of the logfile
   -s CHUNKSIZE, --chunkSize CHUNKSIZE
-                        Chunk size to pool genomic sequence
+                        Chunk size to pool genomic sequence in basepairs.
   -t TOLERANCE, --tolerance TOLERANCE
                         Fraction of a chunk that cannot be N.
 ```

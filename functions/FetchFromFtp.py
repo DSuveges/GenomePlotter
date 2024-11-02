@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import ftplib
@@ -10,7 +9,6 @@ from dateutil import parser
 
 
 class FetchFromFtp(object):
-
     """
     This class is to retrieve the association table from the most recent GWAS Catalog release.
     Expects the ftp host address.
@@ -22,7 +20,7 @@ class FetchFromFtp(object):
         self.FTP_HOST = url
 
         # Initialize connection and go to folder:
-        self.ftp = ftplib.FTP(self.FTP_HOST, 'anonymous', '')
+        self.ftp = ftplib.FTP(self.FTP_HOST, "anonymous", "")
 
     def fetch_file_list(self, path):
         # Get list of files and the date of modification:
@@ -30,7 +28,7 @@ class FetchFromFtp(object):
         self.ftp.cwd(path)
         self.ftp.dir(files.append)
 
-        files = [' '.join(x.split()[8:]) for x in files]
+        files = [" ".join(x.split()[8:]) for x in files]
 
         return files
 
@@ -45,11 +43,11 @@ class FetchFromFtp(object):
         self.ftp.dir(files.append)
 
         # Get all dates:
-        dates = [' '.join(x.split()[5:8]) for x in files]
+        dates = [" ".join(x.split()[5:8]) for x in files]
         dates_parsed = [parser.parse(x) for x in dates]
 
         release_date = max(dates_parsed)
-        return release_date.strftime('%Y-%m-%d')
+        return release_date.strftime("%Y-%m-%d")
 
     def fetch_file(self, path, file):
         sio = io.BytesIO()
@@ -62,10 +60,13 @@ class FetchFromFtp(object):
         zippy = gzip.GzipFile(fileobj=sio)
         return zippy
 
-    def fetch_tsv(self, path, file, skiprows=None, header='infer'):
+    def fetch_tsv(self, path, file, skiprows=None, header="infer"):
         self.tsv_data = pd.read_csv(
-            f'ftp://{self.FTP_HOST}/{path}/{file}',
-            sep='\t', dtype=str, skiprows=skiprows, header=header
+            f"ftp://{self.FTP_HOST}/{path}/{file}",
+            sep="\t",
+            dtype=str,
+            skiprows=skiprows,
+            header=header,
         )
 
     def close_connection(self):
