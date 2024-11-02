@@ -145,8 +145,14 @@ class ColorPicker(object):
     # These are the supported and expected features:
     features = ['exon', 'gene', 'intergenic', 'centromere', 'heterochromatin', 'dummy']
 
-    def __init__(self, colors: dict, dark_max: float = None, dark_threshold: float = None,
-                 count: int = 20, width: int = None) -> None:
+    def __init__(
+            self: ColorPicker, 
+            colors: dict, 
+            dark_max: float|None = None, 
+            dark_threshold: float|None = None,
+            count: int = 20, 
+            width: int| None = None
+        ) -> None:
         """Initializing ColorPicker
 
         Params:
@@ -158,12 +164,12 @@ class ColorPicker(object):
 
         Returns:
             None
+
+        Raises:
+            ValueError: If the colors are not in the right format.
+            ValueError: If the dark_max and dark_threshold are not in the right format.
+            ValueError: If the count and width are not in the right format.
         """
-
-        # Checking if colors is of the good type:
-        if not isinstance(colors, dict):
-            raise TypeError(f'The color object has to be a dictionary. {type(colors)} is given.')
-
         # Checking if all features can be found in the color set:
         if not pd.Series(self.features).isin(list(colors.keys())).all():
             raise ValueError(f'The following keys must be defined in the color sets: {",".join(self.features)}')

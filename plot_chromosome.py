@@ -1,3 +1,4 @@
+"""Plotting script for chromosome data."""
 from __future__ import annotations
 
 import argparse
@@ -20,7 +21,18 @@ from functions.GwasAnnotator import gwas_annotator
 from functions.svg_handler import svg_handler
 
 
-def genes_annotation_wrapper(config_manager, chromosome, height, gene_filename):
+def genes_annotation_wrapper(config_manager: ConfigManager, chromosome: str, height: int, gene_filename: str) -> GeneAnnotator:
+    """Wrapper function to generate gene annotation.
+    
+    Args:
+        config_manager (ConfigManager): Configuration manager object.
+        chromosome (str): Chromosome to process.
+        height (int): Height of the plot.
+        gene_filename (str): File containing gene annotations.
+    
+    Returns:
+        GeneAnnotator: Gene annotator object.
+    """
     # Extractig config values:
     pixel = config_manager.get_pixel()
     chunk_size = config_manager.get_chunk_size()
@@ -37,9 +49,18 @@ def genes_annotation_wrapper(config_manager, chromosome, height, gene_filename):
     return gene_annotator_object
 
 
-def cytoband_annotation_wrapper(config_manager, chromosome):
+def cytoband_annotation_wrapper(config_manager: ConfigManager, chromosome: str) -> CytobandAnnotator:
+    """Wrapper function to generate cytoband annotation.
+
+    Args:
+        config_manager (ConfigManager): Configuration manager object.
+        chromosome (str): Chromosome to process.
+    
+    Returns:
+        CytobandAnnotator: Cytoband annotator object.
+    """
     # Extract config values:
-    color_scheme = config_manager.get_color_scheme()
+    color_scheme = config_manager.get_color_schema()
     pixel = config_manager.get_pixel()
     chunk_size = config_manager.get_chunk_size()
     width = config_manager.get_width()
@@ -61,7 +82,7 @@ def cytoband_annotation_wrapper(config_manager, chromosome):
 
 def gwas_annotation_wrapper(config_manager, chromosome):
     # Extract config values:
-    color_scheme = config_manager.get_color_scheme()
+    color_scheme = config_manager.get_color_schema()
     gwas_color = color_scheme["gwas_point"]
     pixel = config_manager.get_pixel()
     chunk_size = config_manager.get_chunk_size()
@@ -94,7 +115,7 @@ def integrator_wrapper(config_manager, dummy, chromosome):
     dark_max = config_manager.get_dark_max()
     color_map = {
         k: v
-        for k, v in config_manager.get_color_scheme().items()
+        for k, v in config_manager.get_color_schema().items()
         if isinstance(v, str) and v.startswith("#")
     }
 
@@ -265,7 +286,7 @@ if __name__ == "__main__":
 
     # Initialise logger:
     with open("logger_config.yaml", "r") as stream:
-        logger_config = yaml.load(stream, Loader=yaml.FullLoader)
+        logger_config = yaml.safe_load(stream)
 
     logging.config.dictConfig(logger_config)
     logger = logging.getLogger(__name__)

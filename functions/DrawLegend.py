@@ -17,7 +17,7 @@ class DrawLegend(object):
     """
 
     def __init__(self, config_manager):
-        self.__colors__ = config_manager.get_color_scheme()
+        self.__colors__ = config_manager.get_color_schema()
         self.__pixel__ = config_manager.get_pixel()
         self.__config_manager__ = config_manager
 

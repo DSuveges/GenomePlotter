@@ -91,9 +91,13 @@ class Config:
     def __post_init__(self):
         # Iterating over expected fields and populate data:
         for field in self.__dataclass_fields__.keys():
+            class_name =  getattr(
+                Config, 
+                self.__dataclass_fields__[field].type
+            )
             self.__setattr__(
                 field,
-                eval(self.__dataclass_fields__[field].type)(
+                class_name(
                     **self.__getattribute__(field)
                 )
             )
@@ -199,6 +203,9 @@ class ConfigManager(object):
     def get_arrow_colors(self):
         return self.__data['color_schema']['arrow_colors']
 
+    def get_color_schema(self):
+        return self.__data['color_schema']
+
     # Get operational parameters:
     def get_data_folder(self):
         if not self.__data_folder:
@@ -294,3 +301,4 @@ class ConfigManager(object):
 
     def get_custom_gene_window(self):
         return self.__data['plot_parameters']['custom_gene_window']
+

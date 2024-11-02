@@ -165,7 +165,7 @@ if __name__ == "__main__":
 
     # Initialise logger:
     with open("logger_config.yaml", "r") as stream:
-        logger_config = yaml.safe_load(stream, Loader=yaml.FullLoader)
+        logger_config = yaml.safe_load(stream)
 
     logging.config.dictConfig(logger_config)
     logger = logging.getLogger(__name__)
