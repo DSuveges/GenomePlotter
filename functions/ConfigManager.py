@@ -125,6 +125,78 @@ class Config:
             if key in self.basic_parameters.__dataclass_fields__:
                 self.basic_parameters.__setattr__(key, value)
 
+    def get_cytoband_file(self: Config) -> str:
+        """Get the cytoband file.
+
+        Returns:
+            str: Path to the cytoband file if exists.
+
+        Raises:
+            ValueError: If the cytoband file does not exist.
+        """
+        file = self.source_data.cytoband_data.processed_file
+        full_path = f"{self.basic_parameters.data_folder}/{file}"
+
+        if not os.path.isfile(full_path):
+            raise ValueError(f"Cytological band file ({full_path}) doesn't exists.")
+
+        return full_path
+
+    def get_chromosome_file(self: Config, chromsome: str) -> str:
+        """Get the chromosome file.
+
+        Args:
+            chromsome (str): The chromosome number.
+
+        Returns:
+            str: Path to the chromosome file if exists.
+
+        Raises:
+            ValueError: If the chromosome file does not exist.
+        """
+        file = self.source_data.ensembl_data.processed_file
+        file = file.format(chromsome)
+        full_path = f"{self.basic_parameters.data_folder}/{file}"
+
+        if not os.path.isfile(full_path):
+            raise ValueError(f"The requested genome file ({full_path}) doesn't exists.")
+
+        return full_path
+
+    def get_gencode_file(self: Config) -> str:
+        """Get the GENCODE file.
+
+        Returns:
+            str: Path to the GENCODE file if exists.
+
+        Raises:
+            ValueError: If the GENCODE file does not exist.
+        """
+        file = self.source_data.gencode_data.processed_file
+        full_path = f"{self.basic_parameters.data_folder}/{file}"
+
+        if not os.path.isfile(full_path):
+            raise ValueError(f"Processed GENCODE file ({full_path}) doesn't exists.")
+
+        return full_path
+
+    def get_gwas_file(self: Config) -> str:
+        """Get the GWAS file.
+
+        Returns:
+            str: Path to the GWAS file if exists.
+
+        Raises:
+            ValueError: If the GWAS file does not exist.
+        """
+        file = self.source_data.gwas_data.processed_file
+        full_path = f"{self.basic_parameters.data_folder}/{file}"
+
+        if not os.path.isfile(full_path):
+            raise ValueError(f"Processed GWAS file ({full_path}) doesn't exists.")
+
+        return full_path
+
 
 @dataclass
 class ConfigManager(object):

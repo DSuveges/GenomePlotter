@@ -1,10 +1,12 @@
 """Plotting script for chromosome data."""
+
 from __future__ import annotations
 
 import argparse
 import json
 import logging.config
 import os
+from dataclasses import asdict
 
 import pandas as pd
 import yaml
@@ -21,23 +23,24 @@ from functions.GwasAnnotator import gwas_annotator
 from functions.svg_handler import svg_handler
 
 
-def genes_annotation_wrapper(config_manager: ConfigManager, chromosome: str, height: int, gene_filename: str) -> GeneAnnotator:
+def genes_annotation_wrapper(
+    config_manager: ConfigManager, chromosome: str, height: int, gene_filename: str
+) -> GeneAnnotator:
     """Wrapper function to generate gene annotation.
-    
+
     Args:
         config_manager (ConfigManager): Configuration manager object.
         chromosome (str): Chromosome to process.
         height (int): Height of the plot.
         gene_filename (str): File containing gene annotations.
-    
+
     Returns:
         GeneAnnotator: Gene annotator object.
     """
     # Extractig config values:
-    pixel = config_manager.get_pixel()
-    chunk_size = config_manager.get_chunk_size()
-    width = config_manager.get_width()
-    chunk_size = config_manager.get_chunk_size()
+    pixel = config_manager.plot_parameters.pixel_size
+    chunk_size = config_manager.basic_parameters.chunk_size
+    width = config_manager.plot_parameters.width
     centromere_position = get_centromere_position(
         config_manager.get_cytoband_file(), chromosome
     )
@@ -49,21 +52,23 @@ def genes_annotation_wrapper(config_manager: ConfigManager, chromosome: str, hei
     return gene_annotator_object
 
 
-def cytoband_annotation_wrapper(config_manager: ConfigManager, chromosome: str) -> CytobandAnnotator:
+def cytoband_annotation_wrapper(
+    config_manager: ConfigManager, chromosome: str
+) -> CytobandAnnotator:
     """Wrapper function to generate cytoband annotation.
 
     Args:
         config_manager (ConfigManager): Configuration manager object.
         chromosome (str): Chromosome to process.
-    
+
     Returns:
         CytobandAnnotator: Cytoband annotator object.
     """
     # Extract config values:
-    color_scheme = config_manager.get_color_schema()
-    pixel = config_manager.get_pixel()
-    chunk_size = config_manager.get_chunk_size()
-    width = config_manager.get_width()
+    color_scheme = asdict(config_manager.color_schema)
+    pixel = config_manager.plot_parameters.pixel_size
+    chunk_size = config_manager.basic_parameters.chunk_size
+    width = config_manager.plot_parameters.width
     cytoband_file = config_manager.get_cytoband_file()
 
     logger.info(f"Generating cytological band from file: {cytoband_file}.")
@@ -82,11 +87,11 @@ def cytoband_annotation_wrapper(config_manager: ConfigManager, chromosome: str) 
 
 def gwas_annotation_wrapper(config_manager, chromosome):
     # Extract config values:
-    color_scheme = config_manager.get_color_schema()
+    color_scheme = asdict(config_manager.color_schema)
     gwas_color = color_scheme["gwas_point"]
-    pixel = config_manager.get_pixel()
-    chunk_size = config_manager.get_chunk_size()
-    width = config_manager.get_width()
+    pixel = config_manager.plot_parameters.pixel_size
+    chunk_size = config_manager.basic_parameters.chunk_size
+    width = config_manager.plot_parameters.width
     gwas_file = config_manager.get_gwas_file()
 
     logger.info(f"Generating GWAS annotation from file: {gwas_file}.")
@@ -102,24 +107,29 @@ def gwas_annotation_wrapper(config_manager, chromosome):
     return gwasAnnot.generate_gwas()
 
 
-def integrator_wrapper(config_manager, dummy, chromosome):
-    """
-    Opens file, integrates data, returns with integrated dataframe
+def integrator_wrapper(
+    config_manager: Config, dummy: bool, chromosome: str
+) -> pd.DataFrame:
+    """Integrate input data.
+
+    Args:
+        config_manager (Config): Configuration object.
+        dummy (bool): Flag to indicate if dummy data should be generated.
+        chromosome (str): Chromosome to process.
+
+    Returns:
+        pd.DataFrame: Integrated data.
     """
 
     # Extracting parameters from config:
     cytoband_file = config_manager.get_cytoband_file()
     chromosome_file = config_manager.get_chromosome_file(chromosome)
     gencode_file = config_manager.get_gencode_file()
-    dark_start = config_manager.get_dark_start()
-    dark_max = config_manager.get_dark_max()
-    color_map = {
-        k: v
-        for k, v in config_manager.get_color_schema().items()
-        if isinstance(v, str) and v.startswith("#")
-    }
+    dark_start = config_manager.plot_parameters.dark_start
+    dark_max = config_manager.plot_parameters.dark_max
+    color_map = config_manager.color_schema.chromosome_colors
 
-    width = config_manager.get_width()
+    width = config_manager.plot_parameters.width
 
     # Initialize color picker object:
     color_picker = ColorPicker(
@@ -150,9 +160,9 @@ def integrator_wrapper(config_manager, dummy, chromosome):
         header=0,
         dtype={"chr": str, "start": int, "end": int, "name": str, "type": str},
     )
-    logger.info(f"Number of genome chunks: {len(chr_df)}")
-    logger.info(f"Number of GENCODE annotations in the genome: {len(GENCODE_df)}")
-    logger.info(f"Number of cytological bands in the genome: {len(cyb_df)}")
+    logger.info(f"Number of genome chunks: {len(chr_df):,}")
+    logger.info(f"Number of GENCODE annotations in the genome: {len(GENCODE_df):,}")
+    logger.info(f"Number of cytological bands in the genome: {len(cyb_df):,}")
 
     # Integrating cytoband, sequence and gene data:
     logger.info("Integrating data...")
@@ -317,19 +327,25 @@ if __name__ == "__main__":
         else f"{plot_folder}/chr{chromosome}.png"
     )
 
-    # initialize config manager:
-    config_manager = ConfigManager(config_file)
+    # Initilise configuration:
+    with open(config_file) as f:
+        try:
+            config_manager = Config(**json.load(f))
+        except json.decoder.JSONDecodeError:
+            raise ValueError(
+                f"The provided config file ({config_file}) is not a valid JSON file."
+            )
 
     # Set new configuration:
-    config_manager.set_width(width)
-    config_manager.set_pixel_size(pixel)
-    config_manager.set_dark_start(dark_start)
-    config_manager.set_dark_max(dark_max)
-    config_manager.set_plot_folder(plot_folder)
+    config_manager.plot_parameters.width = width
+    config_manager.plot_parameters.pixel_size = pixel
+    config_manager.plot_parameters.dark_start = dark_start
+    config_manager.plot_parameters.dark_max = dark_max
+    config_manager.basic_parameters.plot_folder = plot_folder
 
     # Updating config file:
     logger.info(f"Updating config file: {config_file}")
-    config_manager.save_config(config_file)
+    config_manager.save(config_file)
 
     # Integrating data:
     logger.info("Integrating data...")
