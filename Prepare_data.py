@@ -1,24 +1,27 @@
+"""This script fetches and prepares the input data for the genome plotter project."""
+
 from __future__ import annotations
 
 import argparse
 import json
 import logging.config
 import os
-from dataclasses import asdict
 
 import yaml
 
 from functions.ConfigManager import Config
-from functions.InputParsers import (
-    FetchCytobands,
-    FetchGenome,
-    FetchGwas,
-    fetch_ensembl_version,
-)
+from input_parsers.fetch_cytobands import FetchCytobands
+from input_parsers.fetch_ensembl import FetchGenome, fetch_ensembl_version
 from input_parsers.fetch_gencode import FetchGencode
+from input_parsers.fetch_gwas_catalog import FetchGwas
 
 
 def parse_args() -> argparse.Namespace:
+    """Parse command line arguments.
+
+    Returns:
+        argparse.Namespace: The parsed command line arguments.
+    """
     parser = argparse.ArgumentParser(
         description="This script fetches and parses input data for the genome plotter project"
     )
@@ -37,12 +40,9 @@ def parse_args() -> argparse.Namespace:
         type=str,
     )
     parser.add_argument(
-        "-l", "--logfile", help="Name of the logfile", required=False, type=str
-    )
-    parser.add_argument(
         "-s",
         "--chunk_size",
-        help="Chunk size to pool genomic sequence",
+        help="Chunk size to pool genomic sequence in base pairs.",
         required=True,
         type=int,
     )
@@ -58,18 +58,35 @@ def parse_args() -> argparse.Namespace:
 
 
 def get_cytoband_data(cytoband_url: str, cytoband_output_file: str) -> str:
-    """Fetch cytoband data from the given URL and save it to the output file."""
+    """Fetch cytoband data from the given URL and save it to the output file.
+
+    Args:
+        cytoband_url (str): URL to fetch the cytoband data from.
+        cytoband_output_file (str): File to save the cytoband data to.
+
+    Returns:
+        str: The genome build of the cytoband data.
+    """
     cytoband_retrieve = FetchCytobands(cytoband_url)
     cytoband_retrieve.save_cytoband_data(cytoband_output_file)
     return cytoband_retrieve.get_assembly_build()
 
 
 def main(configuration: Config) -> None:
+    """Main function to fetch and prepare the input data for the genome plotter project.
+
+    Args:
+        configuration (Config): The configuration object containing the input data.
+    """
     # Extracting relevant parameters:
     basic_parameters = configuration.basic_parameters
     data_dir = basic_parameters.data_folder
     chunk_size = basic_parameters.chunk_size
     tolerance = basic_parameters.missing_tolerance
+
+    assert data_dir, "Data directory is not provided."
+    assert chunk_size, "Chunk size is not provided."
+    assert tolerance, "Tolerance for unsequenced bases is not provided."
 
     # Report the other command line parameters:
     logger.info(f"Chunk size: {chunk_size}")
@@ -77,7 +94,7 @@ def main(configuration: Config) -> None:
 
     # Fetching GWAS Catalog data:
     logger.info("Fetching GWAS data...")
-    gwas_retrieve = FetchGwas(asdict(configuration.source_data.gwas_data))
+    gwas_retrieve = FetchGwas(configuration.source_data.gwas_data)
     gwas_retrieve.retrieve_data()
     gwas_retrieve.process_gwas_data()
     gwas_retrieve.save_gwas_data(data_dir)
@@ -92,7 +109,7 @@ def main(configuration: Config) -> None:
 
     # Fetching GENCODE data:
     logging.info("Fetching GENCODE data.")
-    gencode_retrieve = FetchGencode(asdict(configuration.source_data.gencode_data))
+    gencode_retrieve = FetchGencode(configuration.source_data.gencode_data)
     gencode_retrieve.retrieve_data()
     gencode_retrieve.process_gencode_data()
     gencode_retrieve.save_gencode_data(data_dir)
@@ -111,7 +128,7 @@ def main(configuration: Config) -> None:
 
     # Fetching the human genome:
     logger.info("Fetching the human genome sequence...")
-    genome_retrieve = FetchGenome(asdict(configuration.source_data.ensembl_data))
+    genome_retrieve = FetchGenome(configuration.source_data.ensembl_data)
     genome_retrieve.retrieve_data()
     genome_retrieve.parse_genome(chunk_size, tolerance, data_dir)
 
@@ -122,8 +139,17 @@ def main(configuration: Config) -> None:
 
 
 def validate_input(data_dir: str, config_file: str) -> None:
+    """Validate the input parameters.
+
+    Args:
+        data_dir (str): The directory to save the data to.
+        config_file (str): The configuration file.
+
+    Raises:
+        ValueError: If the data directory or the configuration file do not exist.
+    """
     # Checking if output dir exists:
-    if not os.path.abspath(data_dir):
+    if not os.path.exists(os.path.join(os.getcwd(), data_dir)):
         raise ValueError(f"The provided folder ({data_dir}) does not exist")
 
     # Reading configuration file:
@@ -137,7 +163,7 @@ if __name__ == "__main__":
 
     # Initialise logger:
     with open("logger_config.yaml", "r") as stream:
-        logger_config = yaml.load(stream, Loader=yaml.FullLoader)
+        logger_config = yaml.safe_load(stream)
 
     logging.config.dictConfig(logger_config)
     logger = logging.getLogger(__name__)
