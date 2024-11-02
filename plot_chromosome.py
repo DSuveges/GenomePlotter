@@ -15,7 +15,7 @@ from functions.ChromosomePlotter import ChromosomePlotter
 
 # Importing custom functions:
 from functions.ColorFunctions import ColorPicker
-from functions.ConfigManager import Config, ConfigManager
+from functions.ConfigManager import Config
 from functions.CytobandAnnotator import CytobandAnnotator, get_centromere_position
 from functions.DataIntegrator import DataIntegrator
 from functions.GeneAnnotator import GeneAnnotator
@@ -24,12 +24,12 @@ from functions.svg_handler import svg_handler
 
 
 def genes_annotation_wrapper(
-    config_manager: ConfigManager, chromosome: str, height: int, gene_filename: str
+    config_manager: Config, chromosome: str, height: int, gene_filename: str
 ) -> GeneAnnotator:
     """Wrapper function to generate gene annotation.
 
     Args:
-        config_manager (ConfigManager): Configuration manager object.
+        config_manager (Config): Configuration manager object.
         chromosome (str): Chromosome to process.
         height (int): Height of the plot.
         gene_filename (str): File containing gene annotations.
@@ -53,12 +53,12 @@ def genes_annotation_wrapper(
 
 
 def cytoband_annotation_wrapper(
-    config_manager: ConfigManager, chromosome: str
+    config_manager: Config, chromosome: str
 ) -> CytobandAnnotator:
     """Wrapper function to generate cytoband annotation.
 
     Args:
-        config_manager (ConfigManager): Configuration manager object.
+        config_manager (Config): Configuration manager object.
         chromosome (str): Chromosome to process.
 
     Returns:
@@ -85,7 +85,7 @@ def cytoband_annotation_wrapper(
     return cytoband_annot
 
 
-def gwas_annotation_wrapper(config_manager, chromosome):
+def gwas_annotation_wrapper(config_manager: Config, chromosome: str) -> gwas_annotator:
     # Extract config values:
     color_scheme = asdict(config_manager.color_schema)
     gwas_color = color_scheme["gwas_point"]

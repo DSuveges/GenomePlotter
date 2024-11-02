@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+import json
 import re
 import unittest
 
-from functions.ConfigManager import ConfigManager
+from functions.ConfigManager import Config
 
 
 class TestConfigManager(unittest.TestCase):
     CONFIG_JSON = "config.json"
-    config_obj = ConfigManager(CONFIG_JSON)
+
+    with open(CONFIG_JSON, "w") as f:
+        config_obj = Config(**json.load(f))
     hex_color_match = re.compile(r"^#[0-9A-F]{6}$", re.IGNORECASE)
 
     # def save_config(self, filename=None):
