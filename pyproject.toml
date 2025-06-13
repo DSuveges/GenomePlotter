@@ -13,7 +13,7 @@ pycairo = "^1.26.1"
 numpy = "^2.1.0"
 pandas = "^2.2.2"
 pybedtools = "^0.10.0"
-requests = "^2.32.3"
+requests = "^2.32.4"
 pyyaml = "^6.0.2"
 cairosvg = "^2.7.1"
 
