@@ -1,5 +1,7 @@
 ## GenomePlotter
 
+[![codecov](https://codecov.io/gh/DSuveges/GenomePlotter/branch/master/graph/badge.svg)](https://codecov.io/gh/DSuveges/GenomePlotter)
+
 The motivation behind this project was to create a scientifically correct visualization of the human genome with showing the location of genes, exons, already published genome-wide associations and many more. I chose a heat-map kind of visualization that allows the representation of the underlying chemical properties of the DNA ([GC content](https://en.wikipedia.org/wiki/GC-content)) as well.
 
 ### Approach
