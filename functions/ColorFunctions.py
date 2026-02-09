@@ -174,10 +174,15 @@ class ColorPicker:
             width (int | None): Number of chunks in a row.
 
         Raises:
+            TypeError: If colors is not a dictionary.
             ValueError: If the colors are not in the right format.
             ValueError: If the dark_max and dark_threshold are not in the right format.
             ValueError: If the count and width are not in the right format.
         """
+        # Checking if colors is a dictionary:
+        if not isinstance(colors, dict):
+            raise TypeError("colors must be a dictionary mapping feature names to hex colors.")
+
         # Checking if all features can be found in the color set:
         if not pd.Series(self.features).isin(list(colors.keys())).all():
             print(list(colors.keys()))
