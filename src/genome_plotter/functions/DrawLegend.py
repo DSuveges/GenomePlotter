@@ -7,11 +7,11 @@ from collections import OrderedDict
 from dataclasses import asdict
 from typing import TYPE_CHECKING
 
-from ColorFunctions import linear_gradient
-from svg_handler import svg_handler
+from genome_plotter.functions.ColorFunctions import linear_gradient
+from genome_plotter.functions.svg_handler import svg_handler
 
 if TYPE_CHECKING:
-    from functions.ConfigManager import Config
+    from genome_plotter.functions.ConfigManager import Config
 
 
 class DrawLegend:

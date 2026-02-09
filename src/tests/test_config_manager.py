@@ -3,16 +3,19 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import unittest
 
-from functions.ConfigManager import Config
+from genome_plotter.functions.ConfigManager import Config
 
 
 class TestConfigManager(unittest.TestCase):
     """Test cases for Config manager."""
 
-    CONFIG_JSON = "config.json"
+    CONFIG_JSON = os.path.join(
+        os.path.dirname(__file__), "..", "genome_plotter", "config.json"
+    )
 
     with open(CONFIG_JSON) as f:
         config_obj = Config(**json.load(f))

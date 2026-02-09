@@ -7,7 +7,7 @@ import unittest
 
 import pandas as pd
 
-from functions.ColorFunctions import (
+from genome_plotter.functions.ColorFunctions import (
     ColorPicker,
     color_darkener,
     hex_to_rgb,

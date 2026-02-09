@@ -9,10 +9,10 @@ from typing import TYPE_CHECKING
 import pandas as pd
 import requests
 
-from functions.FetchFromFtp import FetchFromFtp
+from genome_plotter.functions.FetchFromFtp import FetchFromFtp
 
 if TYPE_CHECKING:
-    from functions.ConfigManager import SourcePrototype
+    from genome_plotter.functions.ConfigManager import SourcePrototype
 
 logger = logging.getLogger(__name__)
 

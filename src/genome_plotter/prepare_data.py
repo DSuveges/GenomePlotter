@@ -9,9 +9,11 @@ import os
 
 import yaml
 
-from functions.ConfigManager import Config
-from input_parsers.fetch_cytobands import FetchCytobands
-from input_parsers.fetch_gencode import FetchGencode
+from genome_plotter.functions.ConfigManager import Config
+from genome_plotter.input_parsers.fetch_cytobands import FetchCytobands
+from genome_plotter.input_parsers.fetch_gencode import FetchGencode
+
+logger = logging.getLogger(__name__)
 
 
 def parse_args() -> argparse.Namespace:
@@ -70,8 +72,8 @@ def get_cytoband_data(cytoband_url: str, cytoband_output_file: str) -> str:
     return cytoband_retrieve.get_assembly_build()
 
 
-def main(configuration: Config) -> None:
-    """Main function to fetch and prepare the input data for the genome plotter project.
+def run(configuration: Config) -> None:
+    """Run the data preparation pipeline.
 
     Args:
         configuration (Config): The configuration object containing the input data.
@@ -165,12 +167,14 @@ def validate_input(data_dir: str, config_file: str) -> None:
         raise ValueError(f"The provided config file ({config_file}) does not exist.")
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """Entry point for the prepare-data CLI command."""
     # Parse command line arguments
     args = parse_args()
 
     # Initialise logger:
-    with open("logger_config.yaml", "r") as stream:
+    logger_config_path = os.path.join(os.path.dirname(__file__), "logger_config.yaml")
+    with open(logger_config_path, "r") as stream:
         logger_config = yaml.safe_load(stream)
 
     logging.config.dictConfig(logger_config)
@@ -199,4 +203,8 @@ if __name__ == "__main__":
         missing_tolerance=args.tolerance,
     )
 
-    main(configuration)
+    run(configuration)
+
+
+if __name__ == "__main__":
+    main()
