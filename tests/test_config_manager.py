@@ -1,3 +1,5 @@
+"""Tests for the ConfigManager module."""
+
 from __future__ import annotations
 
 import json
@@ -8,37 +10,17 @@ from functions.ConfigManager import Config
 
 
 class TestConfigManager(unittest.TestCase):
+    """Test cases for Config manager."""
+
     CONFIG_JSON = "config.json"
 
-    with open(CONFIG_JSON, "w") as f:
+    with open(CONFIG_JSON) as f:
         config_obj = Config(**json.load(f))
     hex_color_match = re.compile(r"^#[0-9A-F]{6}$", re.IGNORECASE)
 
-    # def save_config(self, filename=None):
-    # def set_data_folder(self, data_folder):
-    # def set_width(self, width):
-    # def set_pixel_size(self, pixel_size):
-    # def set_dark_start(self, dark_start):
-    # def set_dark_max(self, dark_max):
-    # def set_plot_folder(self, plot_folder):
-    # -> def get_chromosome_colors(self):
-    # -> def get_cytobanc_colors(self):
-    # -> def get_gwas_color(self):
-    # -> def get_arrow_colors(self):
-    # def get_data_folder(self):
-    # def get_source(self, resource, key, chromosome=None):
-    # def get_cytoband_file(self):
-    # def get_chromosome_file(self, chromsome):
-    # def get_gwas_file(self):
-    # def get_gencode_file(self):
-    # def get_pixel(self):
-    # def get_chunk_size(self):
-    # def get_width(self):
-    # def get_dark_max(self):
-    # def get_dark_start(self):
-
-    def test_get_chromosome_colors(self):
-        chromosome_colors = self.config_obj.get_chromosome_colors()
+    def test_get_chromosome_colors(self) -> None:
+        """Test chromosome colors retrieval."""
+        chromosome_colors = self.config_obj.color_schema.chromosome_colors
 
         # Test return types:
         self.assertIsInstance(chromosome_colors, dict)
@@ -60,8 +42,9 @@ class TestConfigManager(unittest.TestCase):
             self.assertIsInstance(color, str)
             self.assertTrue(self.hex_color_match.match(color))
 
-    def test_get_cytobanc_colors(self):
-        cytobanc_colors = self.config_obj.get_cytobanc_colors()
+    def test_get_cytobanc_colors(self) -> None:
+        """Test cytoband colors retrieval."""
+        cytobanc_colors = self.config_obj.color_schema.cytoband_colors
 
         # Test return types:
         self.assertIsInstance(cytobanc_colors, dict)
@@ -86,8 +69,9 @@ class TestConfigManager(unittest.TestCase):
             self.assertIsInstance(color, str)
             self.assertTrue(self.hex_color_match.match(color))
 
-    def test_get_arrow_colors(self):
-        arrow_colors = self.config_obj.get_arrow_colors()
+    def test_get_arrow_colors(self) -> None:
+        """Test arrow colors retrieval."""
+        arrow_colors = self.config_obj.color_schema.arrow_colors
 
         # Test return types:
         self.assertIsInstance(arrow_colors, dict)
@@ -102,13 +86,15 @@ class TestConfigManager(unittest.TestCase):
             self.assertIsInstance(color, str)
             self.assertTrue(self.hex_color_match.match(color))
 
-    def test_get_gwas_color(self):
-        gwas_color = self.config_obj.get_gwas_color()
+    def test_get_gwas_color(self) -> None:
+        """Test GWAS color retrieval."""
+        gwas_color = self.config_obj.color_schema.gwas_point
         self.assertIsInstance(gwas_color, str)
         self.assertTrue(self.hex_color_match.match(gwas_color))
 
-    def test_get_custom_gene_window(self):
-        gene_window = self.config_obj.get_custom_gene_window()
+    def test_get_custom_gene_window(self) -> None:
+        """Test custom gene window retrieval."""
+        gene_window = self.config_obj.plot_parameters.custom_gene_window
         self.assertIsInstance(gene_window, int)
 
 

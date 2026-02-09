@@ -1,3 +1,5 @@
+"""Module containing color manipulation functions and classes."""
+
 from __future__ import annotations
 
 import colorsys
@@ -8,16 +10,15 @@ import numpy as np
 import pandas as pd
 
 
-def hex_to_rgb(hex_color: str) -> list:
-    """Converting hexadecimal color to rgb
+def hex_to_rgb(hex_color: str) -> list[int]:
+    """Convert hexadecimal color to RGB.
 
-    params:
-        hex_color (str): color represented in hexadecimal format eg '#FFFFFF'
+    Args:
+        hex_color (str): Color represented in hexadecimal format eg '#FFFFFF'.
 
-    returns:
-        list: RGB color representation, list with 3 integers eg [255, 255, 255]
+    Returns:
+        list[int]: RGB color representation, list with 3 integers eg [255, 255, 255].
     """
-
     if not isinstance(hex_color, str):
         raise ValueError(
             "The provided hexadecimal definition has to be string eg #000000."
@@ -31,14 +32,14 @@ def hex_to_rgb(hex_color: str) -> list:
     return [int(hex_color[i : i + 2], 16) for i in range(1, 6, 2)]
 
 
-def rgb_to_hex(rgb_color: list) -> str:
-    """Converting rgb color to hexadecimal representation
+def rgb_to_hex(rgb_color: list[int]) -> str:
+    """Convert RGB color to hexadecimal representation.
 
-    params:
-        rgb_color (list): RGB color representation, list with 3 integers
+    Args:
+        rgb_color (list[int | float]): RGB color representation, list with 3 integers.
 
-    returns:
-        str: color represented in hexadecimal values eg. '#ffffff'
+    Returns:
+        str: Color represented in hexadecimal values eg. '#ffffff'.
     """
     # Components need to be integers for hex to make sense
     rgb_color = [int(x) for x in rgb_color]
@@ -49,16 +50,16 @@ def rgb_to_hex(rgb_color: list) -> str:
 
 def linear_gradient(
     start_hex: str, finish_hex: str = "#FFFFFF", length: int = 10
-) -> list:
-    """Generating color gradient between two hexadecimal color of a given length
+) -> list[str]:
+    """Generate color gradient between two hexadecimal colors of a given length.
 
-    Params:
-        start_hex (str): starting color in hexadecimal format, requried
-        finish_hex (str): ending color in hexadecimal format, default: '#FFFFFF'
-        length (int): number of colors in the gradient
+    Args:
+        start_hex (str): Starting color in hexadecimal format, required.
+        finish_hex (str): Ending color in hexadecimal format, default: '#FFFFFF'.
+        length (int): Number of colors in the gradient.
 
     Returns:
-        list: 'length' number of colors in hexadecimal format
+        list[str]: 'length' number of colors in hexadecimal format.
     """
     # Starting and ending colors in RGB form
     start_rgb = hex_to_rgb(start_hex)
@@ -94,19 +95,18 @@ def linear_gradient(
 def color_darkener(
     color: str, x: int, width: int, threshold: float, max_diff_value: float
 ) -> str:
-    """Function to decrease the luminosity of a hex color
+    """Decrease the luminosity of a hex color.
 
-    Params:
-        color (str): primary color assigned based on primary annotation eg. intergenic, exon etc,
-        x (int): x position of the chunk
-        width (str): how many chunks do we have in one line. (always >= row['x'])
-        threshold (float): fraction of the width, where the darkening starts (<= 1.0)
-        max_diff_value (float): the max value of darkening (<=1)
+    Args:
+        color (str): Primary color assigned based on annotation eg. intergenic, exon etc.
+        x (int): X position of the chunk.
+        width (int): How many chunks in one line (always >= row['x']).
+        threshold (float): Fraction of width where the darkening starts (<= 1.0).
+        max_diff_value (float): The max value of darkening (<=1).
 
     Returns:
-        str: the darkness adjusted color in hex
+        str: The darkness adjusted color in hex.
     """
-
     if not isinstance(color, str) or not re.match(r"#[0-9A-Fa-f]{6}", color):
         raise TypeError(
             f'Color is expected to be given as a hexadecimal value (eg. "#F12AC4"). Given: {color}.'
@@ -145,40 +145,44 @@ def color_darkener(
         new_rgb = colorsys.hls_to_rgb(hls_code[0], hls_code[1] * factor, hls_code[2])
 
         # Get the modifed hexacode:
-        color = rgb_to_hex([x * 255 for x in new_rgb])
+        color = rgb_to_hex([int(x * 255) for x in new_rgb])
 
     return color
 
 
-class ColorPicker(object):
+class ColorPicker:
+    """Class to pick colors for genomic features based on GC content."""
+
     # These are the supported and expected features:
     features = ["exon", "gene", "intergenic", "centromere", "heterochromatin", "dummy"]
 
     def __init__(
         self: ColorPicker,
-        colors: dict,
+        colors: dict[str, str],
         dark_max: float | None = None,
         dark_threshold: float | None = None,
         count: int = 20,
         width: int | None = None,
     ) -> None:
-        """Initializing ColorPicker
+        """Initialize ColorPicker.
 
-        Params:
-            colors (dict):
-            dark_max (float): How much darker color should be reached.
-            dark_threshold (float): Where the darkenin should be started.
+        Args:
+            colors (dict[str, str]): Dictionary mapping feature names to hex colors.
+            dark_max (float | None): How much darker color should be reached.
+            dark_threshold (float | None): Where the darkening should be started.
             count (int): Number of steps in the gradient.
-            width (int): Number of chunks in a row.
-
-        Returns:
-            None
+            width (int | None): Number of chunks in a row.
 
         Raises:
+            TypeError: If colors is not a dictionary.
             ValueError: If the colors are not in the right format.
             ValueError: If the dark_max and dark_threshold are not in the right format.
             ValueError: If the count and width are not in the right format.
         """
+        # Checking if colors is a dictionary:
+        if not isinstance(colors, dict):
+            raise TypeError("colors must be a dictionary mapping feature names to hex colors.")
+
         # Checking if all features can be found in the color set:
         if not pd.Series(self.features).isin(list(colors.keys())).all():
             print(list(colors.keys()))
@@ -217,7 +221,16 @@ class ColorPicker(object):
         self.width = width
         self.count = count
 
-    def map_color(self, feature: str, gc_content: float) -> str:
+    def map_color(self: ColorPicker, feature: str, gc_content: float | None) -> str:
+        """Map a feature and GC content to a color.
+
+        Args:
+            feature (str): Genomic feature type.
+            gc_content (float | None): GC content ratio.
+
+        Returns:
+            str: Hex color code.
+        """
         if feature == "dummy":
             color = self.color_map["dummy"][0]
         elif gc_content is None or np.isnan(gc_content):
@@ -233,7 +246,18 @@ class ColorPicker(object):
 
         return color
 
-    def pick_color(self, row: pd.Series) -> str:
+    def pick_color(self: ColorPicker, row: pd.Series) -> str:
+        """Pick a color for a row based on genomic features.
+
+        Args:
+            row (pd.Series): DataFrame row with GC_ratio, GENCODE, and x columns.
+
+        Returns:
+            str: Hex color code.
+
+        Raises:
+            TypeError: If row is not a pd.Series with required keys.
+        """
         expected_columns = ["GC_ratio", "GENCODE", "x"]
         if (
             not isinstance(row, pd.Series)
@@ -250,6 +274,8 @@ class ColorPicker(object):
         if (
             (row["GENCODE"] != "dummy")
             and self.width is not None
+            and self.dark_threshold is not None
+            and self.dark_max is not None
             and (row["x"] / self.width) > self.dark_threshold
         ):
             color = color_darkener(

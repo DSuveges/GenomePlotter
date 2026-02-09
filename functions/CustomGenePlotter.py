@@ -1,16 +1,33 @@
+"""Module for custom gene plotting functionality."""
+
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
 import pandas as pd
 
-from .DataIntegrator import DataIntegrator
+from input_parsers.data_integrator import DataIntegrator
+
+if TYPE_CHECKING:
+    from functions.ColorFunctions import ColorPicker
+    from functions.ConfigManager import Config
 
 
-class CustomGeneIntegrator(object):
-    def __init__(self, query, config_manager) -> None:
-        self.width = config_manager.get_width()
-        self.gene_window = config_manager.get_custom_gene_window()
+class CustomGeneIntegrator:
+    """Class for integrating data for custom gene plots."""
+
+    def __init__(
+        self: CustomGeneIntegrator, query: str, config_manager: Config
+    ) -> None:
+        """Initialize the custom gene integrator.
+
+        Args:
+            query (str): Gene name or Ensembl ID to query.
+            config_manager (Config): Configuration manager object.
+        """
+        self.width = config_manager.plot_parameters.width
+        self.gene_window = config_manager.plot_parameters.custom_gene_window
 
         logging.info(f"Generating integrated dataset for gene: {query}")
 
@@ -57,7 +74,18 @@ class CustomGeneIntegrator(object):
         self.genome_df = genome_df
 
     @staticmethod
-    def __filter_gencode_data(gene_name, gencode_df):
+    def __filter_gencode_data(
+        gene_name: str, gencode_df: pd.DataFrame
+    ) -> pd.DataFrame:
+        """Filter GENCODE data for a specific gene.
+
+        Args:
+            gene_name (str): Gene name or Ensembl ID.
+            gencode_df (pd.DataFrame): Full GENCODE DataFrame.
+
+        Returns:
+            pd.DataFrame: Filtered DataFrame for the gene.
+        """
         if gene_name.startswith("ENSG"):
             gencode_filtered = gencode_df.loc[gencode_df.gene_id.str.match(gene_name)]
         else:
@@ -65,12 +93,23 @@ class CustomGeneIntegrator(object):
 
         return gencode_filtered
 
-    def get_gencode_data(self):
+    def get_gencode_data(self: CustomGeneIntegrator) -> pd.DataFrame:
+        """Return the filtered GENCODE data.
+
+        Returns:
+            pd.DataFrame: Filtered GENCODE DataFrame.
+        """
         return self.filtered_gencode
 
-    def __load_genome(self, genome_file):
-        """This function loads genome for the gene"""
+    def __load_genome(self: CustomGeneIntegrator, genome_file: str) -> pd.DataFrame:
+        """Load genome data for the gene region.
 
+        Args:
+            genome_file (str): Path to the genome file.
+
+        Returns:
+            pd.DataFrame: Filtered genome DataFrame.
+        """
         genome_df = pd.read_csv(
             genome_file,
             sep="\t",
@@ -88,12 +127,17 @@ class CustomGeneIntegrator(object):
 
         return genome_filtered
 
-    def integrate(self, color_picker) -> None:
+    def integrate(self: CustomGeneIntegrator, color_picker: ColorPicker) -> None:
+        """Integrate genome data with annotations and colors.
+
+        Args:
+            color_picker (ColorPicker): Color picker object for assigning colors.
+        """
         # Initialize data integrator:
         integrator = DataIntegrator(self.genome_df)
 
         # Convert genomic coordinates to plot coordinates:
-        integrator.add_xy_coordinates()
+        integrator.add_xy_coordinates(self.width)
 
         # Adding GENCODE annotation to genomic data:
         integrator.add_genes(self.filtered_gencode)
@@ -111,25 +155,45 @@ class CustomGeneIntegrator(object):
             y=lambda df: df.y - integrated_data.y.min(),
         ).reset_index(drop=True)
 
-    def get_integrated_data(self) -> pd.DataFrame:
+    def get_integrated_data(self: CustomGeneIntegrator) -> pd.DataFrame:
+        """Return the integrated data.
+
+        Returns:
+            pd.DataFrame: Integrated DataFrame.
+        """
         return self.integrated_data
 
-    def get_data_width(self) -> int:
+    def get_data_width(self: CustomGeneIntegrator) -> int:
+        """Return the data width.
+
+        Returns:
+            int: Maximum x coordinate.
+        """
         return self.integrated_data.x.max()
 
 
-class GenerateArrowPlot(object):
+class GenerateArrowPlot:
+    """Class for generating arrow plots for gene structures."""
+
     CHUNK_SVG = '<rect x="{}" y="0" width="{}" height="{}" style="stroke-width:1;stroke:{};fill:{}" />\n'
     LINE_SVG = '<line x1="{}" y1="{}" x2="{}" y2="{}" stroke="{}" stroke-width="1" />\n'
     ARROW_SVG = '<polygon points="{}" style="fill:{};stroke:{};stroke-width:1" />\n'
 
-    def __init__(self, config_manager, arrow_width):
+    def __init__(
+        self: GenerateArrowPlot, config_manager: Config, arrow_width: int
+    ) -> None:
+        """Initialize the arrow plot generator.
+
+        Args:
+            config_manager (Config): Configuration manager object.
+            arrow_width (int): Width of the arrow elements.
+        """
         self.arrow_data = pd.read_csv(
             config_manager.get_gencode_arrow_file(), sep="\t", compression="infer"
         )
 
         # Extract colors:
-        arrow_colors = config_manager.get_arrow_colors()
+        arrow_colors = config_manager.color_schema.arrow_colors
         self.line_color = arrow_colors["line_color"]
         self.utr_color = arrow_colors["utr_color"]
         self.cds_color = arrow_colors["cds_color"]
@@ -140,7 +204,17 @@ class GenerateArrowPlot(object):
 
         self.arrow_width = arrow_width
 
-    def generate_arrow_polt(self, gene_name):
+    def generate_arrow_polt(
+        self: GenerateArrowPlot, gene_name: str
+    ) -> tuple[str, float]:
+        """Generate arrow plot for a gene.
+
+        Args:
+            gene_name (str): Name of the gene.
+
+        Returns:
+            tuple[str, float]: SVG string and plot width.
+        """
         # Get CDS and UTR for a given gene:
         gene_df = (
             self.arrow_data.loc[lambda df: df.gene_name == gene_name]
@@ -189,7 +263,15 @@ class GenerateArrowPlot(object):
 
         return svg_string, gene_df.relative_end.max()
 
-    def draw_arrow(self, df):
+    def draw_arrow(self: GenerateArrowPlot, df: pd.DataFrame) -> str:
+        """Draw an arrow for the gene structure.
+
+        Args:
+            df (pd.DataFrame): DataFrame with gene structure.
+
+        Returns:
+            str: SVG arrow string.
+        """
         arrow_width = self.arrow_width
 
         # Get orientation:
@@ -220,7 +302,15 @@ class GenerateArrowPlot(object):
 
         return self.ARROW_SVG.format(coordinate_str, self.utr_color, self.line_color)
 
-    def draw_box(self, row):
+    def draw_box(self: GenerateArrowPlot, row: pd.Series) -> str:
+        """Draw a box for an exon/UTR.
+
+        Args:
+            row (pd.Series): Row with gene structure data.
+
+        Returns:
+            str: SVG box string.
+        """
         if row["type"] == "UTR":
             fill_color = self.utr_color
         elif row["type"] == "CDS":
@@ -236,7 +326,15 @@ class GenerateArrowPlot(object):
             fill_color,
         )
 
-    def draw_lines(self, row):
+    def draw_lines(self: GenerateArrowPlot, row: pd.Series) -> str | None:
+        """Draw connecting lines for introns.
+
+        Args:
+            row (pd.Series): Row with gene structure data.
+
+        Returns:
+            str | None: SVG line string or None if gap is too small.
+        """
         if row["next_start"] - row["relative_end"] < 2:
             return None
 

@@ -1,3 +1,5 @@
+"""Module for plotting chromosome data as SVG."""
+
 from __future__ import annotations
 
 import logging
@@ -8,21 +10,18 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 
-class ChromosomePlotter(object):
-    """
-    Functions to store/process and save svg object of a single chromosome
-    """
+class ChromosomePlotter:
+    """Functions to store, process and save SVG object of a single chromosome."""
 
     chunk_svg = '<rect x="{}" y="{}" width="{}" height="{}" style="stroke-width:1;stroke:{}; fill: {}" />'
 
-    def __init__(self, input_data: pd.DataFrame, pixel: int):
-        """Initialize plotter object
+    def __init__(self: ChromosomePlotter, input_data: pd.DataFrame, pixel: int) -> None:
+        """Initialize plotter object.
 
-        Params:
-            input_data (pd.DataFrame):
-            pixel (int): size of pixel (one unit of genetic information)
+        Args:
+            input_data (pd.DataFrame): DataFrame with chromosome data.
+            pixel (int): Size of pixel (one unit of genetic information).
         """
-
         self.__pixel__ = pixel
         self.__chromosome_data__ = input_data
         self.__chromosome_name__ = input_data.chr[0]
@@ -35,10 +34,11 @@ class ChromosomePlotter(object):
         # The svg string will be stored here:
         self.__plot_string__ = ""
 
-    def __add_centromere(self):
+    def __add_centromere(self: ChromosomePlotter) -> None:
+        """Add centromere visualization to the chromosome plot."""
         # If the plotted chromosome region doesn't have centromere, we skip:
         if "centromere" not in self.__chromosome_data__.GENCODE.to_list():
-            return None
+            return
 
         # We use the Gencode annotation in the chromosome dataframe to get start and end:
         centromere_start = (
@@ -76,7 +76,8 @@ class ChromosomePlotter(object):
             f'\n<g id="centromere">\n\t{half_centromere}\t{other_half}</g>\n'
         )
 
-    def draw_dummy(self):
+    def draw_dummy(self: ChromosomePlotter) -> None:
+        """Draw a dummy chromosome representation."""
         width = self.__width__
         height = self.__height__
 
@@ -125,7 +126,8 @@ class ChromosomePlotter(object):
         # Adding centromoere:
         self.__add_centromere()
 
-    def draw_chromosome(self):
+    def draw_chromosome(self: ChromosomePlotter) -> None:
+        """Draw the chromosome with colored chunks."""
         pixel = self.__pixel__
         svg_chunks = []
         for _, df_row in self.__chromosome_data__.iterrows():
@@ -142,19 +144,44 @@ class ChromosomePlotter(object):
         # Adding centromoere:
         self.__add_centromere()
 
-    def get_plot_with(self):
+    def get_plot_with(self: ChromosomePlotter) -> int:
+        """Return the plot width.
+
+        Returns:
+            int: Plot width in pixels.
+        """
         return self.__width__
 
-    def get_plot_height(self):
+    def get_plot_height(self: ChromosomePlotter) -> int:
+        """Return the plot height.
+
+        Returns:
+            int: Plot height in pixels.
+        """
         return self.__height__
 
-    def return_svg(self):
+    def return_svg(self: ChromosomePlotter) -> str:
+        """Return the SVG plot string.
+
+        Returns:
+            str: SVG content string.
+        """
         return self.__plot_string__
 
-    def save_png(self, file_name):
+    def save_png(self: ChromosomePlotter, file_name: str) -> None:
+        """Save the plot as PNG file.
+
+        Args:
+            file_name (str): Output file name.
+        """
         cairosvg.svg2png(bytestring=self.__svg__, write_to=file_name)
 
-    def wrap_svg(self, file_name):
+    def wrap_svg(self: ChromosomePlotter, file_name: str) -> None:
+        """Wrap the SVG content and save to file.
+
+        Args:
+            file_name (str): Output file name.
+        """
         self.__svg__ = (
             '<svg width="%s" height="%s" version="1.1" xmlns="http://www.w3.org/2000/svg" \
                 xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve">\n%s</svg>'

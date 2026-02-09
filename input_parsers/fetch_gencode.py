@@ -18,37 +18,83 @@ logger = logging.getLogger(__name__)
 
 # Fetch and process Gencode data:
 class FetchGencode(FetchFromFtp):
-    """Function to fetch gene data from GENCODE ftp"""
+    """Function to fetch gene data from GENCODE ftp."""
 
-    def __init__(self, gencode_parameters: SourcePrototype) -> None:
-        """Based on the source related parameters, fetches, parses and saves GENCODE gene info"""
+    def __init__(self: FetchGencode, gencode_parameters: SourcePrototype) -> None:
+        """Fetch, parse and save GENCODE gene info based on source parameters.
 
+        Args:
+            gencode_parameters (SourcePrototype): The source parameters.
+
+        Raises:
+            ValueError: If the source parameters are not provided.
+        """
         # Extract parameters:
         self.host = gencode_parameters.host
         self.path = gencode_parameters.path
         self.source_file = gencode_parameters.source_file
         self.processed_file = gencode_parameters.processed_file
         self.arrow_file = gencode_parameters.arrow_file
-        self.release_date = None
-        self.release = None
 
         # Initialize host:
+        assert self.host is not None, "Host is required for GENCODE data fetch."
         super().__init__(self.host)
 
-    def retrieve_data(self):
+    @staticmethod
+    def _get_gencode_version(file_list: list[str]) -> int:
+        """Parse the list of files and return the latest release version.
+
+        Args:
+            file_list (list[str]): List of files in the directory.
+
+        Returns:
+            int: The latest release version.
+
+        Examples:
+            >>> FetchGencode._get_gencode_version(["release_1", "release_2", "release_3"])
+            3
+            >>> FetchGencode._get_gencode_version(["release_1", "release_2", "release_3", "cicaful"])
+            3
+            >>> FetchGencode._get_gencode_version(["bogyo", "pocok", "cicaful"])
+            Traceback (most recent call last):
+            ...
+            ValueError: Release data not found.
+            >>> FetchGencode._get_gencode_version([None])
+            Traceback (most recent call last):
+            ...
+            ValueError: Release data not found.
         """
-        Retrieving release data and association table.
-        Then the connection is closed.
+        # Extract only strings:
+        filtered_files = list(filter(lambda x: isinstance(x, str), file_list))
+        # Extract release version from strings:
+        releases = list(
+            filter(
+                lambda x: isinstance(x, int),
+                [
+                    int(x.replace("release_", ""))
+                    for x in filtered_files
+                    if re.match(r"release_\d+$", x)
+                ],
+            )
+        )
+        if not releases:
+            raise ValueError("Release data not found.")
+
+        # Get the latest release:
+        return max(releases)
+
+    def retrieve_data(self: FetchGencode) -> None:
+        """Retrieving release data and association table. Then the connection is closed.
+
+        Raises:
+            ValueError: If the release data is not found.
         """
+        assert self.path is not None, "Path is not provided."
+        assert self.source_file is not None, "Source file is not provided."
 
         # Get last release:
-        file_list = self.fetch_file_list(self.path)
-        releases = [
-            int(x.replace("release_", ""))
-            for x in file_list
-            if re.match(r"release_\d+$", x)
-        ]
-        self.release = max(releases)
+        file_list: list[str] = self.fetch_file_list(self.path)
+        self.release: int = self._get_gencode_version(file_list)
 
         # Get date of last release:
         path_to_last_release = "{}/release_{}/".format(self.path, self.release)
@@ -82,8 +128,8 @@ class FetchGencode(FetchFromFtp):
         gene_count = len(self.gencode_raw.loc[self.gencode_raw.type == "gene"])
         logger.info(f"Number of genes in {self.release} release: {gene_count:,}")
 
-    # Processing gwas data:
-    def process_gencode_data(self):
+    def process_gencode_data(self: FetchGencode) -> None:
+        """Process the raw GENCODE data into structured gene annotations."""
         # Parsing gtf annotation:
         logger.info("Parsing GTF annotation.")
         parsed_annotation = self.gencode_raw.annotation.apply(
@@ -107,9 +153,16 @@ class FetchGencode(FetchFromFtp):
             gene_id=gencode_df_updated.gene_id.str.split(".").str[0]
         )
 
-        # Filtering for protein coding genes:
+        # Cleaning up genes:
         gencode_df_updated = gencode_df_updated.loc[
-            gencode_df_updated.gene_type == "protein_coding"
+            # Dropping entries on non-conventional chromosomes:
+            (gencode_df_updated.chr.str.len <= 2)
+            # Filtering for protein coding genes:
+            & (gencode_df_updated.gene_type == "protein_coding")
+            # Dropping novel genes without proper gene name:
+            & (~gencode_df_updated.gene_name.str.startswith("ENSG"))
+            # Dropping novel genes without proper gene name:
+            & (~gencode_df_updated.gene_name.str.contains("orf"))
         ]
         protein_coding_gene_count = len(
             gencode_df_updated.loc[gencode_df_updated.type == "gene"]
@@ -201,8 +254,12 @@ class FetchGencode(FetchFromFtp):
         self.processed = processed
         self.arrow_data = arrow_data
 
-    # Save data
-    def save_gencode_data(self, data_dir):
+    def save_gencode_data(self: FetchGencode, data_dir: str) -> None:
+        """Save processed GENCODE data to files.
+
+        Args:
+            data_dir (str): Directory to save data files.
+        """
         self.processed = self.processed[
             ["chr", "start", "end", "gene_id", "gene_name", "transcript_id", "type"]
         ]
@@ -218,16 +275,32 @@ class FetchGencode(FetchFromFtp):
         )
         logger.info(f"GENCODE data saved into {gencode_arrow_filename}.")
 
-    # Extract release date:
-    def get_release_date(self):
+    def get_release_date(self: FetchGencode) -> str:
+        """Get the release date of the GENCODE data.
+
+        Returns:
+            str: Release date string.
+        """
         return self.release_date
 
-    # Extract release date:
-    def get_release(self):
+    def get_release(self: FetchGencode) -> int:
+        """Get the release version of the GENCODE data.
+
+        Returns:
+            int: Release version number.
+        """
         return self.release
 
     @staticmethod
-    def get_canonical_transcript(transcripts):
+    def get_canonical_transcript(transcripts: pd.DataFrame) -> str:
+        """Select the canonical transcript following Ensembl guidelines.
+
+        Args:
+            transcripts (pd.DataFrame): DataFrame with transcript information.
+
+        Returns:
+            str: Canonical transcript ID.
+        """
         # Selecting canonical transcript following Ensembl guidelines:
         # http://www.ensembl.org/Help/Glossary
 
@@ -257,7 +330,25 @@ class FetchGencode(FetchFromFtp):
         return canonical_transcript_id
 
     @staticmethod
-    def generate_exon_intron_structure(gene_id, transcript_id, start, end, exons):
+    def generate_exon_intron_structure(
+        gene_id: str,
+        transcript_id: str,
+        start: int,
+        end: int,
+        exons: pd.DataFrame,
+    ) -> pd.DataFrame:
+        """Generate exon-intron structure for a gene.
+
+        Args:
+            gene_id (str): Gene identifier.
+            transcript_id (str): Transcript identifier.
+            start (int): Gene start position.
+            end (int): Gene end position.
+            exons (pd.DataFrame): DataFrame with exon coordinates.
+
+        Returns:
+            pd.DataFrame: DataFrame with exon and intron features.
+        """
         # Looping through all exons generate coordinates of the corresponding intron(s)
         new_features = []
         for _, values in (
@@ -283,10 +374,11 @@ class FetchGencode(FetchFromFtp):
             new_features.append({"start": start, "end": end, "type": "intron"})
 
         # Generate dataframe + add extra features:
-        df = pd.DataFrame(new_features)
-        df["gene_id"] = gene_id
-        df["transcript_id"] = transcript_id
-        df["chr"] = exons.chr.tolist()[0].replace("chr", "")
-        df["gene_name"] = exons.gene_name.tolist()[0]
+        df = pd.DataFrame(new_features).assign(
+            gene_id=gene_id,
+            transcript_id=transcript_id,
+            chr=exons.chr.tolist()[0].replace("chr", ""),
+            gene_name=exons.gene_name.tolist()[0],
+        )
 
         return df

@@ -15,28 +15,29 @@ logger = logging.getLogger(__name__)
 
 # Fetch GWAS Catalog data and parse:
 class FetchGwas(FetchFromFtp):
-    """Function to fetch GWAS data from ftp and format as bed"""
+    """Function to fetch GWAS data from ftp and format as bed."""
 
-    def __init__(self, gwas_parameters: SourcePrototype):
-        """
-        Based on the gwas source related parameters, fetches, parses and saves data
-        """
+    def __init__(self: FetchGwas, gwas_parameters: SourcePrototype) -> None:
+        """Fetch, parse and save GWAS data based on source parameters.
 
+        Args:
+            gwas_parameters (SourcePrototype): The source parameters.
+        """
         # Extract parameters:
         self.host = gwas_parameters.host
         self.path = gwas_parameters.path
         self.source_file = gwas_parameters.source_file
         self.processed_file = gwas_parameters.processed_file
-        self.release_date = None
+        self.release_date: str | None = None
 
         # Initialize host:
+        assert self.host is not None, "Host is required for GWAS data fetch."
         FetchFromFtp.__init__(self, self.host)
 
-    def retrieve_data(self):
-        """
-        Retrieving release data and association table.
-        Then the connection is closed.
-        """
+    def retrieve_data(self: FetchGwas) -> None:
+        """Retrieve release data and association table, then close connection."""
+        assert self.path is not None, "Path is required."
+        assert self.source_file is not None, "Source file is required."
 
         # Get release date
         self.release_date = self.fetch_last_update_date(self.path)
@@ -49,8 +50,8 @@ class FetchGwas(FetchFromFtp):
         # Close connection:
         self.close_connection()
 
-    # Processing gwas data:
-    def process_gwas_data(self):
+    def process_gwas_data(self: FetchGwas) -> None:
+        """Process raw GWAS data into bed format."""
         gwas_df = self.tsv_data
         gwas_df.CHR_ID = gwas_df.CHR_ID.astype(str)
 
@@ -84,13 +85,21 @@ class FetchGwas(FetchFromFtp):
         # Save dataframe:
         self.gwas_df = filt
 
-    # Save data
-    def save_gwas_data(self, data_dir):
+    def save_gwas_data(self: FetchGwas, data_dir: str) -> None:
+        """Save processed GWAS data to file.
+
+        Args:
+            data_dir (str): Directory to save data file.
+        """
         gwas_output_filename = f"{data_dir}/{self.processed_file}"
         self.gwas_df.to_csv(
             gwas_output_filename, sep="\t", compression="infer", index=False
         )
 
-    # Extract release date:
-    def get_release_date(self):
+    def get_release_date(self: FetchGwas) -> str | None:
+        """Get the release date of the GWAS data.
+
+        Returns:
+            str | None: Release date string or None.
+        """
         return self.release_date
