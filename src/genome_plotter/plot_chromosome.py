@@ -11,16 +11,21 @@ from dataclasses import asdict
 import pandas as pd
 import yaml
 
-from functions.ChromosomePlotter import ChromosomePlotter
+from genome_plotter.functions.ChromosomePlotter import ChromosomePlotter
 
 # Importing custom functions:
-from functions.ColorFunctions import ColorPicker
-from functions.ConfigManager import Config
-from functions.CytobandAnnotator import CytobandAnnotator, get_centromere_position
-from functions.GeneAnnotator import GeneAnnotator
-from functions.GwasAnnotator import gwas_annotator
-from functions.svg_handler import svg_handler
-from input_parsers.data_integrator import DataIntegrator
+from genome_plotter.functions.ColorFunctions import ColorPicker
+from genome_plotter.functions.ConfigManager import Config
+from genome_plotter.functions.CytobandAnnotator import (
+    CytobandAnnotator,
+    get_centromere_position,
+)
+from genome_plotter.functions.GeneAnnotator import GeneAnnotator
+from genome_plotter.functions.GwasAnnotator import gwas_annotator
+from genome_plotter.functions.svg_handler import svg_handler
+from genome_plotter.input_parsers.data_integrator import DataIntegrator
+
+logger = logging.getLogger(__name__)
 
 
 def genes_annotation_wrapper(
@@ -297,7 +302,8 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """Entry point for the plot-chromosome CLI command."""
     # Extracting submitted options:
     args = parse_arguments()
 
@@ -311,20 +317,12 @@ if __name__ == "__main__":
     plot_folder = os.path.abspath(args.folder)
 
     # Initialise logger:
-    with open("logger_config.yaml", "r") as stream:
+    logger_config_path = os.path.join(os.path.dirname(__file__), "logger_config.yaml")
+    with open(logger_config_path, "r") as stream:
         logger_config = yaml.safe_load(stream)
 
     logging.config.dictConfig(logger_config)
     logger = logging.getLogger(__name__)
-
-    # Loading config:
-    with open(args.config) as f:
-        try:
-            configuration = Config(**json.load(f))
-        except json.decoder.JSONDecodeError:
-            raise ValueError(
-                f"The provided config file ({args.config}) is not a valid JSON file."
-            )
 
     # Reporting parameters:
     logger.info(f"Generating plot for chromosome: {chromosome}")
@@ -399,11 +397,6 @@ if __name__ == "__main__":
     chromosomeSvgObject.mergeSvg(cyb_svg)
 
     if args.geneFile:
-        # Get centromere position:
-        centromerePos = get_centromere_position(
-            config_manager.get_cytoband_file(), chromosome
-        )
-
         # Get plot dimension:
         plot_height = chromosomeSvgObject.getHeight()
 
@@ -441,3 +434,7 @@ if __name__ == "__main__":
         chromosomeSvgObject.saveSvg(output_filename.replace("png", "svg"))
 
     logger.info("All done.")
+
+
+if __name__ == "__main__":
+    main()

@@ -27,7 +27,7 @@ jobs:
         run: uv sync --all-extras
 
       - name: Run tests with coverage
-        run: uv run coverage run -m pytest tests/ -v
+        run: uv run coverage run -m pytest src/tests/ -v
 
       - name: Generate coverage report
         run: uv run coverage report -m
@@ -36,8 +36,6 @@ jobs:
         run: uv run coverage xml
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
-          files: ./coverage.xml
-          fail_ci_if_error: false
-          verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}

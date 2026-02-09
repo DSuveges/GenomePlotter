@@ -26,9 +26,20 @@ dev = [
     "ipykernel>=6.29.5",
 ]
 
+[project.scripts]
+prepare-data = "genome_plotter.prepare_data:main"
+plot-chromosome = "genome_plotter.plot_chromosome:main"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["functions", "input_parsers"]
+packages = ["src/genome_plotter"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/genome_plotter"]
+
+[tool.pytest.ini_options]
+testpaths = ["src/tests"]
+pythonpath = ["src"]

@@ -188,7 +188,7 @@ class svg_handler:
         x: float,
         y: float,
         text: str,
-        size: int = 10,
+        size: int | float = 10,
         fill: str = "#000000",
         anchor: str = "start",
     ) -> None:
@@ -198,7 +198,7 @@ class svg_handler:
             x (float): X coordinate.
             y (float): Y coordinate.
             text (str): Text content.
-            size (int): Font size.
+            size (int | float): Font size.
             fill (str): Text color.
             anchor (str): Text anchor position.
         """

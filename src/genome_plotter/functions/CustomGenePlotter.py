@@ -7,11 +7,11 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
-from input_parsers.data_integrator import DataIntegrator
+from genome_plotter.input_parsers.data_integrator import DataIntegrator
 
 if TYPE_CHECKING:
-    from functions.ColorFunctions import ColorPicker
-    from functions.ConfigManager import Config
+    from genome_plotter.functions.ColorFunctions import ColorPicker
+    from genome_plotter.functions.ConfigManager import Config
 
 
 class CustomGeneIntegrator:
