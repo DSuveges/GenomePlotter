@@ -17,7 +17,7 @@ The project is divided into several parts:
 
 - [cairo graphics library](https://www.cairographics.org/download/)
 - [bedtools](http://bedtools.readthedocs.io/en/latest/content/installation.html) v2.27 or above
-- [python-poetry](https://python-poetry.org/)
+- [uv](https://docs.astral.sh/uv/)
 
 ### Installing package:
 
@@ -27,7 +27,7 @@ git clone https://github.com/DSuveges/GenomePlotter
 
 # Creating environment:
 cd GenomePlotter
-poetry install
+uv sync --all-extras
 ```
 
 ### Source data:
