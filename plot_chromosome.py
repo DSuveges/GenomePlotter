@@ -17,14 +17,14 @@ from functions.ChromosomePlotter import ChromosomePlotter
 from functions.ColorFunctions import ColorPicker
 from functions.ConfigManager import Config
 from functions.CytobandAnnotator import CytobandAnnotator, get_centromere_position
-from functions.DataIntegrator import DataIntegrator
 from functions.GeneAnnotator import GeneAnnotator
 from functions.GwasAnnotator import gwas_annotator
 from functions.svg_handler import svg_handler
+from input_parsers.data_integrator import DataIntegrator
 
 
 def genes_annotation_wrapper(
-    config_manager: Config, chromosome: str, height: int, gene_filename: str
+    config_manager: Config, chromosome: str, height: int | float, gene_filename: str
 ) -> GeneAnnotator:
     """Wrapper function to generate gene annotation.
 
@@ -44,6 +44,9 @@ def genes_annotation_wrapper(
     centromere_position = get_centromere_position(
         config_manager.get_cytoband_file(), chromosome
     )
+
+    if centromere_position is None:
+        raise ValueError(f"Centromere position not found for chromosome {chromosome}")
 
     # gene_file, centromerePosition, chromosome, chunk_size, pixel, height, width
     gene_annotator_object = GeneAnnotator(
@@ -85,7 +88,16 @@ def cytoband_annotation_wrapper(
     return cytoband_annot
 
 
-def gwas_annotation_wrapper(config_manager: Config, chromosome: str) -> gwas_annotator:
+def gwas_annotation_wrapper(config_manager: Config, chromosome: str) -> str:
+    """Generate GWAS annotation for a chromosome.
+
+    Args:
+        config_manager (Config): Configuration manager object.
+        chromosome (str): Chromosome to process.
+
+    Returns:
+        str: GWAS annotation SVG string.
+    """
     # Extract config values:
     color_scheme = asdict(config_manager.color_schema)
     gwas_color = color_scheme["gwas_point"]
@@ -120,7 +132,6 @@ def integrator_wrapper(
     Returns:
         pd.DataFrame: Integrated data.
     """
-
     # Extracting parameters from config:
     cytoband_file = config_manager.get_cytoband_file()
     chromosome_file = config_manager.get_chromosome_file(chromosome)
@@ -204,6 +215,11 @@ def integrator_wrapper(
 
 
 def parse_arguments() -> argparse.Namespace:
+    """Parse command line arguments.
+
+    Returns:
+        argparse.Namespace: Parsed arguments.
+    """
     # Processing command line parameters:
     parser = argparse.ArgumentParser(
         description="Script to plot genome chunks colored based on GC content and gene annotation. \
@@ -364,7 +380,7 @@ if __name__ == "__main__":
 
     # Extract data after plotting:
     plot_width = x.get_plot_with()
-    plot_height = x.get_plot_height()
+    plot_height: int | float = x.get_plot_height()
     plot_data = x.return_svg()
 
     # Initialize svg wrapper object with the returned data:

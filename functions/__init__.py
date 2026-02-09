@@ -1,9 +1,10 @@
-"""
-All functions required to
-* fetch data from the internet
-* Porcess data
-* Integrate data
-* Porcess/manipulate colors
-* Manipulate svg strings
-* Plot/save image
+"""Functions for genome plotting.
+
+This module contains functions required to:
+- Fetch data from the internet
+- Process data
+- Integrate data
+- Process/manipulate colors
+- Manipulate SVG strings
+- Plot/save images
 """

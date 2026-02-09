@@ -18,7 +18,15 @@ logger = logging.getLogger(__name__)
 
 
 # get ensembl version
-def fetch_ensembl_version(url):
+def fetch_ensembl_version(url: str) -> int:
+    """Fetch the current Ensembl release version.
+
+    Args:
+        url (str): URL to the Ensembl REST API.
+
+    Returns:
+        int: Current Ensembl release number.
+    """
     response = requests.get(url)
     data = response.json()
     return data["releases"][0]
@@ -26,7 +34,9 @@ def fetch_ensembl_version(url):
 
 # Fetch and process Gencode data:
 class FetchGenome(FetchFromFtp):
-    """Function to retrieve genome sequence from Ensembl"""
+    """Function to retrieve genome sequence from Ensembl."""
+
+    chromosomes: list[str] = []
 
     def __init__(self: FetchGenome, ensembl_parameters: SourcePrototype) -> None:
         """Initialize the class with the parameters required to fetch the data.
@@ -45,10 +55,13 @@ class FetchGenome(FetchFromFtp):
         self.parsed_file = ensembl_parameters.processed_file
 
         # Initialize host:
+        assert self.host is not None, "Host is required for genome data fetch."
         FetchFromFtp.__init__(self, self.host)
 
     def retrieve_data(self: FetchGenome) -> None:
         """Retrieve the genome data from the FTP server."""
+        assert self.host is not None, "Host is required."
+        assert self.source_file is not None, "Source file is required."
         ftp = FetchFromFtp(self.host)
         self.resp = ftp.fetch_file(self.path, self.source_file)
 
@@ -70,10 +83,10 @@ class FetchGenome(FetchFromFtp):
 
         # This variable contains sequence for one chromosome:
         chrom_data = ""
-        chrom_name = None
+        chrom_name: str | None = None
 
-        for line in self.resp:
-            line = line.decode("utf-8")
+        for line_bytes in self.resp:
+            line: str = line_bytes.decode("utf-8")
 
             # Process header:
             if re.match(">", line):
@@ -92,7 +105,7 @@ class FetchGenome(FetchFromFtp):
                 # Extract chromosome name from header:
                 x = re.match(r">(\S+) ", line)
                 try:
-                    chrom_name = x.group(1)
+                    chrom_name = x.group(1) if x else None
                 except AttributeError:
                     logger.error(f"Error parsing chromosome name: {line}")
                     raise ValueError(f"Error parsing chromosome name: {line}")
@@ -101,6 +114,9 @@ class FetchGenome(FetchFromFtp):
             chrom_data += line.strip()
 
         # The last chunk is passed:
+        if chrom_name:
+            self.chromosomes.append(chrom_name)
+
         logger.info(f"Parsing chromosome {chrom_name} is done.")
         self.process_chromosome(chrom_data, chrom_name)
 

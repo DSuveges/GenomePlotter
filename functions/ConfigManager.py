@@ -206,3 +206,22 @@ class Config:
             raise ValueError(f"Processed GWAS file ({full_path}) doesn't exists.")
 
         return full_path
+
+    def get_gencode_arrow_file(self: Config) -> str:
+        """Get the GENCODE arrow file.
+
+        Returns:
+            str: Path to the GENCODE arrow file if exists.
+
+        Raises:
+            ValueError: If the GENCODE arrow file does not exist.
+        """
+        file = self.source_data.gencode_data.arrow_file
+        if file is None:
+            raise ValueError("GENCODE arrow file not configured.")
+        full_path = f"{self.basic_parameters.data_folder}/{file}"
+
+        if not os.path.isfile(full_path):
+            raise ValueError(f"GENCODE arrow file ({full_path}) doesn't exists.")
+
+        return full_path

@@ -1,29 +1,40 @@
 #!/usr/bin/env python
+"""Module for drawing legends for chromosome plots."""
+
 from __future__ import annotations
 
 from collections import OrderedDict
 from dataclasses import asdict
+from typing import TYPE_CHECKING
 
 from ColorFunctions import linear_gradient
 from svg_handler import svg_handler
 
+if TYPE_CHECKING:
+    from functions.ConfigManager import Config
 
-class DrawLegend(object):
-    """WARNING: This function is heavily in under development
 
-    TODO:
-    * Integrate datasource versions
-    * Example gene
+class DrawLegend:
+    """Class for drawing legends for chromosome plots.
+
+    Note:
+        This class is under active development.
+        TODO: Integrate datasource versions.
+        TODO: Add example gene.
     """
 
-    def __init__(self, config_manager):
+    def __init__(self: DrawLegend, config_manager: Config) -> None:
+        """Initialize the legend drawer.
+
+        Args:
+            config_manager (Config): Configuration manager object.
+        """
         self.__colors__ = asdict(config_manager.color_schema)
         self.__pixel__ = config_manager.plot_parameters.pixel_size
         self.__config_manager__ = config_manager
 
-    def draw_colors_legend(self):
-        """Function to drawing a legend describing colors of the chromosome plot"""
-
+    def draw_colors_legend(self: DrawLegend) -> None:
+        """Draw a legend describing colors of the chromosome plot."""
         # These values and the order is hardcoded:
         regions = OrderedDict(
             {
@@ -39,14 +50,14 @@ class DrawLegend(object):
         pixel = self.__pixel__ * 5
 
         # Initialize vertical position:
-        y_position = 0
+        y_position: float = 0
 
         # Initialize svg object:
         self.__svg_color__ = svg_handler("", 750, 300)
 
         # Generating the color gradients:
         for name, label in regions.items():
-            x_position = 0
+            x_position: float = 0
             start_color = colors[name]
             end_color = colors[name] if name == "heterochromatin" else "#FFFFFF"
             gradient = linear_gradient(start_color, end_color, length=20)
@@ -89,5 +100,10 @@ class DrawLegend(object):
         # Adding label:
         self.__svg_color__.add_text(200, 50, "Chromosome plot colors", pixel * 0.8)
 
-    def save(self, filename):
+    def save(self: DrawLegend, filename: str) -> None:
+        """Save the legend as PNG.
+
+        Args:
+            filename (str): Output file name.
+        """
         self.__svg_color__.savePng(filename)
