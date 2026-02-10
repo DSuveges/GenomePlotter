@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+import os
+
 import cairosvg
+
+os.environ["DYLD_FALLBACK_LIBRARY_PATH"] = "/opt/homebrew/lib"
 import pandas as pd
 
 

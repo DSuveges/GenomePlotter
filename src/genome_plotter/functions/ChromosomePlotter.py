@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import logging
+import os
+
+os.environ["DYLD_FALLBACK_LIBRARY_PATH"] = "/opt/homebrew/lib"
 
 import cairosvg
 import pandas as pd
@@ -62,14 +65,16 @@ class ChromosomePlotter:
 
         # Right mark of the centromere:
         centromere_string = f'<path d="M -1 0 \
-            C 0 {centromere_midpoint}, {cetromere_x/2} {centromere_midpoint}, {cetromere_x/2} {centromere_midpoint} \
-            C {cetromere_x/2} {centromere_midpoint}, 0 {centromere_midpoint}, -1 {centromere_hight} Z" fill="white"/>\n'
+            C 0 {centromere_midpoint}, {cetromere_x / 2} {centromere_midpoint}, {cetromere_x / 2} {centromere_midpoint} \
+            C {cetromere_x / 2} {centromere_midpoint}, 0 {centromere_midpoint}, -1 {centromere_hight} Z" fill="white"/>\n'
 
         half_centromere = f'<g transform="translate(0, {centromere_start})">\n\t{centromere_string}\n</g>\n'
 
         # Generating the other half of the centromoere:
-        other_half = f'<g transform="rotate(180 0 {centromere_start + centromere_midpoint}) \
+        other_half = (
+            f'<g transform="rotate(180 0 {centromere_start + centromere_midpoint}) \
             translate(-{self.__width__}, 0)">\n\t{half_centromere}\n</g>\n'
+        )
 
         # adding both sides of the centromere to the plot:
         self.__plot_string__ += (

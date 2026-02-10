@@ -44,9 +44,9 @@ class FetchGenome(FetchFromFtp):
         Args:
             ensembl_parameters (SourcePrototype): Parameters to fetch the data.
         """
-        assert (
-            ensembl_parameters.release and ensembl_parameters.path
-        ), "Ensembl release and path needs to be provided."
+        assert ensembl_parameters.release and ensembl_parameters.path, (
+            "Ensembl release and path needs to be provided."
+        )
 
         # These are the parameters required to fetch the data:
         self.host = ensembl_parameters.host
@@ -93,11 +93,7 @@ class FetchGenome(FetchFromFtp):
                 # If there's data in the buffer, save it:
                 if chrom_data:
                     # We are skipping non-canonical chromosomes:
-                    if chrom_name and len(chrom_name) < 3:
-                        logger.info(f"Parsing chromosome {chrom_name} is done.")
-                        self.process_chromosome(chrom_data, chrom_name)
-                    else:
-                        logger.info(f"Chromosome {chrom_name} is skipped.")
+                    self.process_chromosome(chrom_data, chrom_name)
 
                     # Empty chromosome data buffer:
                     chrom_data = ""
@@ -129,6 +125,12 @@ class FetchGenome(FetchFromFtp):
             chrom_data (pd.DataFrame): The chromosome sequence data.
             chr_name (str): The name of the chromosome.
         """
+        # Test chromosome name if we want to process or not:
+        if chr_name is None or len(chr_name) > 3:
+            logger.warning(f"Non-canoncial chromosome ({chr_name}) is skipped.")
+            return None
+
+        logger.info(f"Processing chromosome: {chr_name}")
         raw_data = []
         file_name = f"{self.data_folder}/{self.parsed_file.format(chr_name)}"
         chunk_size = self.chunk_size
