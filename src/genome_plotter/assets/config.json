@@ -66,7 +66,7 @@
     "gwas_data": {
       "host": "ftp.ebi.ac.uk",
       "path": "/pub/databases/gwas/releases/latest",
-      "source_file": "gwas-catalog-associations_ontology-annotated.tsv",
+      "source_file": "gwas-catalog-associations_ontology-annotated-full.zip",
       "processed_file": "processed_GWAS.bed.gz",
       "release_date": null
     }

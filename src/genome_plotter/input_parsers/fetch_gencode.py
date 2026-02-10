@@ -83,6 +83,26 @@ class FetchGencode(FetchFromFtp):
         # Get the latest release:
         return max(releases)
 
+    @staticmethod
+    def parse_raw_gtf(tsv_data: pd.DataFrame) -> pd.DataFrame:
+        """Select and rename GTF columns from a raw tab-separated DataFrame.
+
+        Args:
+            tsv_data (pd.DataFrame): Raw DataFrame read from a GTF file (no header, comment lines skipped).
+
+        Returns:
+            pd.DataFrame: DataFrame with columns: chr, type, start, end, strand, annotation.
+        """
+        columns = {
+            0: "chr",
+            2: "type",
+            3: "start",
+            4: "end",
+            6: "strand",
+            8: "annotation",
+        }
+        return tsv_data.rename(columns=columns)[columns.values()]
+
     def retrieve_data(self: FetchGencode) -> None:
         """Retrieving release data and association table. Then the connection is closed.
 
@@ -108,16 +128,8 @@ class FetchGencode(FetchFromFtp):
             header=None,
         )
 
-        # Parse data:
-        columns = {
-            0: "chr",
-            2: "type",
-            3: "start",
-            4: "end",
-            6: "strand",
-            8: "annotation",
-        }
-        self.gencode_raw = self.tsv_data.rename(columns=columns)[columns.values()]
+        # Parse raw GTF into structured columns:
+        self.gencode_raw = self.parse_raw_gtf(self.tsv_data)
 
         # Close connection:
         self.close_connection()
@@ -128,55 +140,152 @@ class FetchGencode(FetchFromFtp):
         gene_count = len(self.gencode_raw.loc[self.gencode_raw.type == "gene"])
         logger.info(f"Number of genes in {self.release} release: {gene_count:,}")
 
-    def process_gencode_data(self: FetchGencode) -> None:
-        """Process the raw GENCODE data into structured gene annotations."""
-        # Parsing gtf annotation:
-        logger.info("Parsing GTF annotation.")
-        parsed_annotation = self.gencode_raw.annotation.apply(
+    @staticmethod
+    def parse_gtf_annotations(gencode_raw: pd.DataFrame) -> pd.DataFrame:
+        """Parse GTF annotation strings into columns and merge with coordinates.
+
+        Args:
+            gencode_raw (pd.DataFrame): Raw GENCODE data with an 'annotation' column.
+
+        Returns:
+            pd.DataFrame: DataFrame with parsed annotation columns, 'annotation' column dropped.
+        """
+        parsed_annotation = gencode_raw.annotation.apply(
             lambda annotation: {
                 x.strip().split(" ", 1)[0]: x.strip().split(" ", 1)[1].replace('"', "")
                 for x in annotation.split(";")
                 if x != ""
             }
         )
-
-        # Merging annotation with coordinates:
-        gencode_df_updated = self.gencode_raw.merge(
+        df = gencode_raw.merge(
             pd.DataFrame(parsed_annotation.tolist()), left_index=True, right_index=True
         )
+        df.drop(["annotation"], axis=1, inplace=True)
+        return df
 
-        # Drop unparsed annotation column:
-        gencode_df_updated.drop(["annotation"], axis=1, inplace=True)
+    @staticmethod
+    def strip_gene_id_version(df: pd.DataFrame) -> pd.DataFrame:
+        """Strip `.version` suffix from gene_id column.
 
-        # Removing gene identifier version:
-        gencode_df_updated = gencode_df_updated.assign(
-            gene_id=gencode_df_updated.gene_id.str.split(".").str[0]
+        Args:
+            df (pd.DataFrame): DataFrame with a 'gene_id' column.
+
+        Returns:
+            pd.DataFrame: DataFrame with version-stripped gene_id.
+        """
+        return df.assign(gene_id=df.gene_id.str.split(".").str[0])
+
+    @staticmethod
+    def filter_protein_coding_genes(df: pd.DataFrame) -> pd.DataFrame:
+        """Filter for protein-coding genes on conventional chromosomes.
+
+        Applies four filters:
+        - Conventional chromosomes (bare name after stripping 'chr' prefix is <= 2 chars)
+        - protein_coding gene_type
+        - gene_name does not start with 'ENSG'
+        - gene_name does not contain 'orf'
+
+        Args:
+            df (pd.DataFrame): DataFrame with chr, gene_type, and gene_name columns.
+
+        Returns:
+            pd.DataFrame: Filtered DataFrame.
+        """
+        return df.loc[
+            (df.chr.str.replace(r"^chr", "", regex=True).str.len() <= 2)
+            & (df.gene_type == "protein_coding")
+            & (~df.gene_name.str.startswith("ENSG"))
+            & (~df.gene_name.str.contains("orf"))
+        ]
+
+    @staticmethod
+    def add_length_column(df: pd.DataFrame) -> pd.DataFrame:
+        """Cast start/end to int and add a length column.
+
+        Args:
+            df (pd.DataFrame): DataFrame with 'start' and 'end' columns.
+
+        Returns:
+            pd.DataFrame: DataFrame with int-typed start/end and a new 'length' column.
+        """
+        df = df.copy()
+        df["start"] = df.start.astype(int)
+        df["end"] = df.end.astype(int)
+        return df.assign(length=lambda row: row["end"] - row["start"])
+
+    @staticmethod
+    def process_single_gene(
+        gene_id: str, features: pd.DataFrame
+    ) -> tuple[pd.DataFrame, pd.DataFrame] | None:
+        """Process a single gene: select canonical transcript, build arrow and exon/intron data.
+
+        Args:
+            gene_id (str): The gene identifier.
+            features (pd.DataFrame): All features (transcripts, exons, CDS, UTR) for the gene.
+
+        Returns:
+            tuple[pd.DataFrame, pd.DataFrame] | None: (gene_df, arrow_df) or None if no
+                protein-coding transcript is found.
+        """
+        transcripts = features.loc[
+            (features.type == "transcript")
+            & (features.transcript_type == "protein_coding")
+        ]
+
+        if len(transcripts) == 0:
+            return None
+
+        cds_length = transcripts.transcript_id.apply(
+            lambda t_id: features.loc[
+                (features.type == "CDS") & (features.transcript_id == t_id)
+            ].length.sum()
+        )
+        transcripts = transcripts.copy()
+        transcripts.insert(2, "cds_length", cds_length)
+
+        canonical_transcript_id = FetchGencode.get_canonical_transcript(transcripts)
+        [start, end] = (
+            transcripts.loc[
+                transcripts.transcript_id == canonical_transcript_id,
+                ["start", "end"],
+            ]
+            .iloc[0]
+            .tolist()
         )
 
-        # Cleaning up genes:
-        gencode_df_updated = gencode_df_updated.loc[
-            # Dropping entries on non-conventional chromosomes:
-            (gencode_df_updated.chr.str.len <= 2)
-            # Filtering for protein coding genes:
-            & (gencode_df_updated.gene_type == "protein_coding")
-            # Dropping novel genes without proper gene name:
-            & (~gencode_df_updated.gene_name.str.startswith("ENSG"))
-            # Dropping novel genes without proper gene name:
-            & (~gencode_df_updated.gene_name.str.contains("orf"))
+        arrow_df = features.loc[
+            (features.transcript_id == canonical_transcript_id)
+            & (features.type.isin(["CDS", "UTR"])),
+            ["chr", "start", "end", "strand", "type", "gene_id", "gene_name"],
         ]
+
+        gene_df = FetchGencode.generate_exon_intron_structure(
+            gene_id,
+            canonical_transcript_id,
+            start,
+            end,
+            features.loc[
+                (features.transcript_id == canonical_transcript_id)
+                & (features.type == "exon")
+            ],
+        )
+
+        return gene_df, arrow_df
+
+    def process_gencode_data(self: FetchGencode) -> None:
+        """Process the raw GENCODE data into structured gene annotations."""
+        logger.info("Parsing GTF annotation.")
+        gencode_df = self.parse_gtf_annotations(self.gencode_raw)
+
+        gencode_df = self.strip_gene_id_version(gencode_df)
+
+        gencode_df = self.filter_protein_coding_genes(gencode_df)
         protein_coding_gene_count = len(
-            gencode_df_updated.loc[gencode_df_updated.type == "gene"]
+            gencode_df.loc[gencode_df.type == "gene"]
         )
         logger.info(f"Number of protein coding genes: {protein_coding_gene_count:,}")
 
-        # Updating types:
-        gencode_df_updated["start"] = gencode_df_updated.start.astype(int)
-        gencode_df_updated["end"] = gencode_df_updated.end.astype(int)
-
-        # Adding length to all features:
-        gencode_df_updated = gencode_df_updated.assign(
-            length=lambda row: row["end"] - row["start"]
-        )
+        gencode_df = self.add_length_column(gencode_df)
 
         # Initialize empty dataframes:
         processed = pd.DataFrame(
@@ -198,57 +307,13 @@ class FetchGencode(FetchFromFtp):
             "Generate exon/intron annotations for the canonical transcripts for each gene... (it will take a while.)"
         )
 
-        for (gene_id,), features in gencode_df_updated.groupby(["gene_id"]):
-            # Selecting protein coding transcript identifiers:
-            transcripts = features.loc[
-                (features.type == "transcript")
-                & (features.transcript_type == "protein_coding")
-            ]
-
-            # If no protein coding transcript is found, we skip gene:
-            if len(transcripts) == 0:
+        for (gene_id,), features in gencode_df.groupby(["gene_id"]):
+            result = self.process_single_gene(gene_id, features)
+            if result is None:
                 continue
-
-            # Adding the length of the CDS to all transcripts:
-            cds_length = transcripts.transcript_id.apply(
-                lambda t_id: features.loc[
-                    (features.type == "CDS") & (features.transcript_id == t_id)
-                ].length.sum()
-            )
-            transcripts.insert(2, "cds_length", cds_length)
-
-            # Get canonical transcript and properties:
-            canonical_transcript_id = self.get_canonical_transcript(transcripts)
-            [start, end] = (
-                transcripts.loc[
-                    transcripts.transcript_id == canonical_transcript_id,
-                    ["start", "end"],
-                ]
-                .iloc[0]
-                .tolist()
-            )
-
-            # Get data for the arrow plot:
-            arrow_part = features.loc[
-                (features.transcript_id == canonical_transcript_id)
-                & (features.type.isin(["CDS", "UTR"])),
-                ["chr", "start", "end", "strand", "type", "gene_id", "gene_name"],
-            ]
-            arrow_data = pd.concat([arrow_data, arrow_part])
-
-            # Generate exon-intron splice:
-            gene_df = self.generate_exon_intron_structure(
-                gene_id,
-                canonical_transcript_id,
-                start,
-                end,
-                features.loc[
-                    (features.transcript_id == canonical_transcript_id)
-                    & (features.type == "exon")
-                ],
-            )
-            # appending to existing data:
+            gene_df, arrow_df = result
             processed = pd.concat([processed, gene_df])
+            arrow_data = pd.concat([arrow_data, arrow_df])
 
         # Saving data:
         self.processed = processed

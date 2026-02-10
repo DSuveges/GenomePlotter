@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import os
 from typing import Any
 
+os.environ["DYLD_FALLBACK_LIBRARY_PATH"] = "/opt/homebrew/lib"
 import cairosvg
 
 
@@ -177,7 +179,7 @@ class svg_handler:
 
         if kwargs:
             for key, value in kwargs.items():
-                extra_args += f' {key.replace("_","-")}="{value}"'
+                extra_args += f' {key.replace("_", "-")}="{value}"'
         print(extra_args)
         self.__svg__ += self.__svg_line__.format(
             x1, y1, x2, y2, stroke, stroke_width, extra_args

@@ -10,8 +10,14 @@ import os
 import yaml
 
 from genome_plotter.functions.ConfigManager import Config
+from genome_plotter.input_parsers.data_integrator import integrate_data
 from genome_plotter.input_parsers.fetch_cytobands import FetchCytobands
+from genome_plotter.input_parsers.fetch_ensembl import (
+    FetchGenome,
+    fetch_ensembl_version,
+)
 from genome_plotter.input_parsers.fetch_gencode import FetchGencode
+from genome_plotter.input_parsers.fetch_gwas_catalog import FetchGwas
 
 logger = logging.getLogger(__name__)
 
@@ -35,8 +41,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "-c",
         "--config",
-        help="JSON file with configuration data",
-        required=True,
+        help="JSON file with configuration data. If not provided, the default config bundled with the package is used.",
+        required=False,
+        default=None,
         type=str,
     )
     parser.add_argument(
@@ -77,6 +84,9 @@ def run(configuration: Config) -> None:
 
     Args:
         configuration (Config): The configuration object containing the input data.
+
+    Raises:
+        ValueError: if Could not find ensembl version.
     """
     # Extracting relevant parameters:
     basic_parameters = configuration.basic_parameters
@@ -92,20 +102,20 @@ def run(configuration: Config) -> None:
     logger.info(f"Chunk size: {chunk_size}")
     logger.info(f"Tolerance for unsequenced bases: {tolerance}")
 
-    # # Fetching GWAS Catalog data:
-    # logger.info("Fetching GWAS data...")
-    # gwas_retrieve = FetchGwas(configuration.source_data.gwas_data)
-    # gwas_retrieve.retrieve_data()
-    # gwas_retrieve.process_gwas_data()
-    # gwas_retrieve.save_gwas_data(data_dir)
-    # configuration.source_data.gwas_data.release_date = gwas_retrieve.get_release_date()
+    # Fetching GWAS Catalog data:
+    logger.info("Fetching GWAS data...")
+    gwas_retrieve = FetchGwas(configuration.source_data.gwas_data)
+    gwas_retrieve.retrieve_data()
+    gwas_retrieve.process_gwas_data()
+    gwas_retrieve.save_gwas_data(data_dir)
+    configuration.source_data.gwas_data.release_date = gwas_retrieve.get_release_date()
 
-    # # Fetching cytological bands:
-    # logger.info("Fetching cytoband information...")
-    # configuration.source_data.cytoband_data.genome_build = get_cytoband_data(
-    #     configuration.source_data.cytoband_data.url,
-    #     f"{data_dir}/{configuration.source_data.cytoband_data.processed_file}",
-    # )
+    # Fetching cytological bands:
+    logger.info("Fetching cytoband information...")
+    configuration.source_data.cytoband_data.genome_build = get_cytoband_data(
+        configuration.source_data.cytoband_data.url,
+        f"{data_dir}/{configuration.source_data.cytoband_data.processed_file}",
+    )
 
     # Fetching GENCODE data:
     logging.info("Fetching GENCODE data.")
@@ -118,34 +128,37 @@ def run(configuration: Config) -> None:
     )
     configuration.source_data.gencode_data.version = gencode_retrieve.get_release()
 
-    # # Fetching Ensembl version and genome build:
-    # logger.info("Fetching Ensembl release...")
-    # ensembl_release = fetch_ensembl_version(
-    #     configuration.source_data.ensembl_data.version_url
-    # )
-    # configuration.source_data.ensembl_data.release = ensembl_release
-    # logger.info(f"Current Ensembl release: {ensembl_release}")
+    # Fetching Ensembl version and genome build:
+    logger.info("Fetching Ensembl release...")
+    if configuration.source_data.ensembl_data.version_url is None:
+        raise ValueError("Could not pull Esembl version.")
 
-    # # Fetching the human genome:
-    # logger.info("Fetching the human genome sequence...")
-    # genome_retrieve = FetchGenome(configuration.source_data.ensembl_data)
-    # genome_retrieve.retrieve_data()
-    # genome_retrieve.parse_genome(chunk_size, tolerance, data_dir)
+    ensembl_release = fetch_ensembl_version(
+        configuration.source_data.ensembl_data.version_url
+    )
+    configuration.source_data.ensembl_data.release = ensembl_release
+    logger.info(f"Current Ensembl release: {ensembl_release}")
 
-    # # Integrate parsed data into one single table:
-    # logger.info("Integrating parsed data...")
-    # integrate_data(
-    #     output_dir=data_dir,
-    #     # chromosomes=genome_retrieve.chromosomes,
-    #     chromosomes=["19", "21", "13"],
-    #     cytoband_file=configuration.get_cytoband_file(),
-    #     gencode_file=configuration.get_gencode_file(),
-    # )
+    # Fetching the human genome:
+    logger.info("Fetching the human genome sequence...")
+    genome_retrieve = FetchGenome(configuration.source_data.ensembl_data)
+    genome_retrieve.retrieve_data()
+    genome_retrieve.parse_genome(chunk_size, tolerance, data_dir)
 
-    # # Save config file:
-    # updated_config_file = "config_updated.json"
-    # logger.info(f"Saving updated configuration as {updated_config_file}.")
-    # configuration.save(updated_config_file)
+    # Integrate parsed data into one single table:
+    logger.info("Integrating parsed data...")
+    integrate_data(
+        output_dir=data_dir,
+        # chromosomes=genome_retrieve.chromosomes,
+        chromosomes=[str(i + 1) for i in range(22)] + ["Y", "X", "MT"],
+        cytoband_file=configuration.get_cytoband_file(),
+        gencode_file=configuration.get_gencode_file(),
+    )
+
+    # Save config file:
+    updated_config_file = "config_updated.json"
+    logger.info(f"Saving updated configuration as {updated_config_file}.")
+    configuration.save(updated_config_file)
 
 
 def validate_input(data_dir: str, config_file: str) -> None:
@@ -179,6 +192,11 @@ def main() -> None:
 
     logging.config.dictConfig(logger_config)
     logger = logging.getLogger(__name__)
+
+    # Resolve config file: use bundled default if not provided:
+    if args.config is None:
+        args.config = os.path.join(os.path.dirname(__file__), "assets", "config.json")
+        logger.info("No config file provided, using default bundled config.")
 
     # Validate input parameters:
     logger.info("Validating input parameters...")

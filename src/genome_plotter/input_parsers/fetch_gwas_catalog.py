@@ -43,6 +43,7 @@ class FetchGwas(FetchFromFtp):
         self.release_date = self.fetch_last_update_date(self.path)
 
         # Parse data
+        logger.info(f"{self.path} -> {self.source_file}")
         self.fetch_tsv(self.path, self.source_file)
 
         logger.info(f"Successfully fetched {len(self.tsv_data):,} GWAS associations.")

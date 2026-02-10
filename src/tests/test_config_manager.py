@@ -14,7 +14,7 @@ class TestConfigManager(unittest.TestCase):
     """Test cases for Config manager."""
 
     CONFIG_JSON = os.path.join(
-        os.path.dirname(__file__), "..", "genome_plotter", "config.json"
+        os.path.dirname(__file__), "..", "genome_plotter", "assets", "config.json"
     )
 
     with open(CONFIG_JSON) as f:
