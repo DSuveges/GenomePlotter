@@ -29,6 +29,7 @@ dev = [
 [project.scripts]
 prepare-data = "genome_plotter.prepare_data:main"
 plot-chromosome = "genome_plotter.plot_chromosome:main"
+plot-gene-arrow = "genome_plotter.plot_gene_arrow:main"
 
 [build-system]
 requires = ["hatchling"]
