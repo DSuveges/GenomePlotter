@@ -41,8 +41,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "-c",
         "--config",
-        help="JSON file with configuration data",
-        required=True,
+        help="JSON file with configuration data. If not provided, the default config bundled with the package is used.",
+        required=False,
+        default=None,
         type=str,
     )
     parser.add_argument(
@@ -191,6 +192,11 @@ def main() -> None:
 
     logging.config.dictConfig(logger_config)
     logger = logging.getLogger(__name__)
+
+    # Resolve config file: use bundled default if not provided:
+    if args.config is None:
+        args.config = os.path.join(os.path.dirname(__file__), "assets", "config.json")
+        logger.info("No config file provided, using default bundled config.")
 
     # Validate input parameters:
     logger.info("Validating input parameters...")
