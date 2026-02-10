@@ -1,6 +1,6 @@
 [project]
 name = "genomeplotter"
-version = "0.1.0"
+version = "1.0.0"
 description = "A set of script to create accurate visualisation of the human genome"
 authors = [{ name = "DSuveges", email = "daniel.suveges@protonmail.com" }]
 license = { text = "Apache 2.0" }
