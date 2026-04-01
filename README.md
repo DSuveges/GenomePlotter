@@ -121,6 +121,50 @@ Then genome-wide association signals are added as black dots. The size of the do
 
 Finally the `.png` file is saved (and `.svg` file if required).
 
+### Step 3 - Generate gene arrow plot
+
+The `plot-gene-arrow` command generates a gene structure diagram (arrow plot) for a specific gene, showing its exons, UTRs, and strand direction.
+
+```bash
+uv run plot-gene-arrow --gene TSPAN6 --data-folder data_folder/ --config config.json
+```
+
+help output:
+
+```text
+usage: plot_gene_arrow.py [-h] -g GENE -d DATA_FOLDER -c CONFIG [-o OUTPUT] [-w ARROW_WIDTH]
+
+Generate an arrow plot (gene structure diagram) for a given gene.
+See github: https://github.com/DSuveges/GenomePlotter
+
+options:
+  -h, --help            show this help message and exit
+  -g GENE, --gene GENE  Gene name (e.g. BRCA1)
+  -d DATA_FOLDER, --data-folder DATA_FOLDER
+                        Path to the data folder containing processed files
+  -c CONFIG, --config CONFIG
+                        Path to config JSON file
+  -o OUTPUT, --output OUTPUT
+                        Output file basename (defaults to {gene_name}_arrow)
+  -w ARROW_WIDTH, --arrow-width ARROW_WIDTH
+                        Arrow height in pixels (default: 10)
+```
+
+The script reads the pre-processed GENCODE arrow file from the data folder (generated in Step 1), filters it for the requested gene, and renders the gene structure as an SVG and PNG. Both files are saved using the output basename.
+
+**Examples:**
+
+```bash
+# Generate arrow plot for TSPAN6 using default output name (TSPAN6_arrow.svg / TSPAN6_arrow.png):
+uv run plot-gene-arrow -g TSPAN6 -d data_folder/ -c config.json
+
+# Specify a custom output basename:
+uv run plot-gene-arrow -g BRCA1 -d data_folder/ -c config.json -o plots/BRCA1_structure
+
+# Adjust arrow height:
+uv run plot-gene-arrow -g TP53 -d data_folder/ -c config.json -w 15
+```
+
 ### Gene sets
 
 The `gene_sets/` folder contains a set of files that can be used as gene annotation:
