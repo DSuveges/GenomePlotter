@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
+from genome_plotter.functions.utils import Scaler
 from genome_plotter.input_parsers.data_integrator import DataIntegrator
 
 if TYPE_CHECKING:
@@ -52,7 +53,7 @@ class CustomGeneIntegrator:
         self.gene_name = filtered_gencode.iloc[0]["gene_name"]
         self.gene_id = filtered_gencode.iloc[0]["gene_id"]
         logging.info(
-            f"Gene name: {self.gene_name }, Ensembl gene identifier: {self.gene_id}"
+            f"Gene name: {self.gene_name}, Ensembl gene identifier: {self.gene_id}"
         )
         logging.info(
             f"Number of gencode feature for this gene: {len(filtered_gencode):,}"
@@ -74,9 +75,7 @@ class CustomGeneIntegrator:
         self.genome_df = genome_df
 
     @staticmethod
-    def __filter_gencode_data(
-        gene_name: str, gencode_df: pd.DataFrame
-    ) -> pd.DataFrame:
+    def __filter_gencode_data(gene_name: str, gencode_df: pd.DataFrame) -> pd.DataFrame:
         """Filter GENCODE data for a specific gene.
 
         Args:
@@ -180,17 +179,19 @@ class GenerateArrowPlot:
     ARROW_SVG = '<polygon points="{}" style="fill:{};stroke:{};stroke-width:1" />\n'
 
     def __init__(
-        self: GenerateArrowPlot, config_manager: Config, arrow_width: int
+        self: GenerateArrowPlot,
+        arrow_data: pd.DataFrame,
+        config_manager: Config,
+        arrow_width: int,
     ) -> None:
         """Initialize the arrow plot generator.
 
         Args:
+            arrow_data (pd.DataFrame): dataframe with the arrow coordinates.
             config_manager (Config): Configuration manager object.
             arrow_width (int): Width of the arrow elements.
         """
-        self.arrow_data = pd.read_csv(
-            config_manager.get_gencode_arrow_file(), sep="\t", compression="infer"
-        )
+        self.arrow_data = arrow_data
 
         # Extract colors:
         arrow_colors = config_manager.color_schema.arrow_colors
@@ -204,47 +205,67 @@ class GenerateArrowPlot:
 
         self.arrow_width = arrow_width
 
-    def generate_arrow_polt(
-        self: GenerateArrowPlot, gene_name: str
-    ) -> tuple[str, float]:
+    @staticmethod
+    def _extract_arrow_data(
+        arrow_df: pd.DataFrame, gene_name: str, chunk_size: int, pixel_size: int
+    ) -> pd.DataFrame:
         """Generate arrow plot for a gene.
 
         Args:
+            arrow_df (pd.DataFrame):
             gene_name (str): Name of the gene.
+            chunk_size (int): Number of bp pooled together into one pixel
+            pixel_size (int): screen size of one pixel (chunk of dna)
 
-        Returns:
-            tuple[str, float]: SVG string and plot width.
+
+        Raises:
+            ValueError if gene not found in arrow file.
         """
         # Get CDS and UTR for a given gene:
         gene_df = (
-            self.arrow_data.loc[lambda df: df.gene_name == gene_name]
+            arrow_df.loc[lambda df: df.gene_name == gene_name]
             .sort_values("start")
             .reset_index(drop=True)
             .drop(["chr", "gene_name", "gene_id"], axis=1)
         )
 
         # If nothing found raise:
-        assert len(gene_df) > 1, f"Gene name ({gene_name}) was not found in the data."
+        if len(gene_df) == 0:
+            raise ValueError(
+                f"Gene name ({gene_name}) was not found in the arrow data."
+            )
+
+        # Initialise scaler:
+        scaler = Scaler(
+            gene_start=gene_df.start.min(),
+            chunk_size=chunk_size,
+            pixel_size=pixel_size,
+        )
 
         # Scaling genomic coordinates to screen coordinates:
-        gene_df = gene_df.assign(
-            relative_start=lambda row: (row["start"] - gene_df.start.min())
-            / self.chunk_size
-            * self.pixel_size,
-            relative_end=lambda row: (row["end"] - gene_df.start.min())
-            / self.chunk_size
-            * self.pixel_size,
-        ).assign(length=lambda row: row["relative_end"] - row["relative_start"])
+        return gene_df.assign(
+            relative_start=gene_df.start.apply(scaler.scale_genomic_coordinate),
+            relative_end=gene_df.end.apply(scaler.scale_genomic_coordinate),
+            length=lambda df: df.relative_end - df.relative_start,
+            next_start=lambda df: df.relative_start.drop(0).reset_index(drop=True),
+            midpoint=lambda df: (df.next_start - df.relative_end) / 2 + df.relative_end,
+        )
 
-        # Calculate intron midpoints:
-        gene_df["next_start"] = gene_df.relative_start.drop(0).reset_index(drop=True)
+    def generate_arrow_polt(
+        self: GenerateArrowPlot, gene_name: str
+    ) -> tuple[str, float]:
+        """Generate arrow plot.
 
-        gene_df["midpoint"] = (
-            gene_df.next_start - gene_df.relative_end
-        ) / 2 + gene_df.relative_end
-        self.df = gene_df.head()
+        Args:
+            gene_name (str): Name of the gene to be plotted.
 
+        Returns:
+            tuple[str, float]: SVG string and plot width.
+        """
         # Generate boxes:
+        gene_df = self._extract_arrow_data(
+            self.arrow_data, gene_name, self.chunk_size, self.pixel_size
+        )
         boxes = gene_df.apply(self.draw_box, axis=1).dropna()
 
         # Generate lines connecting boxes:
