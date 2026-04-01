@@ -7,6 +7,7 @@ import json
 import logging.config
 import os
 
+import pandas as pd
 import yaml
 
 from genome_plotter.functions.ConfigManager import Config
@@ -100,7 +101,13 @@ def main() -> None:
 
     # Generate arrow plot:
     logger.info("Initializing arrow plot generator.")
-    arrow_plotter = GenerateArrowPlot(config_manager, arrow_width)
+    arrow_plotter = GenerateArrowPlot(
+        pd.read_csv(
+            config_manager.get_gencode_arrow_file(), sep="\t", compression="infer"
+        ),
+        config_manager,
+        arrow_width,
+    )
 
     logger.info(f"Generating arrow plot for gene: {gene_name}")
     svg_string, width = arrow_plotter.generate_arrow_polt(gene_name)
