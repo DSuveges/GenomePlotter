@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import argparse
 import json
-import logging.config
 import os
 from dataclasses import asdict
 
 import pandas as pd
-import yaml
+from loguru import logger
 
+from genome_plotter import LOG_FORMAT
 from genome_plotter.functions.ChromosomePlotter import ChromosomePlotter
 
 # Importing custom functions:
@@ -24,8 +24,6 @@ from genome_plotter.functions.GeneAnnotator import GeneAnnotator
 from genome_plotter.functions.GwasAnnotator import gwas_annotator
 from genome_plotter.functions.svg_handler import svg_handler
 from genome_plotter.input_parsers.data_integrator import DataIntegrator
-
-logger = logging.getLogger(__name__)
 
 
 def genes_annotation_wrapper(
@@ -317,12 +315,7 @@ def main() -> None:
     plot_folder = os.path.abspath(args.folder)
 
     # Initialise logger:
-    logger_config_path = os.path.join(os.path.dirname(__file__), "logger_config.yaml")
-    with open(logger_config_path, "r") as stream:
-        logger_config = yaml.safe_load(stream)
-
-    logging.config.dictConfig(logger_config)
-    logger = logging.getLogger(__name__)
+    logger.add("genome_plotter.log", level="DEBUG", format=LOG_FORMAT)
 
     # Reporting parameters:
     logger.info(f"Generating plot for chromosome: {chromosome}")
@@ -430,7 +423,7 @@ def main() -> None:
     chromosomeSvgObject.savePng(output_filename)
 
     if args.textFile:
-        logger.info(f'Saving svg file: {output_filename.replace("png","svg")}')
+        logger.info(f"Saving svg file: {output_filename.replace('png', 'svg')}")
         chromosomeSvgObject.saveSvg(output_filename.replace("png", "svg"))
 
     logger.info("All done.")

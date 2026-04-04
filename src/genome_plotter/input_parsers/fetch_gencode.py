@@ -2,18 +2,16 @@
 
 from __future__ import annotations
 
-import logging
 import re
 from typing import TYPE_CHECKING
 
 import pandas as pd
+from loguru import logger
 
 from genome_plotter.functions.FetchFromFtp import FetchFromFtp
 
 if TYPE_CHECKING:
     from genome_plotter.functions.ConfigManager import SourcePrototype
-
-logger = logging.getLogger(__name__)
 
 
 # Fetch and process Gencode data:

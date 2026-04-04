@@ -2,15 +2,13 @@
 
 from __future__ import annotations
 
-import logging
 import os
 
 os.environ["DYLD_FALLBACK_LIBRARY_PATH"] = "/opt/homebrew/lib"
 
 import cairosvg
 import pandas as pd
-
-logger = logging.getLogger(__name__)
+from loguru import logger
 
 
 class ChromosomePlotter:

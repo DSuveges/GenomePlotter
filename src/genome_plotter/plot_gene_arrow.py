@@ -4,17 +4,19 @@ from __future__ import annotations
 
 import argparse
 import json
-import logging.config
 import os
 
 import pandas as pd
-import yaml
+from loguru import logger
 
+from genome_plotter import LOG_FORMAT
+from genome_plotter.functions.ColorFunctions import ColorPicker
 from genome_plotter.functions.ConfigManager import Config
-from genome_plotter.functions.CustomGenePlotter import GenerateArrowPlot
+from genome_plotter.functions.CustomGenePlotter import (
+    CustomGeneIntegrator,
+    GenerateArrowPlot,
+)
 from genome_plotter.functions.svg_handler import svg_handler
-
-logger = logging.getLogger(__name__)
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -36,7 +38,7 @@ def parse_arguments() -> argparse.Namespace:
     )
     parser.add_argument(
         "-d",
-        "--data-folder",
+        "--data_folder",
         help="Path to the data folder containing processed files",
         required=True,
         type=str,
@@ -57,11 +59,11 @@ def parse_arguments() -> argparse.Namespace:
         default=None,
     )
     parser.add_argument(
-        "-w",
-        "--arrow-width",
-        help="Arrow height in pixels (default: 10)",
+        "-s",
+        "--scale-factor",
+        help="Scaling factor applied to all plot dimensions (default: 30)",
         type=int,
-        default=10,
+        default=30,
     )
 
     return parser.parse_args()
@@ -74,16 +76,11 @@ def main() -> None:
     gene_name = args.gene
     data_folder = os.path.abspath(args.data_folder)
     config_file = args.config
-    arrow_width = args.arrow_width
     output_basename = args.output if args.output else f"{gene_name}_arrow"
+    scale_factor = args.scale_factor
 
     # Initialise logger:
-    logger_config_path = os.path.join(os.path.dirname(__file__), "logger_config.yaml")
-    with open(logger_config_path, "r") as stream:
-        logger_config = yaml.safe_load(stream)
-
-    logging.config.dictConfig(logger_config)
-    logger = logging.getLogger(__name__)
+    logger.add("genome_plotter.log", level="DEBUG", format=LOG_FORMAT)
 
     logger.info(f"Generating arrow plot for gene: {gene_name}")
 
@@ -106,14 +103,31 @@ def main() -> None:
             config_manager.get_gencode_arrow_file(), sep="\t", compression="infer"
         ),
         config_manager,
-        arrow_width,
+        scale_factor=scale_factor,
     )
 
     logger.info(f"Generating arrow plot for gene: {gene_name}")
-    svg_string, width = arrow_plotter.generate_arrow_polt(gene_name)
+    svg_arrow, width = arrow_plotter.generate_arrow_polt(gene_name)
 
-    # Wrap in svg_handler:
-    svg_obj = svg_handler(svg_string, width, arrow_width)
+    # Integrate genome chunk data and generate the chunk layer:
+    logger.info("Integrating genome chunk data.")
+    color_picker = ColorPicker(
+        config_manager.color_schema.chromosome_colors, count=30
+    )
+    integrator = CustomGeneIntegrator(gene_name, config_manager)
+    integrator.integrate(color_picker)
+    svg_chunks = arrow_plotter.generate_chunk_svg(integrator.get_integrated_data())
+
+    # Layout: chunk layer on top, arrow below with a gap equal to one pixel_size:
+    px = arrow_plotter.pixel_size
+    gap = px
+    arrow_y_offset = px + gap
+    svg_arrow_shifted = f'<g transform="translate(0 {arrow_y_offset})">\n{svg_arrow}\n</g>\n'
+
+    # Canvas: chunks (px) + gap (px) + arrow body (px) + arrowhead extension (px * 1.5) + padding:
+    canvas_height = arrow_y_offset + px * 3
+    svg_obj = svg_handler(svg_chunks + svg_arrow_shifted, width, canvas_height)
+    svg_obj.group(translate=(px, px))
 
     # Save as SVG and PNG:
     svg_filename = f"{output_basename}.svg"

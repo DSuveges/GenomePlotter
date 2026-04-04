@@ -2,18 +2,16 @@
 
 from __future__ import annotations
 
-import logging
 import pickle
 from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 import pybedtools
+from loguru import logger
 
 if TYPE_CHECKING:
     from genome_plotter.functions.ColorFunctions import ColorPicker
 
-
-logger = logging.getLogger(__name__)
 
 
 def read_data(file: str, types: dict[str, Any]) -> pd.DataFrame:

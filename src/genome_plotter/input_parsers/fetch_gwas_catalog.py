@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-import logging
 from typing import TYPE_CHECKING
+
+from loguru import logger
 
 from genome_plotter.functions.FetchFromFtp import FetchFromFtp
 
 if TYPE_CHECKING:
     from genome_plotter.functions.ConfigManager import SourcePrototype
-
-logger = logging.getLogger(__name__)
 
 
 # Fetch GWAS Catalog data and parse:
