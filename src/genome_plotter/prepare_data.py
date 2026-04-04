@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import argparse
 import json
-import logging.config
 import os
 
-import yaml
+from loguru import logger
 
+from genome_plotter import LOG_FORMAT
 from genome_plotter.functions.ConfigManager import Config
 from genome_plotter.input_parsers.data_integrator import integrate_data
 from genome_plotter.input_parsers.fetch_cytobands import FetchCytobands
@@ -18,8 +18,6 @@ from genome_plotter.input_parsers.fetch_ensembl import (
 )
 from genome_plotter.input_parsers.fetch_gencode import FetchGencode
 from genome_plotter.input_parsers.fetch_gwas_catalog import FetchGwas
-
-logger = logging.getLogger(__name__)
 
 
 def parse_args() -> argparse.Namespace:
@@ -118,7 +116,7 @@ def run(configuration: Config) -> None:
     )
 
     # Fetching GENCODE data:
-    logging.info("Fetching GENCODE data.")
+    logger.info("Fetching GENCODE data.")
     gencode_retrieve = FetchGencode(configuration.source_data.gencode_data)
     gencode_retrieve.retrieve_data()
     gencode_retrieve.process_gencode_data()
@@ -186,12 +184,7 @@ def main() -> None:
     args = parse_args()
 
     # Initialise logger:
-    logger_config_path = os.path.join(os.path.dirname(__file__), "logger_config.yaml")
-    with open(logger_config_path, "r") as stream:
-        logger_config = yaml.safe_load(stream)
-
-    logging.config.dictConfig(logger_config)
-    logger = logging.getLogger(__name__)
+    logger.add("genome_plotter.log", level="DEBUG", format=LOG_FORMAT)
 
     # Resolve config file: use bundled default if not provided:
     if args.config is None:

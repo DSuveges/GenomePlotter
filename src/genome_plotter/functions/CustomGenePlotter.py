@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import logging
 from typing import TYPE_CHECKING
 
 import pandas as pd
+from loguru import logger
 
 from genome_plotter.functions.utils import Scaler
 from genome_plotter.input_parsers.data_integrator import DataIntegrator
@@ -30,7 +30,7 @@ class CustomGeneIntegrator:
         self.width = config_manager.plot_parameters.width
         self.gene_window = config_manager.plot_parameters.custom_gene_window
 
-        logging.info(f"Generating integrated dataset for gene: {query}")
+        logger.info(f"Generating integrated dataset for gene: {query}")
 
         # Reading gencode data:
         self.gencode_df = pd.read_csv(
@@ -52,10 +52,10 @@ class CustomGeneIntegrator:
         # Report what we have:
         self.gene_name = filtered_gencode.iloc[0]["gene_name"]
         self.gene_id = filtered_gencode.iloc[0]["gene_id"]
-        logging.info(
+        logger.info(
             f"Gene name: {self.gene_name}, Ensembl gene identifier: {self.gene_id}"
         )
-        logging.info(
+        logger.info(
             f"Number of gencode feature for this gene: {len(filtered_gencode):,}"
         )
 
@@ -65,12 +65,12 @@ class CustomGeneIntegrator:
         self.end = filtered_gencode.end.max()
         self.filtered_gencode = filtered_gencode
 
-        logging.info(f"Genomic coordinates: {self.chromosome}:{self.start}-{self.end}")
+        logger.info(f"Genomic coordinates: {self.chromosome}:{self.start}-{self.end}")
 
         # Get the relevant genome file:
         genome_file = config_manager.get_chromosome_file(self.chromosome)
         genome_df = self.__load_genome(genome_file)
-        logging.info(f"Number of genomic chunks for this gene: {len(genome_df)}")
+        logger.info(f"Number of genomic chunks for this gene: {len(genome_df)}")
 
         self.genome_df = genome_df
 
@@ -182,14 +182,14 @@ class GenerateArrowPlot:
         self: GenerateArrowPlot,
         arrow_data: pd.DataFrame,
         config_manager: Config,
-        arrow_width: int,
+        scale_factor: int = 1,
     ) -> None:
         """Initialize the arrow plot generator.
 
         Args:
             arrow_data (pd.DataFrame): dataframe with the arrow coordinates.
             config_manager (Config): Configuration manager object.
-            arrow_width (int): Width of the arrow elements.
+            scale_factor (int): Scaling factor applied to all plot dimensions.
         """
         self.arrow_data = arrow_data
 
@@ -201,9 +201,8 @@ class GenerateArrowPlot:
 
         # Extract other values
         self.chunk_size = config_manager.basic_parameters.chunk_size
-        self.pixel_size = config_manager.plot_parameters.pixel_size
-
-        self.arrow_width = arrow_width
+        self.pixel_size = config_manager.plot_parameters.pixel_size * scale_factor
+        logger.info(f"Pixel size: {self.pixel_size}")
 
     @staticmethod
     def _extract_arrow_data(
@@ -266,6 +265,11 @@ class GenerateArrowPlot:
         gene_df = self._extract_arrow_data(
             self.arrow_data, gene_name, self.chunk_size, self.pixel_size
         )
+
+        # Store genomic bounds so generate_chunk_svg can use the same coordinate origin:
+        self._gene_genomic_start = int(gene_df["start"].min())
+        self._gene_genomic_end = int(gene_df["end"].max())
+
         boxes = gene_df.apply(self.draw_box, axis=1).dropna()
 
         # Generate lines connecting boxes:
@@ -280,9 +284,49 @@ class GenerateArrowPlot:
 
         # Concatenate into single string:
         svg_string = "".join(lines.to_list() + boxes.to_list()) + arrow
-        # svg_object = svg_handler(svg_string, gene_df.relative_end.max(), self.arrow_width)
 
-        return svg_string, gene_df.relative_end.max()
+        # Add pixel_size to width so the arrowhead isn't clipped by the canvas edge:
+        return svg_string, gene_df.relative_end.max() + self.pixel_size
+
+    def generate_chunk_svg(
+        self: GenerateArrowPlot, genome_df: pd.DataFrame, extension: int = 10
+    ) -> str:
+        """Generate SVG rectangles for genome chunks overlapping the gene.
+
+        Must be called after generate_arrow_polt so that genomic bounds are set.
+
+        Args:
+            genome_df (pd.DataFrame): Integrated genome data with 'start', 'end',
+                and 'color' columns.
+            extension (int): Number of chunks to include beyond each end of the gene.
+
+        Returns:
+            str: SVG string of colored chunk rectangles.
+        """
+        scaler = Scaler(
+            gene_start=self._gene_genomic_start,
+            chunk_size=self.chunk_size,
+            pixel_size=self.pixel_size,
+        )
+
+        ext_bp = extension * self.chunk_size
+        chunks = genome_df.loc[
+            (genome_df["start"] < self._gene_genomic_end + ext_bp)
+            & (genome_df["end"] > self._gene_genomic_start - ext_bp)
+        ]
+
+        svg = ""
+        for _, row in chunks.iterrows():
+            x = scaler.scale_genomic_coordinate(row["start"])
+            width = round(
+                (row["end"] - row["start"]) / self.chunk_size * self.pixel_size
+            )
+            svg += (
+                f'<rect x="{x}" y="0" width="{width}" height="{self.pixel_size}"'
+                f' style="fill:{row["color"]}" />\n'
+            )
+
+        return svg
 
     def draw_arrow(self: GenerateArrowPlot, df: pd.DataFrame) -> str:
         """Draw an arrow for the gene structure.
@@ -293,7 +337,7 @@ class GenerateArrowPlot:
         Returns:
             str: SVG arrow string.
         """
-        arrow_width = self.arrow_width
+        arrow_width = self.pixel_size
 
         # Get orientation:
         row = df.iloc[0] if df.iloc[0]["strand"] == "-" else df.tail(1).iloc[0]
@@ -342,7 +386,7 @@ class GenerateArrowPlot:
         return self.CHUNK_SVG.format(
             row["relative_start"],
             row["length"],
-            self.arrow_width,
+            self.pixel_size,
             self.line_color,
             fill_color,
         )
@@ -364,12 +408,12 @@ class GenerateArrowPlot:
             row["relative_end"],
             0,
             row["midpoint"],
-            -self.arrow_width / 2,
+            -self.pixel_size / 2,
             self.line_color,
         )
         connector += self.LINE_SVG.format(
             row["midpoint"],
-            -self.arrow_width / 2,
+            -self.pixel_size / 2,
             row["next_start"],
             0,
             self.line_color,

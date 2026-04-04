@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-import logging
-
 import pandas as pd
 import requests
-
-logger = logging.getLogger(__name__)
+from loguru import logger
 
 
 # get cytoband data:

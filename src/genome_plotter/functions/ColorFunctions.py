@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import colorsys
-import logging
 import re
 
 import numpy as np
 import pandas as pd
+from loguru import logger
 
 
 def hex_to_rgb(hex_color: str) -> list[int]:
@@ -199,17 +199,20 @@ class ColorPicker:
                     'All colors should be in hexadecimal format eg "#1ED5FA"'
                 )
 
-        # Checking dark max and the threshold:
-        for val in [dark_max, dark_threshold]:
-            if (not isinstance(val, float)) or (val >= 1) or (val <= 0):
+        # Validate darkening parameters only when they are provided:
+        if dark_max is not None or dark_threshold is not None:
+            for val in [dark_max, dark_threshold]:
+                if not isinstance(val, float) or (val >= 1) or (val <= 0):
+                    raise ValueError(
+                        f"dark_max and dark_threshold has to be float between 0 and 1 instead: {val}"
+                    )
+            if not isinstance(width, int):
                 raise ValueError(
-                    f"dark_max and dark_threshold has to be float between 0 and 1 instead: {val}"
+                    f"width must be an integer when darkening is enabled. Got: {width}"
                 )
 
-        # Checking dark max and the threshold:
-        for val in [count, width]:
-            if not isinstance(val, int):
-                raise ValueError(f"Count and width have to be integers. Got: {val}")
+        if not isinstance(count, int):
+            raise ValueError(f"count has to be an integer. Got: {count}")
 
         # Generating color gradients for a given length:
         self.color_map = {
@@ -239,7 +242,7 @@ class ColorPicker:
             try:
                 color = self.color_map[feature][int(gc_content * (self.count - 1))]
             except KeyError:
-                logging.error(
+                logger.error(
                     f"Feature {feature} was not found in color mapper. Returning black."
                 )
                 color = "#000000"

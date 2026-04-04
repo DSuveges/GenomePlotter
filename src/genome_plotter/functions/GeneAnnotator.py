@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import logging
-
 import pandas as pd
+from loguru import logger
 
 
 class PositionConverter:
@@ -76,7 +75,7 @@ class GeneAnnotator:
         # Open gene file and store data:
         df = pd.read_csv(gene_file, sep="\t", compression="infer")
         self.__df = df.loc[df.chr == chromosome]
-        logging.info(
+        logger.info(
             "Adding annotation for {} genes on this chromosome.".format(len(self.__df))
         )
 
