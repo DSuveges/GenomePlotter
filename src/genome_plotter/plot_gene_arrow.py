@@ -116,7 +116,10 @@ def main() -> None:
     )
     integrator = CustomGeneIntegrator(gene_name, config_manager)
     integrator.integrate(color_picker)
-    svg_chunks = arrow_plotter.generate_chunk_svg(integrator.get_integrated_data())
+    chunk_extension = 10
+    svg_chunks = arrow_plotter.generate_chunk_svg(
+        integrator.get_integrated_data(), extension=chunk_extension
+    )
 
     # Layout: chunk layer on top, arrow below with a gap equal to one pixel_size:
     px = arrow_plotter.pixel_size
@@ -124,10 +127,12 @@ def main() -> None:
     arrow_y_offset = px + gap
     svg_arrow_shifted = f'<g transform="translate(0 {arrow_y_offset})">\n{svg_arrow}\n</g>\n'
 
-    # Canvas: chunks (px) + gap (px) + arrow body (px) + arrowhead extension (px * 1.5) + padding:
+    # The extension adds extra chunks left and right of the gene; expand canvas accordingly.
+    # Left extension is handled by shifting translate_x so negative-x chunks land inside the canvas.
+    extension_px = chunk_extension * px
     canvas_height = arrow_y_offset + px * 3
-    svg_obj = svg_handler(svg_chunks + svg_arrow_shifted, width, canvas_height)
-    svg_obj.group(translate=(px, px))
+    svg_obj = svg_handler(svg_chunks + svg_arrow_shifted, width + extension_px, canvas_height)
+    svg_obj.group(translate=(px + extension_px, px))
 
     # Save as SVG and PNG:
     svg_filename = f"{output_basename}.svg"
