@@ -25,8 +25,8 @@
     "gwas_point": "#000000",
     "arrow_colors": {
       "line_color": "#6495ED",
-      "utr_color": "#FFE4B5",
-      "cds_color": "#ADD8E6"
+      "utr_color": "#CE93D8",
+      "cds_color": "#F4A460"
     },
     "cytoband_colors": {
       "gneg": "#FFFFFF",
