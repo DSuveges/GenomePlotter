@@ -223,6 +223,18 @@ class DataIntegrator:
 
             raise e
 
+        # pybedtools returns a bare DataFrame() with no columns when the
+        # intersection output file is empty (0 bytes), ignoring the names
+        # argument.  This happens for chromosomes with no protein-coding
+        # GENCODE entries (e.g. MT).  Treat every chunk as intergenic.
+        if "start" not in intersect_df.columns:
+            logger.info(
+                f"No GENCODE features found for chromosome {self.chromosome_name}; "
+                "marking all chunks as intergenic."
+            )
+            self.__genome__["GENCODE"] = "intergenic"
+            return
+
         # Parse out results:
         gencode_chunks = intersect_df.groupby("start").apply(
             lambda x: "exon" if "exon" in x.type.unique() else "gene"
