@@ -1,0 +1,40 @@
+{
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnPaste": false,
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "never",
+      "source.organizeImports": "explicit"
+    }
+  },
+  "python.terminal.launchArgs": [
+    "-m",
+    "IPython",
+    "--no-autoindent"
+  ],
+  "[jsonc]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": false,
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    }
+  },
+  "json.format.keepLines": true,
+  "autoDocstring.docstringFormat": "google",
+  "python.testing.pytestArgs": [
+    ".",
+    "--doctest-modules",
+    "--cov=src/"
+  ],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true,
+  "mypy-type-checker.severity": {
+    "error": "Information"
+  },
+  "yaml.extension.recommendations": false,
+  "workbench.remoteIndicator.showExtensionRecommendations": false,
+  "extensions.ignoreRecommendations": true
+}
