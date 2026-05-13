@@ -288,9 +288,7 @@ class DataIntegrator:
         Args:
             color_picker (ColorPicker): The color picker.
         """
-        self.__genome__["color"] = self.__genome__.apply(
-            color_picker.pick_color, axis=1
-        )
+        self.__genome__["color"] = color_picker.pick_colors_vectorized(self.__genome__)
 
     def save_table(self: DataIntegrator, file_name: str) -> None:
         """Save the integrated data as a table.

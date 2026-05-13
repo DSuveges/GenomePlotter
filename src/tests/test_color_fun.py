@@ -209,5 +209,138 @@ class TestColorFunctions(unittest.TestCase):
         )
 
 
+class TestPickColorsVectorized(unittest.TestCase):
+    """Tests for ColorPicker.pick_colors_vectorized."""
+
+    _COLOR_MAP = {
+        "centromere": "#9393FF",
+        "heterochromatin": "#F9D2C2",
+        "intergenic": "#A3E0D1",
+        "exon": "#FFD326",
+        "gene": "#6CB8CC",
+        "dummy": "#B3F29D",
+    }
+
+    def _picker(self, **kwargs: object) -> ColorPicker:
+        """Return a ColorPicker with darkening enabled unless overridden."""
+        defaults: dict[str, object] = {
+            "dark_max": 0.15,
+            "dark_threshold": 0.75,
+            "count": 20,
+            "width": 200,
+        }
+        defaults.update(kwargs)
+        return ColorPicker(self._COLOR_MAP, **defaults)  # type: ignore[arg-type]
+
+    def _df(self, rows: list[dict[str, object]]) -> pd.DataFrame:
+        """Build a minimal DataFrame for color-picking tests."""
+        return pd.DataFrame(rows)
+
+    def _reference(self, picker: ColorPicker, df: pd.DataFrame) -> pd.Series:
+        """Compute colors the slow way for comparison."""
+        return df.apply(picker.pick_color, axis=1)
+
+    # --- output shape / format ---
+
+    def test_output_is_series_with_matching_index(self) -> None:
+        """Output is a pd.Series with the same index as the input DataFrame."""
+        cp = self._picker()
+        df = self._df([{"GC_ratio": 0.4, "GENCODE": "intergenic", "x": 10}])
+        result = cp.pick_colors_vectorized(df)
+        self.assertIsInstance(result, pd.Series)
+        self.assertEqual(list(result.index), list(df.index))
+
+    def test_output_length_matches_input(self) -> None:
+        """Output length equals the number of input rows."""
+        cp = self._picker()
+        df = self._df([
+            {"GC_ratio": 0.2, "GENCODE": "exon", "x": 50},
+            {"GC_ratio": 0.8, "GENCODE": "gene", "x": 190},
+            {"GC_ratio": None, "GENCODE": "heterochromatin", "x": 0},
+        ])
+        self.assertEqual(len(cp.pick_colors_vectorized(df)), 3)
+
+    def test_all_outputs_are_valid_hex_strings(self) -> None:
+        """Every returned value is a six-digit hex color string."""
+        cp = self._picker()
+        features = ["exon", "gene", "intergenic", "centromere", "heterochromatin", "dummy"]
+        rows = [{"GC_ratio": 0.5, "GENCODE": f, "x": 100} for f in features]
+        result = cp.pick_colors_vectorized(self._df(rows))
+        pattern = re.compile(r"^#[0-9a-f]{6}$")
+        for color in result:
+            self.assertRegex(color, pattern)
+
+    # --- correctness vs apply(pick_color) ---
+
+    def test_matches_apply_for_all_features(self) -> None:
+        """Vectorised output matches apply(pick_color) for every feature type."""
+        cp = self._picker()
+        features = ["exon", "gene", "intergenic", "centromere", "heterochromatin", "dummy"]
+        rows = [{"GC_ratio": 0.5, "GENCODE": f, "x": 50} for f in features]
+        df = self._df(rows)
+        pd.testing.assert_series_equal(
+            cp.pick_colors_vectorized(df).reset_index(drop=True),
+            self._reference(cp, df).reset_index(drop=True),
+            check_dtype=False,
+        )
+
+    def test_matches_apply_across_gc_values(self) -> None:
+        """Vectorised output matches apply(pick_color) at low, mid, and high GC ratios."""
+        cp = self._picker()
+        rows = [
+            {"GC_ratio": gc, "GENCODE": "exon", "x": 10}
+            for gc in [0.0, 0.25, 0.5, 0.75, 1.0]
+        ]
+        df = self._df(rows)
+        pd.testing.assert_series_equal(
+            cp.pick_colors_vectorized(df).reset_index(drop=True),
+            self._reference(cp, df).reset_index(drop=True),
+            check_dtype=False,
+        )
+
+    def test_matches_apply_below_and_above_dark_threshold(self) -> None:
+        """Vectorised output matches apply(pick_color) on both sides of the darkening threshold."""
+        cp = self._picker(dark_threshold=0.75, width=200)
+        rows = [
+            {"GC_ratio": 0.5, "GENCODE": "exon", "x": x}
+            for x in [0, 50, 100, 149, 150, 151, 175, 199, 200]
+        ]
+        df = self._df(rows)
+        pd.testing.assert_series_equal(
+            cp.pick_colors_vectorized(df).reset_index(drop=True),
+            self._reference(cp, df).reset_index(drop=True),
+            check_dtype=False,
+        )
+
+    def test_nan_gc_always_returns_heterochromatin_color(self) -> None:
+        """A NaN GC_ratio returns heterochromatin[0] regardless of the GENCODE label."""
+        cp = self._picker()
+        df = self._df([{"GC_ratio": None, "GENCODE": "exon", "x": 50}])
+        result = cp.pick_colors_vectorized(df).iloc[0]
+        expected = cp.pick_color(pd.Series({"GC_ratio": None, "GENCODE": "exon", "x": 50}))
+        self.assertEqual(result, expected)
+
+    def test_dummy_feature_never_darkened(self) -> None:
+        """Dummy chunks return the same color regardless of x position."""
+        cp = self._picker()
+        rows = [{"GC_ratio": 0.5, "GENCODE": "dummy", "x": x} for x in [0, 100, 200]]
+        result = cp.pick_colors_vectorized(self._df(rows))
+        self.assertEqual(result.iloc[0], result.iloc[1])
+        self.assertEqual(result.iloc[0], result.iloc[2])
+
+    def test_works_without_darkening(self) -> None:
+        """Vectorised lookup works when darkening parameters are not set."""
+        cp = ColorPicker(self._COLOR_MAP, count=20)
+        df = self._df([
+            {"GC_ratio": 0.3, "GENCODE": "exon", "x": 0},
+            {"GC_ratio": 0.7, "GENCODE": "gene", "x": 0},
+        ])
+        result = cp.pick_colors_vectorized(df)
+        self.assertEqual(len(result), 2)
+        pattern = re.compile(r"^#[0-9a-f]{6}$")
+        for color in result:
+            self.assertRegex(color, pattern)
+
+
 if __name__ == "__main__":
     unittest.main()

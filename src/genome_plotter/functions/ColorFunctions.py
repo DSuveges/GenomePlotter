@@ -221,6 +221,89 @@ class ColorPicker:
         self.width = width
         self.count = count
 
+        self._feature_to_idx: dict[str, int] = {f: i for i, f in enumerate(self.features)}
+        self._hex_table: np.ndarray = self._build_hex_table()
+
+    def _build_hex_table(self: ColorPicker) -> np.ndarray:
+        """Precompute hex color lookup for all (feature, gc_idx[, x_pos]) combinations.
+
+        Returns a 2-D array when darkening is disabled, or a 3-D array when it is
+        enabled.  All entries are hex color strings (Python object dtype).  The
+        table is built once at construction time so per-row lookup collapses to a
+        single numpy fancy-index operation.
+        """
+        n_f = len(self.features)
+        n_gc = self.count
+
+        # dummy always uses the first gradient entry regardless of GC or x
+        dummy_base = self.color_map["dummy"][0]
+
+        if self.width is None or self.dark_threshold is None or self.dark_max is None:
+            table: np.ndarray = np.empty((n_f, n_gc), dtype=object)
+            for fi, feature in enumerate(self.features):
+                for gi, hex_color in enumerate(self.color_map[feature]):
+                    table[fi, gi] = dummy_base if feature == "dummy" else hex_color
+            return table
+
+        n_x = self.width + 1
+        # x positions below this index are never darkened
+        threshold_x = int(self.dark_threshold * self.width)
+        table = np.empty((n_f, n_gc, n_x), dtype=object)
+
+        for fi, feature in enumerate(self.features):
+            for gi, base_hex in enumerate(self.color_map[feature]):
+                if feature == "dummy":
+                    # dummy: fixed base color for all gc indices and x positions
+                    table[fi, gi, :] = dummy_base
+                else:
+                    # All positions up to the darkening threshold keep the base colour
+                    table[fi, gi, : threshold_x + 1] = base_hex
+                    for xi in range(threshold_x + 1, n_x):
+                        table[fi, gi, xi] = color_darkener(
+                            base_hex, xi, self.width, self.dark_threshold, self.dark_max
+                        )
+        return table
+
+    def pick_colors_vectorized(self: ColorPicker, df: pd.DataFrame) -> pd.Series:
+        """Return a Series of hex colors for every row using table lookup.
+
+        This is a vectorised replacement for ``df.apply(pick_color, axis=1)``.
+        The precomputed ``_hex_table`` is indexed with numpy fancy indexing so
+        the per-row cost is O(1) in Python; the overall complexity is O(n) at
+        C level.
+
+        Args:
+            df (pd.DataFrame): DataFrame with GENCODE, GC_ratio, and x columns.
+
+        Returns:
+            pd.Series: Hex color string for each row, same index as *df*.
+        """
+        # --- feature index ---
+        cat = pd.Categorical(df["GENCODE"], categories=self.features)
+        fi = np.where(cat.codes == -1, 0, cat.codes)
+
+        # --- GC gradient index ---
+        gc_arr = pd.to_numeric(df["GC_ratio"], errors="coerce").to_numpy(dtype=float)
+        gc_nan = np.isnan(gc_arr)
+
+        # Replicate map_color: NaN GC_ratio always yields heterochromatin[0]
+        fi = np.where(gc_nan, self._feature_to_idx["heterochromatin"], fi)
+
+        gc_idx = np.where(
+            gc_nan,
+            0,
+            np.floor(gc_arr * (self.count - 1)).clip(0, self.count - 1),
+        ).astype(int)
+
+        # --- table lookup ---
+        if self._hex_table.ndim == 3:
+            x_pos = df["x"].to_numpy(dtype=int).clip(0, self.width)
+            colors = self._hex_table[fi, gc_idx, x_pos]
+        else:
+            colors = self._hex_table[fi, gc_idx]
+
+        return pd.Series(colors, index=df.index, dtype=object)
+
     def map_color(self: ColorPicker, feature: str, gc_content: float | None) -> str:
         """Map a feature and GC content to a color.
 
