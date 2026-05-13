@@ -268,6 +268,12 @@ class DataIntegrator:
             (cytoband_df.chr == str(chromosome)) & (cytoband_df.type == "acen"),
             ["start", "end"],
         ]
+
+        if centromer_loc.empty:
+            # Some chromosomes (e.g. MT) have no centromere — nothing to mark.
+            logger.info(f"No centromere found for chromosome {chromosome}; skipping.")
+            return
+
         centromer_loc = (int(centromer_loc.start.min()), int(centromer_loc.end.max()))
 
         # If GENCODE column is missing, let's initialize:
