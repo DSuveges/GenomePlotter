@@ -200,26 +200,19 @@ class DataIntegrator:
             self.__genome__.rename(columns={"chr": "chrom"})
         )
 
+        # Build column names dynamically so the list matches the actual number of
+        # columns produced by the intersection regardless of whether x/y coordinates
+        # have been added to the genome DataFrame yet.
+        a_names = list(self.__genome__.columns)
+        b_names = ["chr_2", "start_2", "end_2", "gene_id", "gene_name", "transcript_id", "type"]
+        intersect_names = a_names + b_names
+
         # Run intersectbed and extract result as dataframe:
         try:
             gencode_intersect = chrom_bed.intersect(gencode_bed, wa=True, wb=True)
             intersect_df = gencode_intersect.to_dataframe(
                 header=None,
-                names=[
-                    "chr",
-                    "start",
-                    "end",
-                    "GC_ratio",
-                    "x",
-                    "y",
-                    "chr_2",
-                    "start_2",
-                    "end_2",
-                    "gene_id",
-                    "gene_name",
-                    "transcript_id",
-                    "type",
-                ],
+                names=intersect_names,
             )
         # At this point we should have a dataframe with all the data:
         except Exception as e:
