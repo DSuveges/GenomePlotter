@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import TYPE_CHECKING, Any
 
 import pandas as pd
@@ -10,7 +12,6 @@ from loguru import logger
 
 if TYPE_CHECKING:
     from genome_plotter.functions.ColorFunctions import ColorPicker
-
 
 
 def read_data(file: str, types: dict[str, Any]) -> pd.DataFrame:
@@ -26,67 +27,97 @@ def read_data(file: str, types: dict[str, Any]) -> pd.DataFrame:
     return pd.read_csv(file, compression="gzip", sep="\t", header=0, dtype=types)
 
 
+def _integrate_one_chromosome(
+    chromosome: str,
+    output_dir: str,
+    gencode_file: str,
+    cytoband_file: str,
+    dummy: bool,
+) -> str:
+    """Integrate data for a single chromosome.
+
+    Reads all input files independently so this function is safe to run in a
+    worker process without sharing any state with the parent or other workers.
+
+    Args:
+        chromosome (str): Chromosome identifier (e.g. '1', 'X', 'MT').
+        output_dir (str): Directory containing per-chromosome input files and
+            where the integrated output file will be written.
+        gencode_file (str): Path to the processed GENCODE annotation file.
+        cytoband_file (str): Path to the processed cytoband file.
+        dummy (bool): When True, skip gene annotation and use a dummy label.
+
+    Returns:
+        str: The chromosome identifier, for use in completion logging.
+    """
+    gencode_df = read_data(
+        gencode_file, {"chr": str, "start": int, "end": int, "type": str}
+    )
+    cytoband_df = read_data(
+        cytoband_file,
+        {"chr": str, "start": int, "end": int, "name": str, "type": str},
+    )
+    chr_df = read_data(
+        f"{output_dir}/processed_chr{chromosome}.bed.gz",
+        {"chr": str, "start": int, "end": int, "GC_ratio": float},
+    )
+
+    integrator = DataIntegrator(chr_df)
+
+    if dummy:
+        integrator.add_centromere(cytoband_df)
+        integrator.add_dummy()
+    else:
+        integrator.add_genes(gencode_df)
+        integrator.add_centromere(cytoband_df)
+        integrator.assign_hetero()
+
+    integrator.save_table(f"{output_dir}/integrated_chr{chromosome}.bed.gz")
+    return chromosome
+
+
 def integrate_data(
     output_dir: str,
     chromosomes: list[str],
     cytoband_file: str,
     gencode_file: str,
     dummy: bool = False,
+    max_workers: int | None = None,
 ) -> None:
-    """Integrate the parsed input data.
+    """Integrate the parsed input data for all chromosomes in parallel.
 
     Args:
-        output_dir (str): The directory to save the data to.
-        chromosomes (list[str]): The chromosomes.
-        cytoband_file (str): The cytobands file.
-        gencode_file (str): The gencode file.
-        dummy (bool, optional): Whether to use dummy data. Defaults to False.
+        output_dir (str): The directory containing per-chromosome files and
+            where integrated outputs will be saved.
+        chromosomes (list[str]): Chromosome identifiers to process.
+        cytoband_file (str): Path to the processed cytoband file.
+        gencode_file (str): Path to the processed GENCODE file.
+        dummy (bool): When True, skip gene annotation and fill with a dummy
+            label. Defaults to False.
+        max_workers (int | None): Number of parallel worker processes. Defaults
+            to the number of available CPU cores, capped at len(chromosomes).
     """
-    logger.info("Integrating parsed data.")
-    # Read cytobands:
-    gencode_df = read_data(
-        gencode_file, {"chr": str, "start": int, "end": int, "type": str}
+    n_workers = min(len(chromosomes), max_workers or os.cpu_count() or 1)
+    logger.info(
+        f"Integrating {len(chromosomes)} chromosomes using {n_workers} parallel workers."
     )
-    cyb_df = read_data(
-        cytoband_file,
-        {"chr": str, "start": int, "end": int, "name": str, "type": str},
-    )
-    logger.info(f"Number of GENCODE annotations in the genome: {len(gencode_df):,}")
-    logger.info(f"Number of cytological bands in the genome: {len(cyb_df):,}")
 
-    # Iterate over chromosomes:
-    for chromosome in chromosomes:
-        logger.info(f"Integrating data for chromosome: {chromosome}")
-        # Reading chromosome data:
-        chr_df = read_data(
-            f"{output_dir}/processed_chr{chromosome}.bed.gz",
-            {"chr": str, "start": int, "end": int, "GC_ratio": float},
-        )
-
-        # Initialize data integrator:
-        integrator = DataIntegrator(chr_df)
-
-        # Downstream processing depends on dummy status:
-        if dummy:
-            # Adding cytological band information to the data:
-            integrator.add_centromere(cyb_df)
-
-            # Adding dummy GENCODE annotation to genomic data:
-            integrator.add_dummy()
-
-        else:
-            # Adding GENCODE annotation to genomic data:
-            integrator.add_genes(gencode_df)
-
-            # Adding cytological band information to the data:
-            integrator.add_centromere(cyb_df)
-
-            # Assigning heterocromatic regions:
-            integrator.assign_hetero()
-
-        # Integration is complete:
-        integrator.save_table(f"{output_dir}/integrated_chr{chromosome}.bed.gz")
-        logger.info(f"Integration for chromosome {chromosome} is complete.")
+    with ProcessPoolExecutor(max_workers=n_workers) as executor:
+        future_to_chrom = {
+            executor.submit(
+                _integrate_one_chromosome,
+                chromosome,
+                output_dir,
+                gencode_file,
+                cytoband_file,
+                dummy,
+            ): chromosome
+            for chromosome in chromosomes
+        }
+        for future in as_completed(future_to_chrom):
+            chromosome = future_to_chrom[future]
+            future.result()  # re-raises any exception from the worker
+            logger.info(f"Integration for chromosome {chromosome} complete.")
 
     logger.info("Integration complete.")
 
