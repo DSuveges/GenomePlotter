@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import argparse
-import json
 import os
 
+import yaml
 from loguru import logger
 
 from genome_plotter import LOG_FORMAT
@@ -77,30 +77,26 @@ def get_cytoband_data(cytoband_url: str, cytoband_output_file: str) -> str:
     return cytoband_retrieve.get_assembly_build()
 
 
-def run(configuration: Config) -> None:
-    """Run the data preparation pipeline.
-
-    Args:
-        configuration (Config): The configuration object containing the input data.
+def _validate_run_params(
+    data_dir: str | None,
+    chunk_size: int | None,
+    tolerance: float | None,
+) -> tuple[str, int, float]:
+    """Validate parameters required by run() and return them as non-optional types.
 
     Raises:
-        ValueError: if Could not find ensembl version.
+        ValueError: If any required parameter is missing or invalid.
     """
-    # Extracting relevant parameters:
-    basic_parameters = configuration.basic_parameters
-    data_dir = basic_parameters.data_folder
-    chunk_size = basic_parameters.chunk_size
-    tolerance = basic_parameters.missing_tolerance
+    if not data_dir:
+        raise ValueError("Data directory is not provided.")
+    if not chunk_size:
+        raise ValueError("Chunk size is not provided.")
+    if tolerance is None:
+        raise ValueError("Tolerance for unsequenced bases is not provided.")
+    return data_dir, chunk_size, tolerance
 
-    assert data_dir, "Data directory is not provided."
-    assert chunk_size, "Chunk size is not provided."
-    assert tolerance, "Tolerance for unsequenced bases is not provided."
 
-    # Report the other command line parameters:
-    logger.info(f"Chunk size: {chunk_size}")
-    logger.info(f"Tolerance for unsequenced bases: {tolerance}")
-
-    # Fetching GWAS Catalog data:
+def _fetch_gwas(configuration: Config, data_dir: str) -> None:
     logger.info("Fetching GWAS data...")
     gwas_retrieve = FetchGwas(configuration.source_data.gwas_data)
     gwas_retrieve.retrieve_data()
@@ -108,52 +104,75 @@ def run(configuration: Config) -> None:
     gwas_retrieve.save_gwas_data(data_dir)
     configuration.source_data.gwas_data.release_date = gwas_retrieve.get_release_date()
 
-    # Fetching cytological bands:
+
+def _fetch_cytobands(configuration: Config, data_dir: str) -> None:
     logger.info("Fetching cytoband information...")
     configuration.source_data.cytoband_data.genome_build = get_cytoband_data(
         configuration.source_data.cytoband_data.url,
         f"{data_dir}/{configuration.source_data.cytoband_data.processed_file}",
     )
 
-    # Fetching GENCODE data:
+
+def _fetch_gencode(configuration: Config, data_dir: str) -> None:
     logger.info("Fetching GENCODE data.")
     gencode_retrieve = FetchGencode(configuration.source_data.gencode_data)
     gencode_retrieve.retrieve_data()
     gencode_retrieve.process_gencode_data()
     gencode_retrieve.save_gencode_data(data_dir)
-    configuration.source_data.gencode_data.release_date = (
-        gencode_retrieve.get_release_date()
-    )
+    configuration.source_data.gencode_data.release_date = gencode_retrieve.get_release_date()
     configuration.source_data.gencode_data.version = gencode_retrieve.get_release()
 
-    # Fetching Ensembl version and genome build:
+
+def _fetch_genome(
+    configuration: Config, data_dir: str, chunk_size: int, tolerance: float
+) -> None:
     logger.info("Fetching Ensembl release...")
     if configuration.source_data.ensembl_data.version_url is None:
-        raise ValueError("Could not pull Esembl version.")
-
+        raise ValueError("Could not pull Ensembl version.")
     ensembl_release = fetch_ensembl_version(
         configuration.source_data.ensembl_data.version_url
     )
     configuration.source_data.ensembl_data.release = ensembl_release
     logger.info(f"Current Ensembl release: {ensembl_release}")
 
-    # Fetching the human genome:
     logger.info("Fetching the human genome sequence...")
     genome_retrieve = FetchGenome(configuration.source_data.ensembl_data)
     genome_retrieve.retrieve_data()
     genome_retrieve.parse_genome(chunk_size, tolerance, data_dir)
 
-    # Integrate parsed data into one single table:
+
+def run(configuration: Config) -> None:
+    """Run the data preparation pipeline.
+
+    Args:
+        configuration (Config): The configuration object containing the input data.
+
+    Raises:
+        ValueError: If required parameters are missing or invalid.
+    """
+    basic_parameters = configuration.basic_parameters
+    data_dir, chunk_size, tolerance = _validate_run_params(
+        basic_parameters.data_folder,
+        basic_parameters.chunk_size,
+        basic_parameters.missing_tolerance,
+    )
+
+    logger.info(f"Chunk size: {chunk_size}")
+    logger.info(f"Tolerance for unsequenced bases: {tolerance}")
+
+    _fetch_gwas(configuration, data_dir)
+    _fetch_cytobands(configuration, data_dir)
+    _fetch_gencode(configuration, data_dir)
+    _fetch_genome(configuration, data_dir, chunk_size, tolerance)
+
     logger.info("Integrating parsed data...")
     integrate_data(
         output_dir=data_dir,
-        # chromosomes=genome_retrieve.chromosomes,
         chromosomes=[str(i + 1) for i in range(22)] + ["Y", "X", "MT"],
         cytoband_file=configuration.get_cytoband_file(),
         gencode_file=configuration.get_gencode_file(),
     )
 
-    # Save config file:
     updated_config_file = "config_updated.json"
     logger.info(f"Saving updated configuration as {updated_config_file}.")
     configuration.save(updated_config_file)
@@ -169,45 +188,37 @@ def validate_input(data_dir: str, config_file: str) -> None:
     Raises:
         ValueError: If the data directory or the configuration file do not exist.
     """
-    # Checking if output dir exists:
     if not os.path.exists(os.path.join(os.getcwd(), data_dir)):
         raise ValueError(f"The provided folder ({data_dir}) does not exist")
 
-    # Reading configuration file:
     if not os.path.isfile(config_file):
         raise ValueError(f"The provided config file ({config_file}) does not exist.")
 
 
 def main() -> None:
     """Entry point for the prepare-data CLI command."""
-    # Parse command line arguments
     args = parse_args()
 
-    # Initialise logger:
     logger.add("genome_plotter.log", level="DEBUG", format=LOG_FORMAT)
 
-    # Resolve config file: use bundled default if not provided:
     if args.config is None:
-        args.config = os.path.join(os.path.dirname(__file__), "assets", "config.json")
+        args.config = os.path.join(os.path.dirname(__file__), "assets", "config.yaml")
         logger.info("No config file provided, using default bundled config.")
 
-    # Validate input parameters:
     logger.info("Validating input parameters...")
     validate_input(args.dataDir, args.config)
 
     logger.info(f"Pre-processed data is saved to {args.dataDir}")
     logger.info(f"Configuration file: {args.config}")
 
-    # Initilise configuration:
     with open(args.config) as f:
         try:
-            configuration = Config(**json.load(f))
-        except json.decoder.JSONDecodeError:
+            configuration = Config.model_validate(yaml.safe_load(f))
+        except yaml.YAMLError as e:
             raise ValueError(
-                f"The provided config file ({args.config}) is not a valid JSON file."
-            )
+                f"The provided config file ({args.config}) is not a valid YAML file."
+            ) from e
 
-    # Update configuration with command line options:
     configuration.update_basic_parameters(
         data_folder=os.path.abspath(args.dataDir),
         chunk_size=args.chunk_size,

@@ -9,18 +9,15 @@ os.environ["DYLD_FALLBACK_LIBRARY_PATH"] = "/opt/homebrew/lib"
 import cairosvg
 
 
-class svg_handler:
-    """Functions to manipulate SVG elements and save to files."""
+class SvgHandler:
+    """Build, compose, and export SVG documents."""
 
-    __svg_rect__ = '<rect x="{}" y="{}" width="{}" height="{}" style="stroke-width:1;stroke:{}; fill: {}" />\n'
-    __svg_label__ = '<text x="{}" y="{}" text-anchor="{}" font-family="sans-serif" \
-        font-size="{}px" fill="{}">{}</text>\n'
-    __svg_line__ = (
-        '<line x1="{}" y1="{}" x2="{}" y2="{}" stroke="{}" stroke-width="{}" {} />\n'
-    )
+    _RECT = '<rect x="{}" y="{}" width="{}" height="{}" style="stroke-width:1;stroke:{}; fill: {}" />\n'
+    _LABEL = '<text x="{}" y="{}" text-anchor="{}" font-family="sans-serif" font-size="{}px" fill="{}">{}</text>\n'
+    _LINE = '<line x1="{}" y1="{}" x2="{}" y2="{}" stroke="{}" stroke-width="{}" {} />\n'
 
     def __init__(
-        self: svg_handler,
+        self,
         svg_string: str,
         width: float,
         height: float,
@@ -29,112 +26,94 @@ class svg_handler:
         """Initialize SVG handler with content and dimensions.
 
         Args:
-            svg_string (str): SVG content string.
-            width (float): Width of the SVG.
-            height (float): Height of the SVG.
-            background (str | None): Background color.
+            svg_string (str): Initial SVG content.
+            width (float): Canvas width.
+            height (float): Canvas height.
+            background (str | None): Optional background fill color.
         """
-        self.__svg__ = svg_string
-        self.__width__ = width
-        self.__height__ = height
-        self.__background = background
+        self._svg = svg_string
+        self._width = width
+        self._height = height
+        self._background = background
 
-    def group(self: svg_handler, translate: tuple[float, float] = (0, 0)) -> None:
-        """Group and transform SVG elements with translation.
+    def group(self, translate: tuple[float, float] = (0, 0)) -> None:
+        """Wrap current content in a <g> translate transform.
 
         Args:
-            translate (tuple[float, float]): Translation coordinates (x, y).
+            translate (tuple[float, float]): (x, y) translation offset.
         """
-        self.__svg__ = '<g transform="translate(%s %s)">\n%s\n</g>\n' % (
+        self._svg = '<g transform="translate(%s %s)">\n%s\n</g>\n' % (
             translate[0],
             translate[1],
-            self.__svg__,
+            self._svg,
         )
+        self._width += abs(translate[0])
+        self._height += abs(translate[1])
 
-        # Updating coordinates:
-        self.__width__ += abs(translate[0])
-        self.__height__ += abs(translate[1])
-
-    def appendSvg(self: svg_handler, svg_string: str) -> None:
-        """Append SVG string to the current content.
+    def append_svg(self, svg_string: str) -> None:
+        """Append raw SVG content to the current canvas.
 
         Args:
             svg_string (str): SVG content to append.
         """
-        self.__svg__ += svg_string
+        self._svg += svg_string
 
-    def mergeSvg(self: svg_handler, svg_obj: svg_handler) -> None:
-        """Merge another SVG handler object into this one.
+    def merge_svg(self, other: SvgHandler) -> None:
+        """Merge another SvgHandler's content into this one.
 
-        Args:
-            svg_obj (svg_handler): SVG handler to merge.
-        """
-        self.__svg__ += svg_obj.getSvg()
-
-        self.__width__ = max(self.__width__, svg_obj.getWidth())
-        self.__height__ = max(self.__height__, svg_obj.getHeight())
-
-    def __closeSvg(self: svg_handler) -> None:
-        """Close the SVG document by adding header and footer."""
-        svg_header = f'<svg version="1.1" xmlns="http://www.w3.org/2000/svg" \
-            xmlns:xlink="http://www.w3.org/1999/xlink" \
-            xml:space="preserve"  width = "{self.__width__}" height = "{self.__height__}" >\n'
-
-        # If background color is set, we use it:
-        if self.__background is not None:
-            svg_header += (
-                f'<rect width="100%" height="100%" fill="{self.__background}" />'
-            )
-
-        self.__closedSVG__ = svg_header + self.__svg__ + "\n</svg>\n"
-
-    def savePng(self: svg_handler, filename: str = "test.png") -> None:
-        """Save SVG as PNG file.
+        Canvas dimensions are expanded to fit both objects. Callers are
+        responsible for positioning other via group() before merging so
+        that the max-dimension logic yields the correct total canvas size.
 
         Args:
-            filename (str): Output filename.
+            other (SvgHandler): Handler whose content is merged in.
         """
-        self.__closeSvg()
+        self._svg += other.get_svg()
+        self._width = max(self._width, other.get_width())
+        self._height = max(self._height, other.get_height())
 
-        cairosvg.svg2png(bytestring=self.__closedSVG__, write_to=filename)
+    def _build_svg(self) -> str:
+        """Return the complete SVG document as a string."""
+        header = (
+            f'<svg version="1.1" xmlns="http://www.w3.org/2000/svg" '
+            f'xmlns:xlink="http://www.w3.org/1999/xlink" '
+            f'xml:space="preserve" width="{self._width}" height="{self._height}">\n'
+        )
+        if self._background is not None:
+            header += f'<rect width="100%" height="100%" fill="{self._background}" />'
+        return header + self._svg + "\n</svg>\n"
 
-    def saveSvg(self: svg_handler, filename: str = "test.svg") -> None:
-        """Save SVG to file.
+    def save_png(self, filename: str = "test.png") -> None:
+        """Render and save the SVG as a PNG file.
 
         Args:
-            filename (str): Output filename.
+            filename (str): Output file path.
         """
-        self.__closeSvg()
+        cairosvg.svg2png(bytestring=self._build_svg(), write_to=filename)
 
+    def save_svg(self, filename: str = "test.svg") -> None:
+        """Save the SVG document to a file.
+
+        Args:
+            filename (str): Output file path.
+        """
         with open(filename, "w") as f:
-            f.write(self.__closedSVG__)
+            f.write(self._build_svg())
 
-    def getSvg(self: svg_handler) -> str:
-        """Return the SVG content string.
+    def get_svg(self) -> str:
+        """Return the raw (unwrapped) SVG content string."""
+        return self._svg
 
-        Returns:
-            str: SVG content.
-        """
-        return self.__svg__
+    def get_width(self) -> float:
+        """Return the current canvas width."""
+        return self._width
 
-    def getWidth(self: svg_handler) -> float:
-        """Return the width of the SVG.
-
-        Returns:
-            float: Width value.
-        """
-        return self.__width__
-
-    def getHeight(self: svg_handler) -> float:
-        """Return the height of the SVG.
-
-        Returns:
-            float: Height value.
-        """
-        return self.__height__
+    def get_height(self) -> float:
+        """Return the current canvas height."""
+        return self._height
 
     def draw_rectangle(
-        self: svg_handler,
+        self,
         x: float,
         y: float,
         width: float,
@@ -142,20 +121,20 @@ class svg_handler:
         stroke: str,
         fill: str,
     ) -> None:
-        """Draw a rectangle on the SVG.
+        """Append a rectangle element.
 
         Args:
             x (float): X coordinate.
             y (float): Y coordinate.
             width (float): Rectangle width.
             height (float): Rectangle height.
-            stroke (str): Stroke color.
+            stroke (str): Border color.
             fill (str): Fill color.
         """
-        self.__svg__ += self.__svg_rect__.format(x, y, width, height, stroke, fill)
+        self._svg += self._RECT.format(x, y, width, height, stroke, fill)
 
     def draw_line(
-        self: svg_handler,
+        self,
         x1: float,
         y1: float,
         x2: float,
@@ -164,29 +143,24 @@ class svg_handler:
         stroke_width: int = 3,
         **kwargs: Any,
     ) -> None:
-        """Draw a line on the SVG.
+        """Append a line element.
 
         Args:
-            x1 (float): Start X coordinate.
-            y1 (float): Start Y coordinate.
-            x2 (float): End X coordinate.
-            y2 (float): End Y coordinate.
-            stroke (str): Stroke color.
-            stroke_width (int): Stroke width.
-            **kwargs (Any): Additional SVG attributes.
+            x1 (float): Start X.
+            y1 (float): Start Y.
+            x2 (float): End X.
+            y2 (float): End Y.
+            stroke (str): Line color.
+            stroke_width (int): Line width.
+            **kwargs: Additional SVG attributes (underscores become hyphens).
         """
-        extra_args = ""
-
-        if kwargs:
-            for key, value in kwargs.items():
-                extra_args += f' {key.replace("_", "-")}="{value}"'
-        print(extra_args)
-        self.__svg__ += self.__svg_line__.format(
-            x1, y1, x2, y2, stroke, stroke_width, extra_args
+        extra = "".join(
+            f' {key.replace("_", "-")}="{value}"' for key, value in kwargs.items()
         )
+        self._svg += self._LINE.format(x1, y1, x2, y2, stroke, stroke_width, extra)
 
     def add_text(
-        self: svg_handler,
+        self,
         x: float,
         y: float,
         text: str,
@@ -194,14 +168,14 @@ class svg_handler:
         fill: str = "#000000",
         anchor: str = "start",
     ) -> None:
-        """Add text to the SVG.
+        """Append a text element.
 
         Args:
             x (float): X coordinate.
             y (float): Y coordinate.
             text (str): Text content.
-            size (int | float): Font size.
+            size (int | float): Font size in pixels.
             fill (str): Text color.
-            anchor (str): Text anchor position.
+            anchor (str): SVG text-anchor value.
         """
-        self.__svg__ += self.__svg_label__.format(x, y, anchor, size, fill, text)
+        self._svg += self._LABEL.format(x, y, anchor, size, fill, text)

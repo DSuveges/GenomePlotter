@@ -43,16 +43,16 @@ class FetchGwas(FetchFromFtp):
 
         # Parse data
         logger.info(f"{self.path} -> {self.source_file}")
-        self.fetch_tsv(self.path, self.source_file)
+        self.raw_data = self.fetch_tsv(self.path, self.source_file)
 
-        logger.info(f"Successfully fetched {len(self.tsv_data):,} GWAS associations.")
+        logger.info(f"Successfully fetched {len(self.raw_data):,} GWAS associations.")
 
         # Close connection:
         self.close_connection()
 
     def process_gwas_data(self: FetchGwas) -> None:
         """Process raw GWAS data into bed format."""
-        gwas_df = self.tsv_data
+        gwas_df = self.raw_data
         gwas_df.CHR_ID = gwas_df.CHR_ID.astype(str)
 
         # Filtering columns:

@@ -17,7 +17,8 @@ class FetchCytobands:
         Args:
             url (str): URL to fetch the cytoband data from.
         """
-        response = requests.get(url)
+        response = requests.get(url, timeout=30)
+        response.raise_for_status()
         data = response.json()
 
         logger.info("Cytobands successfully fetched. Parsing.")

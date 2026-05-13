@@ -118,16 +118,15 @@ class FetchGencode(FetchFromFtp):
         path_to_last_release = "{}/release_{}/".format(self.path, self.release)
         self.release_date = self.fetch_last_update_date(path_to_last_release)
 
-        # Fetch data:
-        self.fetch_tsv(
-            path_to_last_release,
-            self.source_file.format(self.release),
-            skiprows=5,
-            header=None,
+        # Fetch data and parse raw GTF into structured columns:
+        self.gencode_raw = self.parse_raw_gtf(
+            self.fetch_tsv(
+                path_to_last_release,
+                self.source_file.format(self.release),
+                skiprows=5,
+                header=None,
+            )
         )
-
-        # Parse raw GTF into structured columns:
-        self.gencode_raw = self.parse_raw_gtf(self.tsv_data)
 
         # Close connection:
         self.close_connection()
@@ -285,37 +284,29 @@ class FetchGencode(FetchFromFtp):
 
         gencode_df = self.add_length_column(gencode_df)
 
-        # Initialize empty dataframes:
-        processed = pd.DataFrame(
-            columns=[
-                "chr",
-                "start",
-                "end",
-                "type",
-                "gene_id",
-                "gene_name",
-                "transcript_id",
-            ]
-        )
-        arrow_data = pd.DataFrame(
-            columns=["chr", "start", "end", "strand", "type", "gene_id", "gene_name"]
-        )
-
         logger.info(
             "Generate exon/intron annotations for the canonical transcripts for each gene... (it will take a while.)"
         )
+
+        gene_dfs: list[pd.DataFrame] = []
+        arrow_dfs: list[pd.DataFrame] = []
 
         for (gene_id,), features in gencode_df.groupby(["gene_id"]):
             result = self.process_single_gene(gene_id, features)
             if result is None:
                 continue
             gene_df, arrow_df = result
-            processed = pd.concat([processed, gene_df])
-            arrow_data = pd.concat([arrow_data, arrow_df])
+            gene_dfs.append(gene_df)
+            arrow_dfs.append(arrow_df)
 
-        # Saving data:
-        self.processed = processed
-        self.arrow_data = arrow_data
+        _gene_cols = ["chr", "start", "end", "type", "gene_id", "gene_name", "transcript_id"]
+        _arrow_cols = ["chr", "start", "end", "strand", "type", "gene_id", "gene_name"]
+        self.processed = (
+            pd.concat(gene_dfs, ignore_index=True) if gene_dfs else pd.DataFrame(columns=_gene_cols)
+        )
+        self.arrow_data = (
+            pd.concat(arrow_dfs, ignore_index=True) if arrow_dfs else pd.DataFrame(columns=_arrow_cols)
+        )
 
     def save_gencode_data(self: FetchGencode, data_dir: str) -> None:
         """Save processed GENCODE data to files.
@@ -355,6 +346,12 @@ class FetchGencode(FetchFromFtp):
         return self.release
 
     @staticmethod
+    def _pick_longest(transcripts: pd.DataFrame) -> str:
+        """Return the transcript_id with the highest cds_length."""
+        longest = transcripts.cds_length.max()
+        return transcripts.loc[transcripts.cds_length == longest].transcript_id.tolist()[0]
+
+    @staticmethod
     def get_canonical_transcript(transcripts: pd.DataFrame) -> str:
         """Select the canonical transcript following Ensembl guidelines.
 
@@ -367,30 +364,13 @@ class FetchGencode(FetchFromFtp):
         # Selecting canonical transcript following Ensembl guidelines:
         # http://www.ensembl.org/Help/Glossary
 
-        # First choice: selecting the longest ccds transcript:
         if transcripts.ccdsid.notna().any():
-            longest_CDS = transcripts.loc[~transcripts.ccdsid.isna()].cds_length.max()
-            canonical_transcript_id = transcripts.loc[
-                longest_CDS == transcripts.cds_length
-            ].transcript_id.tolist()[0]
-
-        # Secong choice: selecting the longest havana transcript:
-        elif transcripts.havana_transcript.notna().any():
-            longest_CDS = transcripts.loc[
-                ~transcripts.havana_transcript.isna()
-            ].cds_length.max()
-            canonical_transcript_id = transcripts.loc[
-                longest_CDS == transcripts.cds_length
-            ].transcript_id.tolist()[0]
-
-        # Third choice: selecting the longest protein coding transcript:
-        else:
-            longest_CDS = transcripts.cds_length.max()
-            canonical_transcript_id = transcripts.loc[
-                longest_CDS == transcripts.cds_length
-            ].transcript_id.tolist()[0]
-
-        return canonical_transcript_id
+            return FetchGencode._pick_longest(transcripts.loc[transcripts.ccdsid.notna()])
+        if transcripts.havana_transcript.notna().any():
+            return FetchGencode._pick_longest(
+                transcripts.loc[transcripts.havana_transcript.notna()]
+            )
+        return FetchGencode._pick_longest(transcripts)
 
     @staticmethod
     def generate_exon_intron_structure(

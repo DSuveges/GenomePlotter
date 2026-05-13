@@ -185,16 +185,13 @@ class ColorPicker:
 
         # Checking if all features can be found in the color set:
         if not pd.Series(self.features).isin(list(colors.keys())).all():
-            print(list(colors.keys()))
             raise ValueError(
                 f'The following keys must be defined in the color sets: {",".join(self.features)}'
             )
 
         # Checking if all the values are good:
         for hex_color in colors.values():
-            if not re.match(r"#[0-9A-F]{6}", hex_color) or not isinstance(
-                hex_color, str
-            ):
+            if not isinstance(hex_color, str) or not re.match(r"#[0-9A-F]{6}", hex_color):
                 raise ValueError(
                     'All colors should be in hexadecimal format eg "#1ED5FA"'
                 )

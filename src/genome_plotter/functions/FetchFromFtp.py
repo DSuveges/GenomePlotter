@@ -101,16 +101,19 @@ class FetchFromFtp:
         file: str,
         skiprows: int | None = None,
         header: Any = "infer",
-    ) -> None:
-        """Fetch a TSV file from FTP and store as DataFrame.
+    ) -> pd.DataFrame:
+        """Fetch a TSV file from FTP and return as DataFrame.
 
         Args:
             path (str): Directory path on FTP server.
             file (str): File name to fetch.
             skiprows (int | None): Number of rows to skip.
             header (Any): Row to use as header.
+
+        Returns:
+            pd.DataFrame: Fetched data.
         """
-        self.tsv_data = pd.read_csv(
+        return pd.read_csv(
             f"ftp://{self.FTP_HOST}/{path}/{file}",
             sep="\t",
             dtype=str,

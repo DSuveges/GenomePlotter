@@ -4,11 +4,10 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from dataclasses import asdict
 from typing import TYPE_CHECKING
 
 from genome_plotter.functions.ColorFunctions import linear_gradient
-from genome_plotter.functions.svg_handler import svg_handler
+from genome_plotter.functions.svg_handler import SvgHandler
 
 if TYPE_CHECKING:
     from genome_plotter.functions.ConfigManager import Config
@@ -29,7 +28,7 @@ class DrawLegend:
         Args:
             config_manager (Config): Configuration manager object.
         """
-        self.__colors__ = asdict(config_manager.color_schema)
+        self.__colors__ = config_manager.color_schema.model_dump()
         self.__pixel__ = config_manager.plot_parameters.pixel_size
         self.__config_manager__ = config_manager
 
@@ -46,14 +45,14 @@ class DrawLegend:
         )
 
         # Extract variables:
-        colors = self.__colors__
+        colors = self.__colors__["chromosome_colors"]
         pixel = self.__pixel__ * 5
 
         # Initialize vertical position:
         y_position: float = 0
 
         # Initialize svg object:
-        self.__svg_color__ = svg_handler("", 750, 300)
+        self.__svg_color__ = SvgHandler("", 750, 300)
 
         # Generating the color gradients:
         for name, label in regions.items():
@@ -106,4 +105,4 @@ class DrawLegend:
         Args:
             filename (str): Output file name.
         """
-        self.__svg_color__.savePng(filename)
+        self.__svg_color__.save_png(filename)

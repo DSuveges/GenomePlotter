@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import os
 
-import cairosvg
+from loguru import logger
 
 os.environ["DYLD_FALLBACK_LIBRARY_PATH"] = "/opt/homebrew/lib"
+import cairosvg
 import pandas as pd
 
 
@@ -20,30 +21,32 @@ def get_centromere_position(cytobandFile: str, chromosome: str) -> int | None:
     Returns:
         int | None: Centromere position or None if not found.
     """
-    # Reading cytoband file as a pandas dataframe:
     df = pd.read_csv(cytobandFile, sep="\t", compression="gzip")
 
-    # Extracting centromere for that chromosome:
     cytobands = df.loc[df.chr == chromosome]
     if len(cytobands) == 0:
-        print("[Error] Cytobands were not found for chromosome {}.".format(chromosome))
+        logger.error("Cytobands were not found for chromosome {}.".format(chromosome))
         return None
 
-    # Extracting centromere:
     centromere = cytobands.loc[cytobands.type == "acen"]
     if len(centromere) == 0:
-        print(
-            "[Error] Centromeres were not found for chromosome {}.".format(chromosome)
+        logger.error(
+            "Centromeres were not found for chromosome {}.".format(chromosome)
         )
         return None
 
-    # Extracting midpoint:
     centr = centromere.loc[centromere.name.str.match("q")].end.tolist()[0]
     return centr
 
 
 class CytobandAnnotator:
     """Add cytological bands to a chromosome plot."""
+
+    # Layout scale factors (multiplied by pixel size to get screen dimensions):
+    _X_OFFSET_FACTOR = 40
+    _FONT_SIZE_FACTOR = 9
+    _BOX_WIDTH_FACTOR = 5
+    _RIGHT_MARGIN_FACTOR = 4
 
     # Built in strings with the cytoband definitions:
     centromer = '<polygon points="{x1},{y1} {x2},{y2} {x3},{y3}" \
@@ -72,7 +75,6 @@ class CytobandAnnotator:
             width (int): Number of chunks per row.
             cytbandColors (dict[str, str]): Color scheme for cytoband types.
         """
-        # Reading gwas file:
         cytobandDf = pd.read_csv(
             bandFile,
             compression="gzip",
@@ -81,10 +83,7 @@ class CytobandAnnotator:
             header=0,
         )
 
-        # Filtering cytoband dataframe;
         cytobandDf_select = cytobandDf.loc[cytobandDf.chr == chromosome]
-
-        # Get chunk count from position:
         cytobandDf_select = cytobandDf_select.assign(
             startY=cytobandDf_select.start / chunkSize / width * pixel
         )
@@ -92,86 +91,69 @@ class CytobandAnnotator:
             endY=cytobandDf_select.end / chunkSize / width * pixel
         )
 
-        # cytoband drawing parameters derived from the plot parameters:
-        self.x_offset = pixel * 40
-        self.font_size = pixel * 9
+        self.x_offset = pixel * self._X_OFFSET_FACTOR
+        self.font_size = pixel * self._FONT_SIZE_FACTOR
         self.border_width = int(pixel / 2)
-        self.box_width = pixel * 5
-        self.right_margin = pixel * 4
+        self.box_width = pixel * self._BOX_WIDTH_FACTOR
+        self.right_margin = pixel * self._RIGHT_MARGIN_FACTOR
 
-        # Color definitions:
         self.cytbandColors = cytbandColors
+
+    def _draw_band(self: CytobandAnnotator, row: pd.Series) -> str:
+        """Draw SVG element for a single cytological band.
+
+        Args:
+            row (pd.Series): Row from cytobandDf_select with band attributes.
+
+        Returns:
+            str: SVG element string for the band.
+        """
+        x0 = self.x_offset
+        bw = self.border_width
+        bxw = self.box_width
+        chw = bxw / 2 + x0
+
+        if row["type"] == "acen" and "p" in row["name"]:
+            svg_element = self.centromer.format(
+                x1=x0, y1=row["startY"],
+                x2=x0 + bxw, y2=row["startY"],
+                x3=chw, y3=row["endY"],
+                fill_color=self.cytbandColors["acen"],
+                border_color=self.cytbandColors["border"],
+                box_width=bw,
+            )
+        elif row["type"] == "acen" and "q" in row["name"]:
+            svg_element = self.centromer.format(
+                x1=x0, y1=row["endY"],
+                x2=x0 + bxw, y2=row["endY"],
+                x3=chw, y3=row["startY"],
+                fill_color=self.cytbandColors["acen"],
+                border_color=self.cytbandColors["border"],
+                box_width=bw,
+            )
+        else:
+            svg_element = self.cytoband_box.format(
+                x=x0, y=row["startY"],
+                width=bxw, height=row["endY"] - row["startY"],
+                fill_color=self.cytbandColors[row["type"]],
+                border_color=self.cytbandColors["border"],
+                box_width=bw,
+            )
+
+        if row["type"] != "acen":
+            svg_element += self.cytoband_name.format(
+                x=x0 * 0.8,
+                y=row["startY"] + (row["endY"] - row["startY"]) / 2,
+                font_size=self.font_size,
+                font_color=self.cytbandColors["border"],
+                band_name=row["name"],
+            )
+
+        return svg_element
 
     def generate_bands(self: CytobandAnnotator) -> None:
         """Generate SVG elements for cytological bands."""
-        # Shorhands for box parameters:
-        x0 = self.x_offset  # cytoband box offset
-        bw = self.border_width  # cytoband border width
-        bxw = self.box_width  # cytoband box width
-        chw = bxw / 2 + x0  # centromer half point
-
-        def _temp(row: pd.Series) -> str:
-            svg_element = ""
-
-            # Centromeres are plotted as triangles facing against each other:
-            if row["type"] == "acen" and "p" in row["name"]:
-                svg_element = self.centromer.format(
-                    **{
-                        "x1": x0,
-                        "y1": row["startY"],
-                        "x2": x0 + bxw,
-                        "y2": row["startY"],
-                        "x3": chw,
-                        "y3": row["endY"],
-                        "fill_color": self.cytbandColors["acen"],
-                        "border_color": self.cytbandColors["border"],
-                        "box_width": bw,
-                    }
-                )
-            elif row["type"] == "acen" and "q" in row["name"]:
-                svg_element = self.centromer.format(
-                    **{
-                        "x1": x0,
-                        "y1": row["endY"],
-                        "x2": x0 + bxw,
-                        "y2": row["endY"],
-                        "x3": chw,
-                        "y3": row["startY"],
-                        "fill_color": self.cytbandColors["acen"],
-                        "border_color": self.cytbandColors["border"],
-                        "box_width": bw,
-                    }
-                )
-
-            # Regular bands are plotted as rectangles, where the fill color is set based on the type of the band:
-            else:
-                svg_element = self.cytoband_box.format(
-                    **{
-                        "x": x0,
-                        "y": row["startY"],
-                        "width": bxw,
-                        "height": row["endY"] - row["startY"],
-                        "fill_color": self.cytbandColors[row["type"]],
-                        "border_color": self.cytbandColors["border"],
-                        "box_width": bw,
-                    }
-                )
-
-            # Adding cytoband names, except centromeres:
-            if row["type"] != "acen":
-                svg_element += self.cytoband_name.format(
-                    **{
-                        "x": x0 * 0.8,
-                        "y": row["startY"] + (row["endY"] - row["startY"]) / 2,
-                        "font_size": self.font_size,
-                        "font_color": self.cytbandColors["border"],
-                        "band_name": row["name"],
-                    }
-                )
-
-            return svg_element
-
-        self.bands = self.cytobandDf_select.apply(_temp, axis=1)
+        self.bands = self.cytobandDf_select.apply(self._draw_band, axis=1)
 
     def generate_png(self: CytobandAnnotator, filename: str = "test_box.png") -> None:
         """Generate and save cytoband plot as PNG.

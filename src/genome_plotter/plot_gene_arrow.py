@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import argparse
-import json
 import os
 
 import pandas as pd
+import yaml
 from loguru import logger
 
 from genome_plotter import LOG_FORMAT
@@ -16,7 +16,7 @@ from genome_plotter.functions.CustomGenePlotter import (
     CustomGeneIntegrator,
     GenerateArrowPlot,
 )
-from genome_plotter.functions.svg_handler import svg_handler
+from genome_plotter.functions.svg_handler import SvgHandler
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -87,11 +87,11 @@ def main() -> None:
     # Initialise configuration:
     with open(config_file) as f:
         try:
-            config_manager = Config(**json.load(f))
-        except json.decoder.JSONDecodeError:
+            config_manager = Config.model_validate(yaml.safe_load(f))
+        except yaml.YAMLError as e:
             raise ValueError(
-                f"The provided config file ({config_file}) is not a valid JSON file."
-            )
+                f"The provided config file ({config_file}) is not a valid YAML file."
+            ) from e
 
     # Set the data folder on the config:
     config_manager.basic_parameters.data_folder = data_folder
@@ -131,7 +131,7 @@ def main() -> None:
     # Left extension is handled by shifting translate_x so negative-x chunks land inside the canvas.
     extension_px = chunk_extension * px
     canvas_height = arrow_y_offset + px * 3
-    svg_obj = svg_handler(svg_chunks + svg_arrow_shifted, width + extension_px, canvas_height)
+    svg_obj = SvgHandler(svg_chunks + svg_arrow_shifted, width + extension_px, canvas_height)
     svg_obj.group(translate=(px + extension_px, px))
 
     # Save as SVG and PNG:
@@ -139,10 +139,10 @@ def main() -> None:
     png_filename = f"{output_basename}.png"
 
     logger.info(f"Saving SVG: {svg_filename}")
-    svg_obj.saveSvg(svg_filename)
+    svg_obj.save_svg(svg_filename)
 
     logger.info(f"Saving PNG: {png_filename}")
-    svg_obj.savePng(png_filename)
+    svg_obj.save_png(png_filename)
 
     logger.info("All done.")
 

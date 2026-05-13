@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import pickle
 from typing import TYPE_CHECKING, Any
 
 import pandas as pd
@@ -228,7 +227,7 @@ class DataIntegrator:
         Args:
             cytoband_df (pd.DataFrame): Cytoband data.
         """
-        chromosome = self.__genome__.chr[1]
+        chromosome = self.__genome__["chr"].iloc[0]
         centromer_loc = cytoband_df.loc[
             (cytoband_df.chr == str(chromosome)) & (cytoband_df.type == "acen"),
             ["start", "end"],
@@ -262,14 +261,6 @@ class DataIntegrator:
             color_picker.pick_color, axis=1
         )
 
-    def save_pkl(self: DataIntegrator, file_name: str) -> None:
-        """Save the integrated data as a pickle file.
-
-        Args:
-            file_name (str): The file name.
-        """
-        pickle.dump(self.__genome__, open(file_name, "wb"))
-
     def save_table(self: DataIntegrator, file_name: str) -> None:
         """Save the integrated data as a table.
 
@@ -281,6 +272,6 @@ class DataIntegrator:
     def add_dummy(self: DataIntegrator) -> None:
         """Assume GENCODE annotation is dummy for all chunks."""
         if "GENCODE" not in self.__genome__.columns:
-            self.__genome__ = self.__genome__.assign("GENCODE", "dummy")
+            self.__genome__ = self.__genome__.assign(GENCODE="dummy")
         else:
             self.__genome__["GENCODE"] = self.__genome__.GENCODE.fillna("dummy")

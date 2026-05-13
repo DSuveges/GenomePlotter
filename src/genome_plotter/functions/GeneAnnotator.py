@@ -72,14 +72,12 @@ class GeneAnnotator:
         Note:
             Expected columns in gene_file: chr, start, end, name.
         """
-        # Open gene file and store data:
         df = pd.read_csv(gene_file, sep="\t", compression="infer")
         self.__df = df.loc[df.chr == chromosome]
         logger.info(
             "Adding annotation for {} genes on this chromosome.".format(len(self.__df))
         )
 
-        # Store other values:
         self.__chunkSize = chunk_size
         self.__pixel = pixel
         self.__svg_top: float = 0
@@ -90,94 +88,71 @@ class GeneAnnotator:
         self.__centromerePosition = centromerePosition
         self.__chromosome = chromosome
 
-        # Initialize return values:
         self.__gene_annot = ""
 
-    def genes_on_chromosome_arms(
-        self: GeneAnnotator, df: pd.DataFrame, arm: str
+    def _emit_gene_annotation(
+        self: GeneAnnotator,
+        pos: float,
+        text_pos: float,
+        gene_name: str,
+        font_size: float,
     ) -> None:
-        """Annotate genes on a chromosome arm.
+        """Emit SVG segments and label for one gene."""
+        self.__gene_annot += self.segment.format(x1=0, x2=100, y1=pos, y2=pos)
+        self.__gene_annot += self.segment.format(x1=100, x2=200, y1=pos, y2=text_pos)
+        self.__gene_annot += self.segment.format(x1=200, x2=300, y1=text_pos, y2=text_pos)
+        self.__gene_annot += self.text.format(
+            x=200,
+            y=text_pos - 10,
+            font_size=font_size,
+            font_color=self.__fontColor,
+            gene_name=gene_name,
+        )
 
-        Args:
-            df (pd.DataFrame): DataFrame with gene data.
-            arm (str): Chromosome arm ('p' or 'q').
-        """
-        # Initialize position converter:
-        converter = PositionConverter(self.__width, self.__chunkSize, self.__pixel)
-
-        # Get centromere position:
+    def _annotate_p_arm(
+        self: GeneAnnotator, df: pd.DataFrame, converter: PositionConverter
+    ) -> None:
+        """Annotate genes on the p (short) arm, placing labels upward from the centromere."""
         limit = converter.convert(self.__centromerePosition)
-
-        # Extract values:
         font_size = self.__fontSize
-        font_color = self.__fontColor
-
         for _, row in df.iterrows():
             pos = converter.convert(row["start"])
-
-            if arm == "p":
-                if limit <= pos:
-                    text_pos = limit - 10
-                    limit = text_pos - font_size - 10
-                else:
-                    text_pos = pos
-                    limit = text_pos - font_size - 10
-            if arm == "q":
-                if limit > pos:
-                    text_pos = limit + 10
-                    limit = text_pos + font_size + 10
-                else:
-                    text_pos = pos
-                    limit = text_pos + font_size + 10
-
-            # Update svg_top and bottom if required:
+            text_pos = limit - 10 if limit <= pos else pos
+            limit = text_pos - font_size - 10
             if limit - 50 < self.__svg_top:
                 self.__svg_top = limit - font_size - 50
+            self._emit_gene_annotation(pos, text_pos, row["name"], font_size)
 
+    def _annotate_q_arm(
+        self: GeneAnnotator, df: pd.DataFrame, converter: PositionConverter
+    ) -> None:
+        """Annotate genes on the q (long) arm, placing labels downward from the centromere."""
+        limit = converter.convert(self.__centromerePosition)
+        font_size = self.__fontSize
+        for _, row in df.iterrows():
+            pos = converter.convert(row["start"])
+            text_pos = limit + 10 if limit > pos else pos
+            limit = text_pos + font_size + 10
             if limit + 50 > self.__svg_bottom:
                 self.__svg_bottom = limit + font_size + 50
-
-            # Add segments:
-            self.__gene_annot += self.segment.format(
-                **{"x1": 0, "x2": 100, "y1": pos, "y2": pos}
-            )
-            self.__gene_annot += self.segment.format(
-                **{"x1": 100, "x2": 200, "y1": pos, "y2": text_pos}
-            )
-            self.__gene_annot += self.segment.format(
-                **{"x1": 200, "x2": 300, "y1": text_pos, "y2": text_pos}
-            )
-
-            # Add text:
-            self.__gene_annot += self.text.format(
-                **{
-                    "x": 200,
-                    "y": text_pos - 10,
-                    "font_size": font_size,
-                    "font_color": font_color,
-                    "gene_name": row["name"],
-                }
-            )
+            self._emit_gene_annotation(pos, text_pos, row["name"], font_size)
 
     def generate_gene_annotation(self: GeneAnnotator) -> None:
         """Generate SVG annotations for all genes."""
-        # Initialize gene annotation:
         self.__gene_annot = ""
+        converter = PositionConverter(self.__width, self.__chunkSize, self.__pixel)
 
-        # Generate text for the p-arm:
-        self.genes_on_chromosome_arms(
+        self._annotate_p_arm(
             self.__df.loc[self.__df.start <= self.__centromerePosition].sort_values(
-                by=["start"], ascending=False
+                "start", ascending=False
             ),
-            "p",
+            converter,
         )
-
-        # Generate text for the q-arm:
-        self.genes_on_chromosome_arms(
+        self._annotate_q_arm(
             self.__df.loc[self.__df.start > self.__centromerePosition].sort_values(
-                by=["start"], ascending=True
+                "start"
             ),
-            "q",
+            converter,
         )
 
     def get_annotation(self: GeneAnnotator) -> str:

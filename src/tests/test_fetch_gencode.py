@@ -474,5 +474,38 @@ class TestSampleGtfPipeline(unittest.TestCase):
         )
 
 
+class TestPickLongest(unittest.TestCase):
+    """Tests for FetchGencode._pick_longest."""
+
+    def _df(self, rows: list[dict[str, object]]) -> pd.DataFrame:
+        return pd.DataFrame(rows)
+
+    def test_single_transcript_is_returned(self) -> None:
+        df = self._df([{"transcript_id": "T1", "cds_length": 300}])
+        self.assertEqual(FetchGencode._pick_longest(df), "T1")
+
+    def test_longest_transcript_is_selected(self) -> None:
+        df = self._df([
+            {"transcript_id": "T1", "cds_length": 100},
+            {"transcript_id": "T2", "cds_length": 500},
+            {"transcript_id": "T3", "cds_length": 300},
+        ])
+        self.assertEqual(FetchGencode._pick_longest(df), "T2")
+
+    def test_tie_returns_first_occurrence(self) -> None:
+        df = self._df([
+            {"transcript_id": "T1", "cds_length": 400},
+            {"transcript_id": "T2", "cds_length": 400},
+        ])
+        self.assertEqual(FetchGencode._pick_longest(df), "T1")
+
+    def test_zero_length_transcript(self) -> None:
+        df = self._df([
+            {"transcript_id": "T1", "cds_length": 0},
+            {"transcript_id": "T2", "cds_length": 200},
+        ])
+        self.assertEqual(FetchGencode._pick_longest(df), "T2")
+
+
 if __name__ == "__main__":
     unittest.main()

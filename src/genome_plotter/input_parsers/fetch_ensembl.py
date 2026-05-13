@@ -25,7 +25,8 @@ def fetch_ensembl_version(url: str) -> int:
     Returns:
         int: Current Ensembl release number.
     """
-    response = requests.get(url)
+    response = requests.get(url, timeout=30)
+    response.raise_for_status()
     data = response.json()
     return data["releases"][0]
 
@@ -60,8 +61,7 @@ class FetchGenome(FetchFromFtp):
         """Retrieve the genome data from the FTP server."""
         assert self.host is not None, "Host is required."
         assert self.source_file is not None, "Source file is required."
-        ftp = FetchFromFtp(self.host)
-        self.resp = ftp.fetch_file(self.path, self.source_file)
+        self.resp = self.fetch_file(self.path, self.source_file)
 
         logger.info("Sequence data successfully fetched. Parsing...")
 

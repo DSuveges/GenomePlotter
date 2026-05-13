@@ -2,16 +2,18 @@
 
 from __future__ import annotations
 
-import json
 import os
-from dataclasses import asdict, dataclass
+import re
 from typing import Optional
 
+import yaml
+from pydantic import BaseModel, ConfigDict, field_validator
 
-# List of dataclasses to describe the configuration file:
-@dataclass
-class PlotParameters:
-    """Dataclass to store plot parameters."""
+
+class PlotParameters(BaseModel):
+    """Parameters controlling chromosome plot dimensions and shading."""
+
+    model_config = ConfigDict(validate_assignment=True)
 
     width: int
     pixel_size: int
@@ -20,9 +22,10 @@ class PlotParameters:
     custom_gene_window: int
 
 
-@dataclass
-class BasicParameters:
-    """Dataclass to store basic parameters."""
+class BasicParameters(BaseModel):
+    """Runtime parameters populated via CLI; mostly None in the bundled config."""
+
+    model_config = ConfigDict(validate_assignment=True)
 
     chunk_size: int
     missing_tolerance: Optional[float] = None
@@ -31,32 +34,35 @@ class BasicParameters:
     row_length: Optional[int] = None
 
 
-@dataclass
-class ColorSchema:
-    """Dataclass to store color schema."""
+class ColorSchema(BaseModel):
+    """Color definitions for all genomic feature categories."""
 
     chromosome_colors: dict[str, str]
     cytoband_colors: dict[str, str]
     gwas_point: str
     arrow_colors: dict[str, str]
 
+    @field_validator("gwas_point")
+    @classmethod
+    def valid_hex(cls, v: str) -> str:
+        """Validate that gwas_point is a six-digit hex color."""
+        if not re.match(r"^#[0-9A-Fa-f]{6}$", v):
+            raise ValueError(f"Invalid hex color: {v}")
+        return v
 
-@dataclass
-class CytoBandData:
-    """Dataclass to store cytoband data."""
+
+class CytoBandData(BaseModel):
+    """Source configuration for cytological band data."""
 
     url: str
     processed_file: str
     genome_build: Optional[str] = None
 
 
-@dataclass
-class SourcePrototype:
-    """Dataclass to store source prototype."""
+class SourcePrototype(BaseModel):
+    """Generic source configuration for an FTP-fetched dataset."""
 
-    # Output file is mandatory:
     processed_file: str
-    # Optional parameters:
     url: Optional[str] = None
     genome_build: Optional[str] = None
     host: Optional[str] = None
@@ -69,159 +75,82 @@ class SourcePrototype:
     version: Optional[int] = None
 
 
-@dataclass
-class SourceData:
-    """Dataclass to store source data."""
+class SourceData(BaseModel):
+    """Container for all data source configurations."""
 
     cytoband_data: CytoBandData
     ensembl_data: SourcePrototype
     gencode_data: SourcePrototype
     gwas_data: SourcePrototype
 
-    def __post_init__(self: SourceData) -> None:
-        """Convert values to the appropriate data types."""
-        for field in self.__dataclass_fields__.keys():
-            if isinstance(field_type := self.__dataclass_fields__[field].type, str):
-                field_type = globals()[field_type]
-            else:
-                field_type = self.__dataclass_fields__[field].type
 
-            self.__setattr__(
-                field,
-                field_type(**self.__getattribute__(field)),
-            )
+class Config(BaseModel):
+    """Root configuration object for the genome plotter."""
 
-
-@dataclass
-class Config:
-    """Dataclass to store the configuration file."""
+    model_config = ConfigDict(validate_assignment=True)
 
     plot_parameters: PlotParameters
     basic_parameters: BasicParameters
     color_schema: ColorSchema
     source_data: SourceData
 
-    def __post_init__(self: Config) -> None:
-        """Convert values to the appropriate data types."""
-        for field in self.__dataclass_fields__.keys():
-            if isinstance(field_type := self.__dataclass_fields__[field].type, str):
-                field_type = globals()[field_type]
-            else:
-                field_type = self.__dataclass_fields__[field].type
-
-            self.__setattr__(
-                field,
-                field_type(**self.__getattribute__(field)),
-            )
-
-    # Saving the configuration file:
-    def save(self: Config, file_path: str) -> None:
-        """Save the configuration file.
+    def save(self, file_path: str) -> None:
+        """Save the configuration to a YAML file.
 
         Args:
-            file_path (str): Path to the configuration file.
+            file_path (str): Path to the output file.
         """
-        with open(file_path, "w") as file:
-            json.dump(asdict(self), file, indent=3)
+        with open(file_path, "w") as f:
+            yaml.dump(self.model_dump(), f, default_flow_style=False, sort_keys=False)
 
-    # Updating basic configuration based on command line arguments:
-    def update_basic_parameters(self: Config, **kwargs) -> None:  # type: ignore[no-untyped-def]
-        """Update basic parameters based on command line arguments.
+    def update_basic_parameters(self, **kwargs) -> None:  # type: ignore[no-untyped-def]
+        """Update basic parameters from keyword arguments.
 
         Args:
-            **kwargs: Command line arguments.
+            **kwargs: Field names and values to update.
         """
         for key, value in kwargs.items():
-            if key in self.basic_parameters.__dataclass_fields__:
-                self.basic_parameters.__setattr__(key, value)
+            if key in type(self.basic_parameters).model_fields:
+                setattr(self.basic_parameters, key, value)
 
-    def get_cytoband_file(self: Config) -> str:
-        """Get the cytoband file.
-
-        Returns:
-            str: Path to the cytoband file if exists.
-
-        Raises:
-            ValueError: If the cytoband file does not exist.
-        """
+    def get_cytoband_file(self) -> str:
+        """Return the path to the cytoband file, raising if it does not exist."""
         file = self.source_data.cytoband_data.processed_file
         full_path = f"{self.basic_parameters.data_folder}/{file}"
-
         if not os.path.isfile(full_path):
             raise ValueError(f"Cytological band file ({full_path}) doesn't exists.")
-
         return full_path
 
-    def get_chromosome_file(self: Config, chromsome: str) -> str:
-        """Get the chromosome file.
-
-        Args:
-            chromsome (str): The chromosome number.
-
-        Returns:
-            str: Path to the chromosome file if exists.
-
-        Raises:
-            ValueError: If the chromosome file does not exist.
-        """
-        file = self.source_data.ensembl_data.processed_file
-        file = file.format(chromsome)
+    def get_chromosome_file(self, chromsome: str) -> str:
+        """Return the path to a per-chromosome file, raising if it does not exist."""
+        file = self.source_data.ensembl_data.processed_file.format(chromsome)
         full_path = f"{self.basic_parameters.data_folder}/{file}"
-
         if not os.path.isfile(full_path):
             raise ValueError(f"The requested genome file ({full_path}) doesn't exists.")
-
         return full_path
 
-    def get_gencode_file(self: Config) -> str:
-        """Get the GENCODE file.
-
-        Returns:
-            str: Path to the GENCODE file if exists.
-
-        Raises:
-            ValueError: If the GENCODE file does not exist.
-        """
+    def get_gencode_file(self) -> str:
+        """Return the path to the GENCODE file, raising if it does not exist."""
         file = self.source_data.gencode_data.processed_file
         full_path = f"{self.basic_parameters.data_folder}/{file}"
-
         if not os.path.isfile(full_path):
             raise ValueError(f"Processed GENCODE file ({full_path}) doesn't exists.")
-
         return full_path
 
-    def get_gwas_file(self: Config) -> str:
-        """Get the GWAS file.
-
-        Returns:
-            str: Path to the GWAS file if exists.
-
-        Raises:
-            ValueError: If the GWAS file does not exist.
-        """
+    def get_gwas_file(self) -> str:
+        """Return the path to the GWAS file, raising if it does not exist."""
         file = self.source_data.gwas_data.processed_file
         full_path = f"{self.basic_parameters.data_folder}/{file}"
-
         if not os.path.isfile(full_path):
             raise ValueError(f"Processed GWAS file ({full_path}) doesn't exists.")
-
         return full_path
 
-    def get_gencode_arrow_file(self: Config) -> str:
-        """Get the GENCODE arrow file.
-
-        Returns:
-            str: Path to the GENCODE arrow file if exists.
-
-        Raises:
-            ValueError: If the GENCODE arrow file does not exist.
-        """
+    def get_gencode_arrow_file(self) -> str:
+        """Return the path to the GENCODE arrow file, raising if it does not exist."""
         file = self.source_data.gencode_data.arrow_file
         if file is None:
             raise ValueError("GENCODE arrow file not configured.")
         full_path = f"{self.basic_parameters.data_folder}/{file}"
-
         if not os.path.isfile(full_path):
             raise ValueError(f"GENCODE arrow file ({full_path}) doesn't exists.")
-
         return full_path

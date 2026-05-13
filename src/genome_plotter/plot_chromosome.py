@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import argparse
-import json
 import os
-from dataclasses import asdict
 
 import pandas as pd
+import yaml
 from loguru import logger
 
 from genome_plotter import LOG_FORMAT
@@ -21,8 +20,8 @@ from genome_plotter.functions.CytobandAnnotator import (
     get_centromere_position,
 )
 from genome_plotter.functions.GeneAnnotator import GeneAnnotator
-from genome_plotter.functions.GwasAnnotator import gwas_annotator
-from genome_plotter.functions.svg_handler import svg_handler
+from genome_plotter.functions.GwasAnnotator import GwasAnnotator
+from genome_plotter.functions.svg_handler import SvgHandler
 from genome_plotter.input_parsers.data_integrator import DataIntegrator
 
 
@@ -71,7 +70,7 @@ def cytoband_annotation_wrapper(
         CytobandAnnotator: Cytoband annotator object.
     """
     # Extract config values:
-    color_scheme = asdict(config_manager.color_schema)
+    color_scheme = config_manager.color_schema.model_dump()
     pixel = config_manager.plot_parameters.pixel_size
     chunk_size = config_manager.basic_parameters.chunk_size
     width = config_manager.plot_parameters.width
@@ -102,7 +101,7 @@ def gwas_annotation_wrapper(config_manager: Config, chromosome: str) -> str:
         str: GWAS annotation SVG string.
     """
     # Extract config values:
-    color_scheme = asdict(config_manager.color_schema)
+    color_scheme = config_manager.color_schema.model_dump()
     gwas_color = color_scheme["gwas_point"]
     pixel = config_manager.plot_parameters.pixel_size
     chunk_size = config_manager.basic_parameters.chunk_size
@@ -111,7 +110,7 @@ def gwas_annotation_wrapper(config_manager: Config, chromosome: str) -> str:
 
     logger.info(f"Generating GWAS annotation from file: {gwas_file}.")
 
-    gwasAnnot = gwas_annotator(
+    gwasAnnot = GwasAnnotator(
         chromosome=chromosome,
         gwas_color=gwas_color,
         pixel=pixel,
@@ -210,9 +209,6 @@ def integrator_wrapper(
 
     # Extract integrated data:
     integratedData = integrator.get_data()
-
-    # Save data for diagnostic purposes:
-    integratedData.to_csv("cica.tsv.gz", sep="\t", index=False, compression="infer")
 
     return integratedData
 
@@ -337,11 +333,11 @@ def main() -> None:
     # Initilise configuration:
     with open(config_file) as f:
         try:
-            config_manager = Config(**json.load(f))
-        except json.decoder.JSONDecodeError:
+            config_manager = Config.model_validate(yaml.safe_load(f))
+        except yaml.YAMLError as e:
             raise ValueError(
-                f"The provided config file ({config_file}) is not a valid JSON file."
-            )
+                f"The provided config file ({config_file}) is not a valid YAML file."
+            ) from e
 
     # Set new configuration:
     config_manager.plot_parameters.width = width
@@ -349,10 +345,6 @@ def main() -> None:
     config_manager.plot_parameters.dark_start = dark_start
     config_manager.plot_parameters.dark_max = dark_max
     config_manager.basic_parameters.plot_folder = plot_folder
-
-    # Updating config file:
-    logger.info(f"Updating config file: {config_file}")
-    config_manager.save(config_file)
 
     # Integrating data:
     logger.info("Integrating data...")
@@ -375,23 +367,23 @@ def main() -> None:
     plot_data = x.return_svg()
 
     # Initialize svg wrapper object with the returned data:
-    chromosomeSvgObject = svg_handler(plot_data, plot_width, plot_height)
+    chromosomeSvgObject = SvgHandler(plot_data, plot_width, plot_height)
 
     # Generate gwas annitation:
     gwas_annotation = gwas_annotation_wrapper(config_manager, chromosome)
-    chromosomeSvgObject.appendSvg(gwas_annotation)
+    chromosomeSvgObject.append_svg(gwas_annotation)
 
     # Generate cytoband annotation:
     cytoband_annotation_obj = cytoband_annotation_wrapper(config_manager, chromosome)
     (cyb_width, cyb_height) = cytoband_annotation_obj.get_dimensions()
-    cyb_svg = svg_handler(cytoband_annotation_obj.return_svg(), cyb_width, cyb_height)
+    cyb_svg = SvgHandler(cytoband_annotation_obj.return_svg(), cyb_width, cyb_height)
 
     chromosomeSvgObject.group(translate=(cyb_width, 0))
-    chromosomeSvgObject.mergeSvg(cyb_svg)
+    chromosomeSvgObject.merge_svg(cyb_svg)
 
     if args.geneFile:
         # Get plot dimension:
-        plot_height = chromosomeSvgObject.getHeight()
+        plot_height = chromosomeSvgObject.get_height()
 
         # Create gene annotator object:
         gene_annot = genes_annotation_wrapper(
@@ -403,7 +395,7 @@ def main() -> None:
 
         dimensions = gene_annot.get_dimensions()
 
-        gene_svg = svg_handler(
+        gene_svg = SvgHandler(
             width=800,
             height=abs(dimensions[0]) + dimensions[1],
             svg_string=gene_annot.get_annotation(),
@@ -415,16 +407,16 @@ def main() -> None:
             chromosomeSvgObject.group(translate=(0, abs(dimensions[0])))
 
         # Merging together with the chromosome:
-        gene_svg.group(translate=(chromosomeSvgObject.getWidth(), 0))
-        chromosomeSvgObject.mergeSvg(gene_svg)
+        gene_svg.group(translate=(chromosomeSvgObject.get_width(), 0))
+        chromosomeSvgObject.merge_svg(gene_svg)
 
     # Save file:
     logger.info(f"Saving image: {output_filename}")
-    chromosomeSvgObject.savePng(output_filename)
+    chromosomeSvgObject.save_png(output_filename)
 
     if args.textFile:
         logger.info(f"Saving svg file: {output_filename.replace('png', 'svg')}")
-        chromosomeSvgObject.saveSvg(output_filename.replace("png", "svg"))
+        chromosomeSvgObject.save_svg(output_filename.replace("png", "svg"))
 
     logger.info("All done.")
 

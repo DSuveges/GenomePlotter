@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import math
 
+import numpy as np
 import pandas as pd
 
 
-class gwas_annotator:
+class GwasAnnotator:
     """Adds GWAS associations to the chromosome."""
 
     # GWAS hit svg definition:
@@ -22,7 +23,7 @@ class gwas_annotator:
     gwas_cap = 10
 
     def __init__(
-        self: gwas_annotator,
+        self: GwasAnnotator,
         pixel: int,
         chromosome: str,
         gwas_file: str,
@@ -44,7 +45,6 @@ class gwas_annotator:
             yoffset (int): Y offset for positioning.
             gwas_color (str): Color for GWAS points.
         """
-        # Reading gwas file:
         gwas_df = pd.read_csv(
             gwas_file,
             compression="gzip",
@@ -54,57 +54,42 @@ class gwas_annotator:
             dtype={"#chr": str, "start": int, "end": int, "rsID": str, "trait": str},
         )
 
-        # Filtering dataframe for the given chromosome:
         filtered_locations = gwas_df.loc[gwas_df["#chr"] == chromosome]
 
-        # Looping through all GWAS hits on the chromosome and calculate coordinates and scale:
-        data = []
-        for index, value in (
+        # Count hits per chunk index, capped at gwas_cap:
+        chunk_counts = (
             filtered_locations.start.apply(lambda x: int(x / chunk_size))
             .value_counts()
-            .items()
-        ):
-            value = value if value < 10 else 10
-            data.append(
-                {"counts": value, "x": int(index % width), "y": int(index / width)}
-            )
+            .clip(upper=self.gwas_cap)
+        )
 
-        self.__positions = pd.DataFrame(data)
+        self.__positions = pd.DataFrame(
+            {
+                "counts": chunk_counts.values,
+                "x": (chunk_counts.index % width).astype(int),
+                "y": (chunk_counts.index // width).astype(int),
+            }
+        )
 
         self.__pixel = pixel
         self.__xoffset = xoffset
         self.__yoffset = yoffset
         self.__gwas_color = gwas_color
 
-    def generate_gwas(self: gwas_annotator) -> str:
+    def generate_gwas(self: GwasAnnotator) -> str:
         """Generate SVG for GWAS hits.
 
         Returns:
             str: SVG string containing GWAS hit circles.
         """
-        pixel = self.__pixel
-        positions = self.__positions
-        xoffset = self.__xoffset
-        yoffset = self.__yoffset
+        pos = self.__positions
         gwas_color = self.__gwas_color
 
-        # GWAS Points:
-        gwas_points = []
+        radius = np.sqrt(pos["counts"] ** 2 * self.circle_unit / math.pi)
+        cx = pos["x"] * self.__pixel + radius / 2 + self.__xoffset
+        cy = pos["y"] * self.__pixel + radius / 2 + self.__yoffset
 
-        # Based on the x/y coordinates, let's draw the point:
-        for _, row in positions.iterrows():
-            # The radius of the circle is proportional to the number of GWAS hits in the given chunk:
-            radius = math.sqrt(row["counts"] ** 2 * self.circle_unit / math.pi)
-
-            # Adding point{}
-            gwas_points.append(
-                self.gwas_hit.format(
-                    (row["x"] * pixel) + radius / 2 + xoffset,
-                    (row["y"] * pixel) + radius / 2 + yoffset,
-                    radius,
-                    gwas_color,
-                    gwas_color,
-                )
-            )
-
-        return "\n".join(gwas_points)
+        return "\n".join(
+            self.gwas_hit.format(cx_val, cy_val, r_val, gwas_color, gwas_color)
+            for cx_val, cy_val, r_val in zip(cx, cy, radius)
+        )

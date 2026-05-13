@@ -16,180 +16,116 @@ class ChromosomePlotter:
 
     chunk_svg = '<rect x="{}" y="{}" width="{}" height="{}" style="stroke-width:1;stroke:{}; fill: {}" />'
 
-    def __init__(self: ChromosomePlotter, input_data: pd.DataFrame, pixel: int) -> None:
+    def __init__(self, input_data: pd.DataFrame, pixel: int) -> None:
         """Initialize plotter object.
 
         Args:
             input_data (pd.DataFrame): DataFrame with chromosome data.
             pixel (int): Size of pixel (one unit of genetic information).
         """
-        self.__pixel__ = pixel
-        self.__chromosome_data__ = input_data
-        self.__chromosome_name__ = input_data.chr[0]
-        self.__chunk_size__ = input_data.iloc[0].end
+        self._pixel = pixel
+        self._chromosome_data = input_data
+        self._chromosome_name = input_data["chr"].iloc[0]
+        self._chunk_size = input_data.iloc[0].end
 
-        # Calculate width and height:
-        self.__width__ = pixel * (input_data.x.max() + 1)
-        self.__height__ = pixel * (input_data.y.max() + 1)
+        self._width = pixel * (input_data.x.max() + 1)
+        self._height = pixel * (input_data.y.max() + 1)
 
-        # The svg string will be stored here:
-        self.__plot_string__ = ""
+        self._plot_string = ""
 
-    def __add_centromere(self: ChromosomePlotter) -> None:
+    def _add_centromere(self) -> None:
         """Add centromere visualization to the chromosome plot."""
-        # If the plotted chromosome region doesn't have centromere, we skip:
-        if "centromere" not in self.__chromosome_data__.GENCODE.to_list():
+        if "centromere" not in self._chromosome_data.GENCODE.to_list():
             return
 
-        # We use the Gencode annotation in the chromosome dataframe to get start and end:
-        centromere_start = (
-            self.__chromosome_data__.loc[
-                self.__chromosome_data__.GENCODE == "centromere"
-            ].y.min()
-            * self.__pixel__
-        )
-        centromere_end = (
-            self.__chromosome_data__.loc[
-                self.__chromosome_data__.GENCODE == "centromere"
-            ].y.max()
-            * self.__pixel__
-        )
+        centromere_rows = self._chromosome_data.loc[
+            self._chromosome_data.GENCODE == "centromere"
+        ]
+        centromere_start = centromere_rows.y.min() * self._pixel
+        centromere_end = centromere_rows.y.max() * self._pixel
 
         centromere_midpoint = (centromere_end - centromere_start) / 2
-        centromere_hight = centromere_end - centromere_start
+        centromere_height = centromere_end - centromere_start
+        centromere_x = self._width / 3
 
-        # How deep we want the cleavage:
-        cetromere_x = self.__width__ / 3
-
-        # Right mark of the centromere:
-        centromere_string = f'<path d="M -1 0 \
-            C 0 {centromere_midpoint}, {cetromere_x / 2} {centromere_midpoint}, {cetromere_x / 2} {centromere_midpoint} \
-            C {cetromere_x / 2} {centromere_midpoint}, 0 {centromere_midpoint}, -1 {centromere_hight} Z" fill="white"/>\n'
-
+        centromere_string = (
+            f'<path d="M -1 0 '
+            f'C 0 {centromere_midpoint}, {centromere_x / 2} {centromere_midpoint}, {centromere_x / 2} {centromere_midpoint} '
+            f'C {centromere_x / 2} {centromere_midpoint}, 0 {centromere_midpoint}, -1 {centromere_height} Z" fill="white"/>\n'
+        )
         half_centromere = f'<g transform="translate(0, {centromere_start})">\n\t{centromere_string}\n</g>\n'
-
-        # Generating the other half of the centromoere:
         other_half = (
-            f'<g transform="rotate(180 0 {centromere_start + centromere_midpoint}) \
-            translate(-{self.__width__}, 0)">\n\t{half_centromere}\n</g>\n'
+            f'<g transform="rotate(180 0 {centromere_start + centromere_midpoint}) '
+            f'translate(-{self._width}, 0)">\n\t{half_centromere}\n</g>\n'
         )
+        self._plot_string += f'\n<g id="centromere">\n\t{half_centromere}\t{other_half}</g>\n'
 
-        # adding both sides of the centromere to the plot:
-        self.__plot_string__ += (
-            f'\n<g id="centromere">\n\t{half_centromere}\t{other_half}</g>\n'
-        )
-
-    def draw_dummy(self: ChromosomePlotter) -> None:
+    def draw_dummy(self) -> None:
         """Draw a dummy chromosome representation."""
-        width = self.__width__
-        height = self.__height__
+        width = self._width
+        height = self._height
+        data = self._chromosome_data
 
-        # Extract dummy and centromere color:
-        dummy_color = self.__chromosome_data__.loc[
-            self.__chromosome_data__.GENCODE != "centromere"
-        ].color.tolist()[0]
-        centromere_color = self.__chromosome_data__.loc[
-            self.__chromosome_data__.GENCODE == "centromere"
-        ].color.tolist()[0]
+        dummy_color = data.loc[data.GENCODE != "centromere"].color.tolist()[0]
+        centromere_color = data.loc[data.GENCODE == "centromere"].color.tolist()[0]
 
-        # Extract centromere positions:
-        centromere_start = (
-            self.__chromosome_data__.loc[
-                self.__chromosome_data__.GENCODE == "centromere"
-            ].y.min()
-            * self.__pixel__
+        centromere_rows = data.loc[data.GENCODE == "centromere"]
+        centromere_start = centromere_rows.y.min() * self._pixel
+        centromere_end = centromere_rows.y.max() * self._pixel - centromere_start
+
+        logger.info(f"centromere_start: {centromere_start}, centromere_end: {centromere_end}")
+
+        self._plot_string += self.chunk_svg.format(0, 0, width, height, dummy_color, dummy_color)
+        self._plot_string += self.chunk_svg.format(
+            0, centromere_start, width, centromere_end, centromere_color, centromere_color
         )
-        centromere_end = (
-            self.__chromosome_data__.loc[
-                self.__chromosome_data__.GENCODE == "centromere"
-            ].y.max()
-            * self.__pixel__
-            - centromere_start
-        )
+        self._add_centromere()
 
-        logger.info(
-            f"centromere_start: {centromere_start}, centromere_end: {centromere_end}"
-        )
-
-        # Adding the full chromosome in dummy;
-        self.__plot_string__ += self.chunk_svg.format(
-            0, 0, width, height, dummy_color, dummy_color
-        )
-
-        # Adding centromere rectangle:
-        self.__plot_string__ += self.chunk_svg.format(
-            0,
-            centromere_start,
-            width,
-            centromere_end,
-            centromere_color,
-            centromere_color,
-        )
-
-        # Adding centromoere:
-        self.__add_centromere()
-
-    def draw_chromosome(self: ChromosomePlotter) -> None:
+    def draw_chromosome(self) -> None:
         """Draw the chromosome with colored chunks."""
-        pixel = self.__pixel__
-        svg_chunks = []
-        for _, df_row in self.__chromosome_data__.iterrows():
-            x = df_row["x"] * pixel
-            y = df_row["y"] * pixel
-            svg_chunks.append(
-                self.chunk_svg.format(
-                    x, y, pixel, pixel, df_row["color"], df_row["color"]
-                )
-            )
+        pixel = self._pixel
+        data = self._chromosome_data
+        xs = data["x"].to_numpy() * pixel
+        ys = data["y"].to_numpy() * pixel
+        colors = data["color"].to_numpy()
+        self._plot_string = "\n".join(
+            self.chunk_svg.format(x, y, pixel, pixel, c, c)
+            for x, y, c in zip(xs, ys, colors)
+        )
+        self._add_centromere()
 
-        self.__plot_string__ = "\n".join(svg_chunks)
+    def get_plot_with(self) -> int:
+        """Return the plot width in pixels."""
+        return self._width
 
-        # Adding centromoere:
-        self.__add_centromere()
+    def get_plot_height(self) -> int:
+        """Return the plot height in pixels."""
+        return self._height
 
-    def get_plot_with(self: ChromosomePlotter) -> int:
-        """Return the plot width.
+    def return_svg(self) -> str:
+        """Return the SVG plot string."""
+        return self._plot_string
 
-        Returns:
-            int: Plot width in pixels.
-        """
-        return self.__width__
+    def _wrap_svg_string(self) -> str:
+        return (
+            '<svg width="%s" height="%s" version="1.1" xmlns="http://www.w3.org/2000/svg" '
+            'xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve">\n%s</svg>'
+            % (self._width, self._height, self._plot_string)
+        )
 
-    def get_plot_height(self: ChromosomePlotter) -> int:
-        """Return the plot height.
-
-        Returns:
-            int: Plot height in pixels.
-        """
-        return self.__height__
-
-    def return_svg(self: ChromosomePlotter) -> str:
-        """Return the SVG plot string.
-
-        Returns:
-            str: SVG content string.
-        """
-        return self.__plot_string__
-
-    def save_png(self: ChromosomePlotter, file_name: str) -> None:
-        """Save the plot as PNG file.
+    def save_png(self, file_name: str) -> None:
+        """Save the plot as a PNG file.
 
         Args:
-            file_name (str): Output file name.
+            file_name (str): Output file path.
         """
-        cairosvg.svg2png(bytestring=self.__svg__, write_to=file_name)
+        cairosvg.svg2png(bytestring=self._wrap_svg_string(), write_to=file_name)
 
-    def wrap_svg(self: ChromosomePlotter, file_name: str) -> None:
+    def wrap_svg(self, file_name: str) -> None:
         """Wrap the SVG content and save to file.
 
         Args:
-            file_name (str): Output file name.
+            file_name (str): Output file path.
         """
-        self.__svg__ = (
-            '<svg width="%s" height="%s" version="1.1" xmlns="http://www.w3.org/2000/svg" \
-                xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve">\n%s</svg>'
-            % (self.__width__, self.__height__, self.__plot_string__)
-        )
-        f = open(file_name, "w")
-        f.write(self.__svg__)
-        f.close()
+        with open(file_name, "w") as f:
+            f.write(self._wrap_svg_string())
