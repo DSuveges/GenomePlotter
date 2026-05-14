@@ -27,8 +27,10 @@ class FetchFromFtp:
         """
         self.FTP_HOST = url
 
-        # Initialize connection and go to folder:
-        self.ftp = ftplib.FTP(self.FTP_HOST, "anonymous", "")
+        # Initialize connection and go to folder.
+        # timeout=600 prevents silent hangs on dropped connections — if no data
+        # is received for 10 minutes the socket raises socket.timeout.
+        self.ftp = ftplib.FTP(self.FTP_HOST, "anonymous", "", timeout=600)
 
     def fetch_file_list(self: FetchFromFtp, path: str) -> list[str]:
         """Extract the list of files in the specified path.
