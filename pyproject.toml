@@ -16,6 +16,7 @@ dependencies = [
     "cairosvg>=2.7.1",
     "loguru>=0.7.0",
     "pydantic>=2.0",
+    "pillow>=10.0",
 ]
 
 [project.optional-dependencies]
@@ -32,6 +33,7 @@ dev = [
 prepare-data = "genome_plotter.prepare_data:main"
 plot-chromosome = "genome_plotter.plot_chromosome:main"
 plot-gene-arrow = "genome_plotter.plot_gene_arrow:main"
+make-poster = "genome_plotter.make_poster:main"
 
 [build-system]
 requires = ["hatchling"]
